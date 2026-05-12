@@ -1,4 +1,10 @@
-import { defineConfig, type PluginOption } from 'vite';
+import {
+  defineConfig,
+  type Connect,
+  type PluginOption,
+  type ViteDevServer,
+} from 'vite';
+import type { ServerResponse } from 'node:http';
 import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -51,19 +57,25 @@ export default defineConfig(({ command }) => {
       tailwindcss(),
       {
         name: 'miss-badminton-trailing-slash',
-        configureServer(server) {
-          server.middlewares.use((req, res, next) => {
-            const raw = req.originalUrl ?? '';
-            const pathOnly = raw.split('?')[0] ?? '';
-            if (pathOnly === '/miss-badminton') {
-              const qs = raw.includes('?') ? `?${raw.split('?')[1]}` : '';
-              res.statusCode = 302;
-              res.setHeader('Location', `/miss-badminton/${qs}`);
-              res.end();
-              return;
+        configureServer(server: ViteDevServer) {
+          server.middlewares.use(
+            (
+              req: Connect.IncomingMessage,
+              res: ServerResponse,
+              next: Connect.NextFunction
+            ) => {
+              const raw = req.originalUrl ?? '';
+              const pathOnly = raw.split('?')[0] ?? '';
+              if (pathOnly === '/miss-badminton') {
+                const qs = raw.includes('?') ? `?${raw.split('?')[1]}` : '';
+                res.statusCode = 302;
+                res.setHeader('Location', `/miss-badminton/${qs}`);
+                res.end();
+                return;
+              }
+              next();
             }
-            next();
-          });
+          );
         },
       },
       VitePWA({
