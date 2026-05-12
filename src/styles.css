@@ -115,3 +115,19 @@ body {
 .sw-update-banner__btn:hover {
   background: var(--primary-hover);
 }
+
+@keyframes mb-shuttle-float {
+  0%,
+  100% {
+    transform: translateY(-8%) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(8%) rotate(8deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*='mb-shuttle-float'] {
+    animation: none !important;
+  }
+}
