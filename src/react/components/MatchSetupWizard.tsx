@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 
 export type MatchType = 'singles' | 'doubles';
 export type SetCount = 1 | 2 | 3 | 5;
@@ -66,6 +67,7 @@ export function MatchSetupWizard({
   onCancel,
   onComplete,
 }: MatchSetupWizardProps): ReactElement {
+  const { t } = useI18n();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [draft, setDraft] = useState<WizardDraft>(() =>
     initial ? draftFromConfig(initial) : { ...DEFAULT_DRAFT }
@@ -97,16 +99,12 @@ export function MatchSetupWizard({
       points: draft.points,
       sideChange: draft.sideChange,
       team1: {
-        primary: draft.team1.primary.trim() || 'joueur 1',
-        partner: isDoubles
-          ? draft.team1.partner.trim() || 'partenaire 1'
-          : undefined,
+        primary: draft.team1.primary.trim(),
+        partner: isDoubles ? draft.team1.partner.trim() : undefined,
       },
       team2: {
-        primary: draft.team2.primary.trim() || 'joueur 2',
-        partner: isDoubles
-          ? draft.team2.partner.trim() || 'partenaire 2'
-          : undefined,
+        primary: draft.team2.primary.trim(),
+        partner: isDoubles ? draft.team2.partner.trim() : undefined,
       },
     });
   };
@@ -136,18 +134,18 @@ export function MatchSetupWizard({
               className="text-xs font-medium uppercase tracking-wide"
               style={{ color: 'var(--muted)' }}
             >
-              Étape {step} / 3
+              {t('wizard.stepLabel', { n: step })}
             </p>
             <h2 id={titleId} className="text-xl font-bold">
-              {step === 1 && 'Type de match'}
-              {step === 2 && 'Règles'}
-              {step === 3 && 'Joueurs'}
+              {step === 1 && t('wizard.typeTitle')}
+              {step === 2 && t('wizard.rulesTitle')}
+              {step === 3 && t('wizard.playersTitle')}
             </h2>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            aria-label="Fermer l'assistant"
+            aria-label={t('wizard.closeLabel')}
             className="rounded-md px-2 py-1 text-xl leading-none hover:bg-black/5"
             style={{ color: 'var(--muted)' }}
           >
@@ -192,7 +190,7 @@ export function MatchSetupWizard({
                 color: 'var(--text)',
               }}
             >
-              Retour
+              {t('wizard.back')}
             </button>
           ) : (
             <span />
@@ -206,7 +204,7 @@ export function MatchSetupWizard({
               className="rounded-xl px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: 'var(--primary)' }}
             >
-              Suivant
+              {t('wizard.next')}
             </button>
           ) : (
             <button
@@ -215,7 +213,7 @@ export function MatchSetupWizard({
               className="rounded-xl px-5 py-2 text-sm font-semibold text-white"
               style={{ background: 'var(--primary)' }}
             >
-              Commencer
+              {t('wizard.start')}
             </button>
           )}
         </footer>
@@ -246,20 +244,21 @@ interface Step1Props {
 }
 
 function Step1({ value, onChange }: Step1Props) {
+  const { t } = useI18n();
   return (
     <fieldset className="grid grid-cols-2 gap-3">
-      <legend className="sr-only">Type de match</legend>
+      <legend className="sr-only">{t('wizard.typeTitle')}</legend>
       <OptionCard
         selected={value === 'singles'}
         onClick={() => onChange('singles')}
-        title="Seul"
-        subtitle="Simple — 1 vs 1"
+        title={t('wizard.singlesTitle')}
+        subtitle={t('wizard.singlesSubtitle')}
       />
       <OptionCard
         selected={value === 'doubles'}
         onClick={() => onChange('doubles')}
-        title="En double"
-        subtitle="Double — 2 vs 2"
+        title={t('wizard.doublesTitle')}
+        subtitle={t('wizard.doublesSubtitle')}
       />
     </fieldset>
   );
@@ -276,31 +275,32 @@ interface Step2Props {
 
 const SET_OPTIONS: SetCount[] = [1, 2, 3, 5];
 const POINT_OPTIONS: PointsTarget[] = [15, 21, 30, 31];
-const SIDE_CHANGE_OPTIONS: { value: SideChange; label: string }[] = [
-  { value: 'decisive', label: 'Set décisif uniquement' },
-  { value: 'each-set', label: 'Chaque set' },
-  { value: 'mid-match', label: 'Mi-match' },
-];
 
 function Step2({ sets, points, sideChange, onChange }: Step2Props) {
+  const { t } = useI18n();
+  const sideChangeOptions: { value: SideChange; label: string }[] = [
+    { value: 'decisive', label: t('wizard.sideChangeDecisive') },
+    { value: 'each-set', label: t('wizard.sideChangeEachSet') },
+    { value: 'mid-match', label: t('wizard.sideChangeMidMatch') },
+  ];
   return (
     <div className="flex flex-col gap-4">
       <PillGroup
-        label="Nombre de sets"
+        label={t('wizard.sets')}
         value={sets}
         options={SET_OPTIONS.map(v => ({ value: v, label: `${v}` }))}
         onChange={v => onChange({ sets: v })}
       />
       <PillGroup
-        label="Points par set"
+        label={t('wizard.points')}
         value={points}
         options={POINT_OPTIONS.map(v => ({ value: v, label: `${v}` }))}
         onChange={v => onChange({ points: v })}
       />
       <PillGroup
-        label="Changement de côté"
+        label={t('wizard.sideChange')}
         value={sideChange}
-        options={SIDE_CHANGE_OPTIONS}
+        options={sideChangeOptions}
         onChange={v => onChange({ sideChange: v })}
       />
     </div>
@@ -315,17 +315,18 @@ interface Step3Props {
 }
 
 function Step3({ matchType, team1, team2, onChange }: Step3Props) {
+  const { t } = useI18n();
   const isDoubles = matchType === 'doubles';
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <TeamFieldset
-        title="Équipe rouge"
+        title={t('wizard.redTeam')}
         accent="#e53935"
         isDoubles={isDoubles}
         primary={team1.primary}
         partner={team1.partner}
-        primaryPlaceholder="joueur 1"
-        partnerPlaceholder="partenaire 1"
+        primaryPlaceholder={t('players.player1')}
+        partnerPlaceholder={t('players.partner1')}
         onPrimary={v =>
           onChange({ team1: { primary: v, partner: team1.partner } })
         }
@@ -334,13 +335,13 @@ function Step3({ matchType, team1, team2, onChange }: Step3Props) {
         }
       />
       <TeamFieldset
-        title="Équipe bleue"
+        title={t('wizard.blueTeam')}
         accent="#26a3b8"
         isDoubles={isDoubles}
         primary={team2.primary}
         partner={team2.partner}
-        primaryPlaceholder="joueur 2"
-        partnerPlaceholder="partenaire 2"
+        primaryPlaceholder={t('players.player2')}
+        partnerPlaceholder={t('players.partner2')}
         onPrimary={v =>
           onChange({ team2: { primary: v, partner: team2.partner } })
         }

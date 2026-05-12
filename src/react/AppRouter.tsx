@@ -11,21 +11,23 @@ import { HomeView } from './views/HomeView';
 import { MatchView } from './views/MatchView';
 import { HistoryView } from './views/HistoryView';
 import { SettingsView } from './views/SettingsView';
-import { ROUTE_META } from '../routes';
+import { useI18n } from '../i18n/useI18n';
 
 function DocumentTitle() {
   const location = useLocation();
+  const { t, locale } = useI18n();
 
   useEffect(() => {
-    const routeMap: Record<string, keyof typeof ROUTE_META> = {
-      '/': 'home',
-      '/match': 'match',
-      '/historique': 'history',
-      '/parametres': 'settings',
-    };
+    const routeMap: Record<string, 'home' | 'match' | 'history' | 'settings'> =
+      {
+        '/': 'home',
+        '/match': 'match',
+        '/historique': 'history',
+        '/parametres': 'settings',
+      };
     const route = routeMap[location.pathname] ?? 'home';
-    document.title = ROUTE_META[route].documentTitle;
-  }, [location.pathname]);
+    document.title = t(`documentTitle.${route}`);
+  }, [location.pathname, t, locale]);
 
   return null;
 }

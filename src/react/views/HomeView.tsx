@@ -7,41 +7,63 @@ import {
   type Team,
 } from '../components/MatchSetupWizard';
 import { FullscreenPrompt } from '../components/FullscreenPrompt';
+import { CourtOverlay, type ServiceSide } from '../components/CourtOverlay';
+import { useLongPress } from '../hooks/useLongPress';
+import { useI18n } from '../../i18n/useI18n';
 
 const RIVE_SRC = `${import.meta.env.BASE_URL}rive/shuttle.riv`;
+const LONG_PRESS_MS = 320;
 
 function formatScore(value: number): string {
   return value.toString().padStart(2, '0');
 }
 
-function teamLabel(team: Team | undefined, fallback: string): string {
-  if (!team) return fallback;
-  if (team.partner) return `${team.primary} & ${team.partner}`;
-  return team.primary;
+function resolveTeamLabel(team: Team, fallbacks: [string, string?]): string {
+  const primary = team.primary || fallbacks[0];
+  if (team.partner !== undefined) {
+    const partner = team.partner || fallbacks[1] || '';
+    return partner ? `${primary} & ${partner}` : primary;
+  }
+  return primary;
 }
 
 export function HomeView() {
+  const { t } = useI18n();
+
   const [score1, setScore1] = useState(0);
   const [score2, setScore2] = useState(0);
   const [match, setMatch] = useState<MatchConfig | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [server, setServer] = useState<ServiceSide | null>(null);
 
-  const player1Label = teamLabel(match?.team1, 'joueur 1');
-  const player2Label = teamLabel(match?.team2, 'joueur 2');
+  const player1Label = match
+    ? resolveTeamLabel(match.team1, [
+        t('players.player1'),
+        t('players.partner1'),
+      ])
+    : t('players.player1');
+  const player2Label = match
+    ? resolveTeamLabel(match.team2, [
+        t('players.player2'),
+        t('players.partner2'),
+      ])
+    : t('players.player2');
 
-  const handlePanelClick = (which: 'p1' | 'p2') => {
+  const handleScore = (which: ServiceSide) => {
     if (!match) {
       setWizardOpen(true);
       return;
     }
-    if (which === 'p1') setScore1(s => s + 1);
+    if (which === 'team1') setScore1(s => s + 1);
     else setScore2(s => s + 1);
+    setServer(which);
   };
 
   const handleComplete = (config: MatchConfig) => {
     setMatch(config);
     setScore1(0);
     setScore2(0);
+    setServer(null);
     setWizardOpen(false);
   };
 
@@ -53,14 +75,25 @@ export function HomeView() {
     setMatch({ ...match, team1: match.team2, team2: match.team1 });
     setScore1(score2);
     setScore2(score1);
+    setServer(prev =>
+      prev === 'team1' ? 'team2' : prev === 'team2' ? 'team1' : null
+    );
   };
+
+  const handleReset = () => {
+    setScore1(0);
+    setScore2(0);
+    setServer(null);
+  };
+
+  const serverScore = server === 'team1' ? score1 : score2;
 
   return (
     <>
       <FullscreenPrompt />
       <div className="mx-auto w-full max-w-3xl space-y-6">
         <section
-          aria-label="Tableau de score"
+          aria-label={t('home.scoreboardLabel')}
           className="relative overflow-hidden rounded-2xl shadow-2xl"
           style={{ aspectRatio: '16 / 10', boxShadow: 'var(--shadow)' }}
         >
@@ -71,7 +104,9 @@ export function HomeView() {
               score={score1}
               background="#e53935"
               textColor="#ffffff"
-              onScore={() => handlePanelClick('p1')}
+              onScore={() => handleScore('team1')}
+              ariaLabel={t('scoreboard.addPoint', { name: player1Label })}
+              holdHint={t('scoreboard.holdHint')}
             />
             <ScorePanel
               side="right"
@@ -79,21 +114,25 @@ export function HomeView() {
               score={score2}
               background="#26a3b8"
               textColor="#ffffff"
-              onScore={() => handlePanelClick('p2')}
+              onScore={() => handleScore('team2')}
+              ariaLabel={t('scoreboard.addPoint', { name: player2Label })}
+              holdHint={t('scoreboard.holdHint')}
             />
           </div>
+
+          <CourtOverlay server={server} serverScore={serverScore} />
 
           <div
             className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
             style={{
-              top: '18%',
-              width: 'min(22%, 140px)',
+              top: '14%',
+              width: 'min(20%, 120px)',
               aspectRatio: '1 / 1',
             }}
           >
             <RiveScene
               src={RIVE_SRC}
-              ariaLabel="Volant de badminton animé"
+              ariaLabel={t('home.scoreboardLabel')}
               className="h-full w-full"
               fallback={<ShuttleFallback />}
             />
@@ -102,7 +141,7 @@ export function HomeView() {
           <button
             type="button"
             onClick={handleSwap}
-            aria-label="Permuter les joueurs"
+            aria-label={t('scoreboard.swap')}
             className="absolute left-1/2 top-1/2 z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-lg font-bold shadow-lg ring-2 ring-black/10 transition-transform hover:scale-105 active:scale-95 sm:h-12 sm:w-12 sm:text-xl"
             style={{ background: '#ffffff', color: '#1f2937' }}
           >
@@ -112,38 +151,35 @@ export function HomeView() {
           <footer className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between bg-black/55 px-4 py-2 text-white backdrop-blur-sm">
             <span className="flex items-center gap-2 text-sm font-medium">
               <span aria-hidden>🏸</span>
-              Badminton Scoreboard
+              {t('scoreboard.title')}
             </span>
             <div className="flex items-center gap-3 text-base">
               <button
                 type="button"
                 onClick={() => setWizardOpen(true)}
-                aria-label="Configurer le match"
+                aria-label={t('scoreboard.edit')}
                 className="rounded-md px-2 py-1 hover:bg-white/10"
               >
                 ✎
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setScore1(0);
-                  setScore2(0);
-                }}
-                aria-label="Remettre les scores à zéro"
+                onClick={handleReset}
+                aria-label={t('scoreboard.reset')}
                 className="rounded-md px-2 py-1 hover:bg-white/10"
               >
                 ↺
               </button>
               <Link
                 to="/historique"
-                aria-label="Voir l'historique"
+                aria-label={t('scoreboard.historyAria')}
                 className="rounded-md px-2 py-1 hover:bg-white/10"
               >
                 ☰
               </Link>
               <Link
                 to="/parametres"
-                aria-label="Ouvrir les paramètres"
+                aria-label={t('scoreboard.settingsAria')}
                 className="rounded-md px-2 py-1 hover:bg-white/10"
               >
                 ⚙
@@ -157,12 +193,10 @@ export function HomeView() {
             className="text-2xl font-bold sm:text-3xl"
             style={{ color: 'var(--primary)' }}
           >
-            Miss Badminton
+            {t('appName')}
           </h1>
           <p className="max-w-md text-sm" style={{ color: 'var(--muted)' }}>
-            {match
-              ? 'Touchez la zone rouge pour le joueur 1, la zone bleue pour le joueur 2.'
-              : 'Touchez le tableau pour configurer un nouveau match.'}
+            {match ? t('home.subtitleReady') : t('home.subtitleEmpty')}
           </p>
           <div className="flex w-full max-w-sm flex-col gap-3 pt-2 sm:flex-row">
             <button
@@ -171,7 +205,7 @@ export function HomeView() {
               className="flex-1 rounded-xl px-6 py-3 text-center font-semibold text-white"
               style={{ background: 'var(--primary)' }}
             >
-              Nouveau match
+              {t('home.newMatch')}
             </button>
             <Link
               to="/historique"
@@ -182,7 +216,7 @@ export function HomeView() {
                 color: 'var(--text)',
               }}
             >
-              Voir l'historique
+              {t('home.viewHistory')}
             </Link>
           </div>
         </div>
@@ -205,6 +239,8 @@ interface ScorePanelProps {
   score: number;
   background: string;
   textColor: string;
+  ariaLabel: string;
+  holdHint: string;
   onScore: () => void;
 }
 
@@ -214,15 +250,18 @@ function ScorePanel({
   score,
   background,
   textColor,
+  ariaLabel,
+  holdHint,
   onScore,
 }: ScorePanelProps) {
+  const { isPressing, handlers } = useLongPress(onScore, LONG_PRESS_MS);
   return (
     <button
       type="button"
-      onClick={onScore}
-      aria-label={`Ajouter un point pour ${label}`}
-      className="relative flex h-full w-full flex-col justify-between px-4 pb-14 pt-4 text-left transition-[filter] duration-150 active:brightness-90 sm:px-6 sm:pb-16 sm:pt-6"
-      style={{ background, color: textColor }}
+      aria-label={ariaLabel}
+      className="relative flex h-full w-full select-none flex-col justify-between px-4 pb-14 pt-4 text-left transition-[filter] duration-150 active:brightness-90 sm:px-6 sm:pb-16 sm:pt-6"
+      style={{ background, color: textColor, touchAction: 'manipulation' }}
+      {...handlers}
     >
       <span
         className={`text-2xl font-light sm:text-3xl ${side === 'left' ? 'self-end' : 'self-start'}`}
@@ -239,6 +278,22 @@ function ScorePanel({
       <span className="self-center text-sm font-medium opacity-90 sm:text-base">
         {label}
       </span>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-10 select-none text-center text-[10px] uppercase tracking-wider opacity-60 sm:text-xs"
+      >
+        {holdHint}
+      </span>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-10 z-10 h-1 origin-left bg-white/80"
+        style={{
+          transform: `scaleX(${isPressing ? 1 : 0})`,
+          transition: isPressing
+            ? `transform ${LONG_PRESS_MS}ms linear`
+            : 'transform 120ms ease-out',
+        }}
+      />
     </button>
   );
 }
@@ -246,7 +301,7 @@ function ScorePanel({
 function ShuttleFallback() {
   return (
     <div
-      className="flex h-full w-full items-center justify-center text-5xl sm:text-6xl"
+      className="flex h-full w-full items-center justify-center text-4xl sm:text-5xl"
       style={{ animation: 'mb-shuttle-float 2.4s ease-in-out infinite' }}
       aria-hidden
     >

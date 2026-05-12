@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 
 const DISMISSED_KEY = 'mb_fs_prompt_dismissed';
 
@@ -19,6 +20,7 @@ function computeNeedsPrompt(): boolean {
 }
 
 export function FullscreenPrompt() {
+  const { t } = useI18n();
   const [visible, setVisible] = useState<boolean>(() => computeNeedsPrompt());
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export function FullscreenPrompt() {
       className="pointer-events-none fixed inset-x-0 top-16 z-[60] flex justify-center px-3"
       role="dialog"
       aria-live="polite"
-      aria-label="Mode paysage plein écran"
+      aria-label={t('fullscreen.dialogLabel')}
     >
       <div
         className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-xl border p-3 shadow-lg"
@@ -76,22 +78,19 @@ export function FullscreenPrompt() {
         <span aria-hidden className="text-xl">
           📱↻
         </span>
-        <span className="flex-1 text-sm">
-          Pivote ton écran et passe en plein écran pour une meilleure
-          expérience.
-        </span>
+        <span className="flex-1 text-sm">{t('fullscreen.message')}</span>
         <button
           type="button"
           onClick={activate}
           className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
           style={{ background: 'var(--primary)' }}
         >
-          Activer
+          {t('fullscreen.activate')}
         </button>
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Ignorer"
+          aria-label={t('fullscreen.dismiss')}
           className="px-1 text-xl leading-none"
           style={{ color: 'var(--muted)' }}
         >
