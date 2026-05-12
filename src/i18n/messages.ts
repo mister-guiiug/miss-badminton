@@ -76,6 +76,15 @@ export interface Messages {
     dismiss: string;
     dialogLabel: string;
   };
+  matchOver: {
+    label: string;
+    winnerText: string;
+    score: string;
+    newMatch: string;
+  };
+  scoreboardExtra: {
+    invertPlayers: string;
+  };
   settings: {
     languageLabel: string;
     languageHelp: string;
@@ -153,6 +162,15 @@ const fr: Messages = {
     dismiss: 'Ignorer',
     dialogLabel: 'Mode paysage plein écran',
   },
+  matchOver: {
+    label: 'Match terminé',
+    winnerText: '{name} remporte le match',
+    score: 'Sets : {a} – {b}',
+    newMatch: 'Nouveau match',
+  },
+  scoreboardExtra: {
+    invertPlayers: 'Intervertir haut et bas',
+  },
   settings: {
     languageLabel: 'Langue',
     languageHelp: "Choisissez la langue de l'interface.",
@@ -227,6 +245,15 @@ const en: Messages = {
     activate: 'Activate',
     dismiss: 'Dismiss',
     dialogLabel: 'Fullscreen landscape mode',
+  },
+  matchOver: {
+    label: 'Match over',
+    winnerText: '{name} wins the match',
+    score: 'Sets: {a} – {b}',
+    newMatch: 'New match',
+  },
+  scoreboardExtra: {
+    invertPlayers: 'Swap top and bottom',
   },
   settings: {
     languageLabel: 'Language',
