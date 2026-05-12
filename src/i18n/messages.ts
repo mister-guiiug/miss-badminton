@@ -14,6 +14,9 @@ export interface Messages {
     match: string;
     history: string;
     settings: string;
+    openMenu: string;
+    closeMenu: string;
+    menuLabel: string;
   };
   documentTitle: {
     home: string;
@@ -86,6 +89,9 @@ const fr: Messages = {
     match: 'Match',
     history: 'Historique',
     settings: 'Paramètres',
+    openMenu: 'Ouvrir le menu',
+    closeMenu: 'Fermer le menu',
+    menuLabel: 'Menu de navigation',
   },
   documentTitle: {
     home: 'Miss Badminton',
@@ -160,6 +166,9 @@ const en: Messages = {
     match: 'Match',
     history: 'History',
     settings: 'Settings',
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+    menuLabel: 'Navigation menu',
   },
   documentTitle: {
     home: 'Miss Badminton',

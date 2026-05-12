@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { RiveScene } from '../components/RiveScene';
 import {
   MatchSetupWizard,
@@ -91,144 +90,95 @@ export function HomeView() {
   return (
     <>
       <FullscreenPrompt />
-      <div className="mx-auto w-full max-w-3xl space-y-6">
-        <section
-          aria-label={t('home.scoreboardLabel')}
-          className="relative overflow-hidden rounded-2xl shadow-2xl"
-          style={{ aspectRatio: '16 / 10', boxShadow: 'var(--shadow)' }}
+      <section
+        aria-label={t('home.scoreboardLabel')}
+        className="relative w-full overflow-hidden shadow-2xl"
+        style={{ aspectRatio: '16 / 10', boxShadow: 'var(--shadow)' }}
+      >
+        <div className="absolute inset-0 grid grid-cols-2">
+          <ScorePanel
+            side="left"
+            label={player1Label}
+            score={score1}
+            background="#e53935"
+            textColor="#ffffff"
+            onScore={() => handleScore('team1')}
+            ariaLabel={t('scoreboard.addPoint', { name: player1Label })}
+            holdHint={t('scoreboard.holdHint')}
+          />
+          <ScorePanel
+            side="right"
+            label={player2Label}
+            score={score2}
+            background="#26a3b8"
+            textColor="#ffffff"
+            onScore={() => handleScore('team2')}
+            ariaLabel={t('scoreboard.addPoint', { name: player2Label })}
+            holdHint={t('scoreboard.holdHint')}
+          />
+        </div>
+
+        <CourtOverlay server={server} serverScore={serverScore} />
+
+        <div
+          className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
+          style={{
+            top: '12%',
+            width: 'min(18%, 110px)',
+            aspectRatio: '1 / 1',
+          }}
         >
-          <div className="absolute inset-0 grid grid-cols-2">
-            <ScorePanel
-              side="left"
-              label={player1Label}
-              score={score1}
-              background="#e53935"
-              textColor="#ffffff"
-              onScore={() => handleScore('team1')}
-              ariaLabel={t('scoreboard.addPoint', { name: player1Label })}
-              holdHint={t('scoreboard.holdHint')}
-            />
-            <ScorePanel
-              side="right"
-              label={player2Label}
-              score={score2}
-              background="#26a3b8"
-              textColor="#ffffff"
-              onScore={() => handleScore('team2')}
-              ariaLabel={t('scoreboard.addPoint', { name: player2Label })}
-              holdHint={t('scoreboard.holdHint')}
-            />
-          </div>
+          <RiveScene
+            src={RIVE_SRC}
+            ariaLabel={t('home.scoreboardLabel')}
+            className="h-full w-full"
+            fallback={<ShuttleFallback />}
+          />
+        </div>
 
-          <CourtOverlay server={server} serverScore={serverScore} />
+        <button
+          type="button"
+          onClick={handleSwap}
+          aria-label={t('scoreboard.swap')}
+          className="absolute left-1/2 top-1/2 z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xl font-bold shadow-lg ring-2 ring-black/10 transition-transform hover:scale-105 active:scale-95 sm:h-14 sm:w-14 sm:text-2xl"
+          style={{ background: '#ffffff', color: '#1f2937' }}
+        >
+          <span aria-hidden>⇄</span>
+        </button>
 
-          <div
-            className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
-            style={{
-              top: '14%',
-              width: 'min(20%, 120px)',
-              aspectRatio: '1 / 1',
-            }}
-          >
-            <RiveScene
-              src={RIVE_SRC}
-              ariaLabel={t('home.scoreboardLabel')}
-              className="h-full w-full"
-              fallback={<ShuttleFallback />}
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleSwap}
-            aria-label={t('scoreboard.swap')}
-            className="absolute left-1/2 top-1/2 z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-lg font-bold shadow-lg ring-2 ring-black/10 transition-transform hover:scale-105 active:scale-95 sm:h-12 sm:w-12 sm:text-xl"
-            style={{ background: '#ffffff', color: '#1f2937' }}
-          >
-            <span aria-hidden>⇄</span>
-          </button>
-
-          <footer className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between bg-black/55 px-4 py-2 text-white backdrop-blur-sm">
-            <span className="flex items-center gap-2 text-sm font-medium">
-              <span aria-hidden>🏸</span>
-              {t('scoreboard.title')}
-            </span>
-            <div className="flex items-center gap-3 text-base">
-              <button
-                type="button"
-                onClick={() => setWizardOpen(true)}
-                aria-label={t('scoreboard.edit')}
-                className="rounded-md px-2 py-1 hover:bg-white/10"
-              >
-                ✎
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                aria-label={t('scoreboard.reset')}
-                className="rounded-md px-2 py-1 hover:bg-white/10"
-              >
-                ↺
-              </button>
-              <Link
-                to="/historique"
-                aria-label={t('scoreboard.historyAria')}
-                className="rounded-md px-2 py-1 hover:bg-white/10"
-              >
-                ☰
-              </Link>
-              <Link
-                to="/parametres"
-                aria-label={t('scoreboard.settingsAria')}
-                className="rounded-md px-2 py-1 hover:bg-white/10"
-              >
-                ⚙
-              </Link>
-            </div>
-          </footer>
-        </section>
-
-        <div className="flex flex-col items-center gap-3 px-4 text-center">
-          <h1
-            className="text-2xl font-bold sm:text-3xl"
-            style={{ color: 'var(--primary)' }}
-          >
-            {t('appName')}
-          </h1>
-          <p className="max-w-md text-sm" style={{ color: 'var(--muted)' }}>
-            {match ? t('home.subtitleReady') : t('home.subtitleEmpty')}
-          </p>
-          <div className="flex w-full max-w-sm flex-col gap-3 pt-2 sm:flex-row">
+        <footer className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between bg-black/55 px-4 py-2 text-white backdrop-blur-sm">
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <span aria-hidden>🏸</span>
+            {t('scoreboard.title')}
+          </span>
+          <div className="flex items-center gap-3 text-base">
             <button
               type="button"
               onClick={() => setWizardOpen(true)}
-              className="flex-1 rounded-xl px-6 py-3 text-center font-semibold text-white"
-              style={{ background: 'var(--primary)' }}
+              aria-label={t('scoreboard.edit')}
+              className="rounded-md px-2 py-1 hover:bg-white/10"
             >
-              {t('home.newMatch')}
+              <span aria-hidden>✎</span>
             </button>
-            <Link
-              to="/historique"
-              className="flex-1 rounded-xl px-6 py-3 text-center font-semibold"
-              style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--text)',
-              }}
+            <button
+              type="button"
+              onClick={handleReset}
+              aria-label={t('scoreboard.reset')}
+              className="rounded-md px-2 py-1 hover:bg-white/10"
             >
-              {t('home.viewHistory')}
-            </Link>
+              <span aria-hidden>↺</span>
+            </button>
           </div>
-        </div>
+        </footer>
+      </section>
 
-        {wizardOpen && (
-          <MatchSetupWizard
-            initial={match}
-            onCancel={() => setWizardOpen(false)}
-            onComplete={handleComplete}
-          />
-        )}
-      </div>
+      {wizardOpen && (
+        <MatchSetupWizard
+          initial={match}
+          onCancel={() => setWizardOpen(false)}
+          onComplete={handleComplete}
+        />
+      )}
     </>
   );
 }
@@ -259,34 +209,41 @@ function ScorePanel({
     <button
       type="button"
       aria-label={ariaLabel}
-      className="relative flex h-full w-full select-none flex-col justify-between px-4 pb-14 pt-4 text-left transition-[filter] duration-150 active:brightness-90 sm:px-6 sm:pb-16 sm:pt-6"
+      className="relative flex h-full w-full select-none flex-col justify-between px-4 pb-12 pt-4 text-left transition-[filter] duration-150 active:brightness-90 sm:px-6 sm:pb-14 sm:pt-6"
       style={{ background, color: textColor, touchAction: 'manipulation' }}
       {...handlers}
     >
       <span
-        className={`text-2xl font-light sm:text-3xl ${side === 'left' ? 'self-end' : 'self-start'}`}
+        className={`text-xl font-light opacity-80 sm:text-2xl ${
+          side === 'left' ? 'self-end' : 'self-start'
+        }`}
         aria-hidden
       >
         0
       </span>
       <span
-        className="self-center text-7xl font-light leading-none sm:text-9xl"
-        style={{ fontVariantNumeric: 'tabular-nums' }}
+        className="self-center text-center font-medium leading-none"
+        style={{
+          fontVariantNumeric: 'tabular-nums',
+          fontSize: 'clamp(5rem, 22vw, 18rem)',
+          textShadow: '0 6px 24px rgba(0,0,0,0.28)',
+          letterSpacing: '-0.04em',
+        }}
       >
         {formatScore(score)}
       </span>
-      <span className="self-center text-sm font-medium opacity-90 sm:text-base">
+      <span className="self-center text-sm font-medium opacity-95 sm:text-base">
         {label}
       </span>
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-10 select-none text-center text-[10px] uppercase tracking-wider opacity-60 sm:text-xs"
+        className="pointer-events-none absolute inset-x-0 bottom-9 select-none text-center text-[10px] uppercase tracking-wider opacity-55 sm:text-xs"
       >
         {holdHint}
       </span>
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-10 z-10 h-1 origin-left bg-white/80"
+        className="pointer-events-none absolute inset-x-0 bottom-9 z-10 h-1 origin-left bg-white/80"
         style={{
           transform: `scaleX(${isPressing ? 1 : 0})`,
           transition: isPressing

@@ -4,7 +4,7 @@ import { LOCALES, LOCALE_LABELS, type Locale } from '../../i18n/messages';
 export function SettingsView() {
   const { t, locale, setLocale } = useI18n();
   return (
-    <div className="max-w-lg mx-auto py-8 space-y-6">
+    <div className="mx-auto max-w-lg space-y-6 px-4 py-16">
       <h1 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>
         {t('nav.settings')}
       </h1>

@@ -1,12 +1,12 @@
+import { useI18n } from '../../i18n/useI18n';
+
 export function HistoryView() {
+  const { t } = useI18n();
   return (
-    <div className="max-w-lg mx-auto py-8 space-y-6">
+    <div className="mx-auto max-w-lg space-y-6 px-4 py-16">
       <h1 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>
-        Historique des matchs
+        {t('nav.history')}
       </h1>
-      <p style={{ color: 'var(--muted)' }}>
-        L'historique de vos matchs sera affiché ici.
-      </p>
     </div>
   );
 }

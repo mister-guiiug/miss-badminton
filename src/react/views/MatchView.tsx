@@ -1,12 +1,12 @@
+import { useI18n } from '../../i18n/useI18n';
+
 export function MatchView() {
+  const { t } = useI18n();
   return (
-    <div className="max-w-lg mx-auto py-8 space-y-6">
+    <div className="mx-auto max-w-lg space-y-6 px-4 py-16">
       <h1 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>
-        Match en cours
+        {t('nav.match')}
       </h1>
-      <p style={{ color: 'var(--muted)' }}>
-        Le suivi de score sera disponible ici.
-      </p>
     </div>
   );
 }

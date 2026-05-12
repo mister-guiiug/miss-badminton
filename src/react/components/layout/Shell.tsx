@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useState, type ReactNode } from 'react';
 import { useI18n } from '../../../i18n/useI18n';
+import { NavDrawer } from './NavDrawer';
 
 interface ShellProps {
   children: ReactNode;
@@ -8,54 +8,21 @@ interface ShellProps {
 
 export function Shell({ children }: ShellProps) {
   const { t } = useI18n();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   return (
     <div className="flex flex-col min-h-dvh">
-      <header
-        className="sticky top-0 z-50 flex items-center justify-between px-4 py-3"
-        style={{
-          background: 'var(--surface)',
-          borderBottom: '1px solid var(--border)',
-        }}
+      <button
+        type="button"
+        onClick={() => setDrawerOpen(true)}
+        aria-label={t('nav.openMenu')}
+        className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full text-lg text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105 active:scale-95"
+        style={{ background: 'rgba(0,0,0,0.55)' }}
       >
-        <span className="font-bold text-lg" style={{ color: 'var(--primary)' }}>
-          🏸 {t('appName')}
-        </span>
-        <nav
-          className="flex gap-3 text-sm font-medium"
-          aria-label={t('nav.home')}
-        >
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) => (isActive ? 'underline' : '')}
-            style={{ color: 'var(--text)' }}
-          >
-            {t('nav.home')}
-          </NavLink>
-          <NavLink
-            to="/match"
-            className={({ isActive }) => (isActive ? 'underline' : '')}
-            style={{ color: 'var(--text)' }}
-          >
-            {t('nav.match')}
-          </NavLink>
-          <NavLink
-            to="/historique"
-            className={({ isActive }) => (isActive ? 'underline' : '')}
-            style={{ color: 'var(--text)' }}
-          >
-            {t('nav.history')}
-          </NavLink>
-          <NavLink
-            to="/parametres"
-            className={({ isActive }) => (isActive ? 'underline' : '')}
-            style={{ color: 'var(--text)' }}
-          >
-            {t('nav.settings')}
-          </NavLink>
-        </nav>
-      </header>
-      <main className="flex-1 p-4">{children}</main>
+        <span aria-hidden>☰</span>
+      </button>
+      <main className="flex-1">{children}</main>
+      {drawerOpen && <NavDrawer onClose={() => setDrawerOpen(false)} />}
     </div>
   );
 }
