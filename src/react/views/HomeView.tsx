@@ -13,6 +13,14 @@ import { useI18n } from '../../i18n/useI18n';
 const RIVE_SRC = `${import.meta.env.BASE_URL}rive/shuttle.riv`;
 const LONG_PRESS_MS = 320;
 
+// Center of the largest colored zone of each half-court (between the doubles
+// back service line and the short service line) expressed as a percentage of
+// the full scoreboard width — keeps the digits clear of the court markings.
+const SCORE_INSET_PCT = 20.5;
+
+const RED = '#e53935';
+const BLUE = '#26a3b8';
+
 function formatScore(value: number): string {
   return value.toString().padStart(2, '0');
 }
@@ -98,9 +106,7 @@ export function HomeView() {
         <div className="absolute inset-0 grid grid-cols-2">
           <ScorePanel
             side="left"
-            label={player1Label}
-            score={score1}
-            background="#e53935"
+            background={RED}
             textColor="#ffffff"
             onScore={() => handleScore('team1')}
             ariaLabel={t('scoreboard.addPoint', { name: player1Label })}
@@ -108,9 +114,7 @@ export function HomeView() {
           />
           <ScorePanel
             side="right"
-            label={player2Label}
-            score={score2}
-            background="#26a3b8"
+            background={BLUE}
             textColor="#ffffff"
             onScore={() => handleScore('team2')}
             ariaLabel={t('scoreboard.addPoint', { name: player2Label })}
@@ -119,6 +123,16 @@ export function HomeView() {
         </div>
 
         <CourtOverlay server={server} serverScore={serverScore} />
+
+        {/* Score digits rendered above the court overlay with a coloured aura
+            so the white lines stay legible without crossing the numbers. */}
+        <ScoreDisplay side="left" score={score1} background={RED} />
+        <ScoreDisplay side="right" score={score2} background={BLUE} />
+
+        {/* Player labels also centred on the wide service-court zone, with the
+            same aura so the bottom court line stays legible. */}
+        <LabelDisplay side="left" label={player1Label} background={RED} />
+        <LabelDisplay side="right" label={player2Label} background={BLUE} />
 
         <div
           className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
@@ -185,8 +199,6 @@ export function HomeView() {
 
 interface ScorePanelProps {
   side: 'left' | 'right';
-  label: string;
-  score: number;
   background: string;
   textColor: string;
   ariaLabel: string;
@@ -196,8 +208,6 @@ interface ScorePanelProps {
 
 function ScorePanel({
   side,
-  label,
-  score,
   background,
   textColor,
   ariaLabel,
@@ -209,31 +219,16 @@ function ScorePanel({
     <button
       type="button"
       aria-label={ariaLabel}
-      className="relative flex h-full w-full select-none flex-col justify-between px-4 pb-12 pt-4 text-left transition-[filter] duration-150 active:brightness-90 sm:px-6 sm:pb-14 sm:pt-6"
+      className="relative h-full w-full select-none text-left transition-[filter] duration-150 active:brightness-90"
       style={{ background, color: textColor, touchAction: 'manipulation' }}
       {...handlers}
     >
       <span
-        className={`text-xl font-light opacity-80 sm:text-2xl ${
-          side === 'left' ? 'self-end' : 'self-start'
-        }`}
         aria-hidden
+        className="pointer-events-none absolute top-4 text-xl font-light opacity-80 sm:top-6 sm:text-2xl"
+        style={{ [side === 'left' ? 'right' : 'left']: '1rem' }}
       >
         0
-      </span>
-      <span
-        className="self-center text-center font-medium leading-none"
-        style={{
-          fontVariantNumeric: 'tabular-nums',
-          fontSize: 'clamp(5rem, 22vw, 18rem)',
-          textShadow: '0 6px 24px rgba(0,0,0,0.28)',
-          letterSpacing: '-0.04em',
-        }}
-      >
-        {formatScore(score)}
-      </span>
-      <span className="self-center text-sm font-medium opacity-95 sm:text-base">
-        {label}
       </span>
       <span
         aria-hidden
@@ -252,6 +247,72 @@ function ScorePanel({
         }}
       />
     </button>
+  );
+}
+
+interface ScoreDisplayProps {
+  side: 'left' | 'right';
+  score: number;
+  background: string;
+}
+
+function ScoreDisplay({ side, score, background }: ScoreDisplayProps) {
+  // Layered text-shadows in the panel colour wash out the court markings
+  // immediately around the digits — the "aura" that keeps numbers legible.
+  const aura = [
+    `0 0 6px ${background}`,
+    `0 0 14px ${background}`,
+    `0 0 28px ${background}`,
+    `0 0 56px ${background}`,
+    '0 6px 22px rgba(0,0,0,0.32)',
+  ].join(', ');
+
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute z-[5] select-none font-medium leading-none text-white"
+      style={{
+        top: '50%',
+        [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
+        transform: `translate(${side === 'left' ? '-50%' : '50%'}, -50%)`,
+        fontVariantNumeric: 'tabular-nums',
+        fontSize: 'clamp(5rem, 22vw, 18rem)',
+        letterSpacing: '-0.04em',
+        textShadow: aura,
+      }}
+    >
+      {formatScore(score)}
+    </span>
+  );
+}
+
+interface LabelDisplayProps {
+  side: 'left' | 'right';
+  label: string;
+  background: string;
+}
+
+function LabelDisplay({ side, label, background }: LabelDisplayProps) {
+  // Same colour-aura recipe as the score, dialed down for a smaller font.
+  const aura = [
+    `0 0 4px ${background}`,
+    `0 0 10px ${background}`,
+    `0 0 22px ${background}`,
+    '0 2px 8px rgba(0,0,0,0.3)',
+  ].join(', ');
+
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute bottom-12 z-[5] max-w-[40%] select-none truncate text-sm font-medium text-white sm:bottom-14 sm:text-base"
+      style={{
+        [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
+        transform: `translateX(${side === 'left' ? '-50%' : '50%'})`,
+        textShadow: aura,
+      }}
+    >
+      {label}
+    </span>
   );
 }
 
