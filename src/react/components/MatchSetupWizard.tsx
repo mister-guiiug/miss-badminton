@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useI18n } from '../../i18n/useI18n';
+import { storage } from '../../storage';
 
 export type MatchType = 'singles' | 'doubles';
 export type SetCount = 1 | 2 | 3 | 5;
 export type PointsTarget = 15 | 21 | 30 | 31;
 export type SideChange = 'decisive' | 'each-set' | 'mid-match';
+export type PointsCap = 30 | null;
 
 export interface Team {
   primary: string;
@@ -16,6 +18,7 @@ export interface MatchConfig {
   type: MatchType;
   sets: SetCount;
   points: PointsTarget;
+  cap: PointsCap;
   sideChange: SideChange;
   team1: Team;
   team2: Team;
@@ -25,6 +28,7 @@ interface WizardDraft {
   type: MatchType | null;
   sets: SetCount;
   points: PointsTarget;
+  cap: PointsCap;
   sideChange: SideChange;
   team1: { primary: string; partner: string };
   team2: { primary: string; partner: string };
@@ -34,6 +38,7 @@ const DEFAULT_DRAFT: WizardDraft = {
   type: null,
   sets: 3,
   points: 21,
+  cap: null,
   sideChange: 'each-set',
   team1: { primary: '', partner: '' },
   team2: { primary: '', partner: '' },
@@ -44,6 +49,7 @@ function draftFromConfig(config: MatchConfig): WizardDraft {
     type: config.type,
     sets: config.sets,
     points: config.points,
+    cap: config.cap ?? null,
     sideChange: config.sideChange,
     team1: {
       primary: config.team1.primary,
@@ -93,10 +99,21 @@ export function MatchSetupWizard({
   const finish = () => {
     if (!draft.type) return;
     const isDoubles = draft.type === 'doubles';
+    const remember = (s: string) => {
+      const v = s.trim();
+      if (v) storage.addPlayerName(v);
+    };
+    remember(draft.team1.primary);
+    remember(draft.team2.primary);
+    if (isDoubles) {
+      remember(draft.team1.partner);
+      remember(draft.team2.partner);
+    }
     onComplete({
       type: draft.type,
       sets: draft.sets,
       points: draft.points,
+      cap: draft.cap,
       sideChange: draft.sideChange,
       team1: {
         primary: draft.team1.primary.trim(),
@@ -165,6 +182,7 @@ export function MatchSetupWizard({
           <Step2
             sets={draft.sets}
             points={draft.points}
+            cap={draft.cap}
             sideChange={draft.sideChange}
             onChange={patch => setDraft(d => ({ ...d, ...patch }))}
           />
@@ -267,22 +285,29 @@ function Step1({ value, onChange }: Step1Props) {
 interface Step2Props {
   sets: SetCount;
   points: PointsTarget;
+  cap: PointsCap;
   sideChange: SideChange;
   onChange: (
-    patch: Partial<Pick<WizardDraft, 'sets' | 'points' | 'sideChange'>>
+    patch: Partial<Pick<WizardDraft, 'sets' | 'points' | 'cap' | 'sideChange'>>
   ) => void;
 }
 
 const SET_OPTIONS: SetCount[] = [1, 2, 3, 5];
 const POINT_OPTIONS: PointsTarget[] = [15, 21, 30, 31];
+const CAP_OPTIONS: PointsCap[] = [null, 30];
 
-function Step2({ sets, points, sideChange, onChange }: Step2Props) {
+function Step2({ sets, points, cap, sideChange, onChange }: Step2Props) {
   const { t } = useI18n();
   const sideChangeOptions: { value: SideChange; label: string }[] = [
     { value: 'decisive', label: t('wizard.sideChangeDecisive') },
     { value: 'each-set', label: t('wizard.sideChangeEachSet') },
     { value: 'mid-match', label: t('wizard.sideChangeMidMatch') },
   ];
+  const capOptions: { value: string; label: string }[] = CAP_OPTIONS.map(c => ({
+    value: c === null ? 'none' : String(c),
+    label: c === null ? t('wizard.capNone') : t('wizard.capValue', { n: c }),
+  }));
+  const capKey = cap === null ? 'none' : String(cap);
   return (
     <div className="flex flex-col gap-4">
       <PillGroup
@@ -296,6 +321,12 @@ function Step2({ sets, points, sideChange, onChange }: Step2Props) {
         value={points}
         options={POINT_OPTIONS.map(v => ({ value: v, label: `${v}` }))}
         onChange={v => onChange({ points: v })}
+      />
+      <PillGroup
+        label={t('wizard.cap')}
+        value={capKey}
+        options={capOptions}
+        onChange={v => onChange({ cap: v === 'none' ? null : 30 })}
       />
       <PillGroup
         label={t('wizard.sideChange')}
@@ -317,8 +348,15 @@ interface Step3Props {
 function Step3({ matchType, team1, team2, onChange }: Step3Props) {
   const { t } = useI18n();
   const isDoubles = matchType === 'doubles';
+  const datalistId = 'mb-player-suggestions';
+  const suggestions = storage.loadPlayerNames();
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <datalist id={datalistId}>
+        {suggestions.map(name => (
+          <option key={name} value={name} />
+        ))}
+      </datalist>
       <TeamFieldset
         title={t('wizard.redTeam')}
         accent="#e53935"
@@ -327,6 +365,7 @@ function Step3({ matchType, team1, team2, onChange }: Step3Props) {
         partner={team1.partner}
         primaryPlaceholder={t('players.player1')}
         partnerPlaceholder={t('players.partner1')}
+        listId={datalistId}
         onPrimary={v =>
           onChange({ team1: { primary: v, partner: team1.partner } })
         }
@@ -342,6 +381,7 @@ function Step3({ matchType, team1, team2, onChange }: Step3Props) {
         partner={team2.partner}
         primaryPlaceholder={t('players.player2')}
         partnerPlaceholder={t('players.partner2')}
+        listId={datalistId}
         onPrimary={v =>
           onChange({ team2: { primary: v, partner: team2.partner } })
         }
@@ -361,6 +401,7 @@ interface TeamFieldsetProps {
   partner: string;
   primaryPlaceholder: string;
   partnerPlaceholder: string;
+  listId?: string;
   onPrimary: (value: string) => void;
   onPartner: (value: string) => void;
 }
@@ -373,6 +414,7 @@ function TeamFieldset({
   partner,
   primaryPlaceholder,
   partnerPlaceholder,
+  listId,
   onPrimary,
   onPartner,
 }: TeamFieldsetProps) {
@@ -397,6 +439,7 @@ function TeamFieldset({
         placeholder={primaryPlaceholder}
         ariaLabel={primaryPlaceholder}
         onChange={onPrimary}
+        listId={listId}
       />
       {isDoubles && (
         <PlayerField
@@ -404,6 +447,7 @@ function TeamFieldset({
           placeholder={partnerPlaceholder}
           ariaLabel={partnerPlaceholder}
           onChange={onPartner}
+          listId={listId}
         />
       )}
     </fieldset>
@@ -495,6 +539,7 @@ interface PlayerFieldProps {
   placeholder: string;
   ariaLabel: string;
   onChange: (value: string) => void;
+  listId?: string;
 }
 
 function PlayerField({
@@ -502,6 +547,7 @@ function PlayerField({
   placeholder,
   ariaLabel,
   onChange,
+  listId,
 }: PlayerFieldProps) {
   return (
     <input
@@ -511,6 +557,8 @@ function PlayerField({
       aria-label={ariaLabel}
       onChange={e => onChange(e.target.value)}
       maxLength={40}
+      list={listId}
+      autoComplete="off"
       className="rounded-xl border px-3 py-2 outline-none focus:ring-2"
       style={{
         background: 'var(--surface-input)',

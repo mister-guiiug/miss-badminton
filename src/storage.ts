@@ -1,0 +1,106 @@
+import type { MatchConfig } from './react/components/MatchSetupWizard';
+
+const LS = {
+  match: 'mb_active_match',
+  game: 'mb_active_game',
+  history: 'mb_match_history',
+  players: 'mb_player_names',
+  sound: 'mb_sound_enabled',
+  haptic: 'mb_haptic_enabled',
+} as const;
+
+const MAX_PLAYERS = 24;
+const MAX_HISTORY = 50;
+
+export interface PersistedGameState {
+  score1: number;
+  score2: number;
+  setWins: { team1: number; team2: number };
+  matchWinner: 'team1' | 'team2' | null;
+  server: 'team1' | 'team2' | null;
+  setScores: { team1: number; team2: number }[];
+  pendingSideChange: boolean;
+  mid11Triggered: boolean;
+}
+
+export interface SavedMatch {
+  id: string;
+  completedAt: number;
+  config: MatchConfig;
+  setScores: { team1: number; team2: number }[];
+  finalSetWins: { team1: number; team2: number };
+  winner: 'team1' | 'team2';
+}
+
+function safeRead<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function safeWrite(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* localStorage full or unavailable */
+  }
+}
+
+function safeRemove(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+export const storage = {
+  loadActiveMatch: (): MatchConfig | null => safeRead<MatchConfig>(LS.match),
+  saveActiveMatch: (m: MatchConfig | null): void => {
+    if (m) safeWrite(LS.match, m);
+    else safeRemove(LS.match);
+  },
+
+  loadActiveGame: (): PersistedGameState | null =>
+    safeRead<PersistedGameState>(LS.game),
+  saveActiveGame: (g: PersistedGameState | null): void => {
+    if (g) safeWrite(LS.game, g);
+    else safeRemove(LS.game);
+  },
+
+  loadPlayerNames: (): string[] => safeRead<string[]>(LS.players) ?? [],
+  addPlayerName: (name: string): void => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const current = storage.loadPlayerNames();
+    const next = [trimmed, ...current.filter(n => n !== trimmed)].slice(
+      0,
+      MAX_PLAYERS
+    );
+    safeWrite(LS.players, next);
+  },
+
+  loadHistory: (): SavedMatch[] => safeRead<SavedMatch[]>(LS.history) ?? [],
+  saveMatchToHistory: (m: SavedMatch): void => {
+    const current = storage.loadHistory();
+    if (current.some(x => x.id === m.id)) return;
+    const next = [m, ...current].slice(0, MAX_HISTORY);
+    safeWrite(LS.history, next);
+  },
+  removeMatchFromHistory: (id: string): void => {
+    const next = storage.loadHistory().filter(m => m.id !== id);
+    safeWrite(LS.history, next);
+  },
+  clearHistory: (): void => safeRemove(LS.history),
+
+  loadBoolPref: (key: 'sound' | 'haptic', fallback: boolean): boolean => {
+    const v = safeRead<boolean>(LS[key]);
+    return v == null ? fallback : v;
+  },
+  saveBoolPref: (key: 'sound' | 'haptic', value: boolean): void =>
+    safeWrite(LS[key], value),
+};

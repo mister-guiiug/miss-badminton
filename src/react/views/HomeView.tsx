@@ -1,26 +1,36 @@
-import { useReducer, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
 import { RiveScene } from '../components/RiveScene';
 import {
   MatchSetupWizard,
   type MatchConfig,
+  type PointsCap,
+  type SideChange,
   type Team,
 } from '../components/MatchSetupWizard';
 import { FullscreenPrompt } from '../components/FullscreenPrompt';
 import { CourtOverlay, type ServiceSide } from '../components/CourtOverlay';
+import { SideChangeBanner } from '../components/SideChangeBanner';
+import { SetTransitionBanner } from '../components/SetTransitionBanner';
+import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { useI18n } from '../../i18n/useI18n';
+import { useFeedback, type FeedbackEvent } from '../hooks/useFeedback';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import {
+  storage,
+  type PersistedGameState,
+  type SavedMatch,
+} from '../../storage';
 
 const RIVE_SRC = `${import.meta.env.BASE_URL}rive/shuttle.riv`;
-
-// Centre of the wide service court zone (between the doubles back service
-// line and the short service line) expressed as a percentage of the full
-// scoreboard width — used to align the score and player name.
 const SCORE_INSET_PCT = 20.5;
-
-// Centre of the narrow zone between the short service line and the net,
-// expressed as a +/- offset from the section centre. Used to position the
-// set score in a strip that's free of court markings.
 const SET_OFFSET_PCT = 7.34;
-
 const RED = '#e53935';
 const BLUE = '#26a3b8';
 
@@ -46,8 +56,23 @@ function setsNeededToWin(totalSets: number): number {
   return Math.floor(totalSets / 2) + 1;
 }
 
-function isSetWon(scoreA: number, scoreB: number, target: number): boolean {
+function isSetWon(
+  scoreA: number,
+  scoreB: number,
+  target: number,
+  cap: PointsCap
+): boolean {
+  if (cap !== null && scoreA >= cap && scoreA > scoreB) return true;
   return scoreA >= target && scoreA - scoreB >= 2;
+}
+
+function isSetPoint(
+  scoreA: number,
+  scoreB: number,
+  target: number,
+  cap: PointsCap
+): boolean {
+  return isSetWon(scoreA + 1, scoreB, target, cap);
 }
 
 interface GameState {
@@ -56,6 +81,25 @@ interface GameState {
   setWins: SetWins;
   matchWinner: ServiceSide | null;
   server: ServiceSide | null;
+  setScores: { team1: number; team2: number }[];
+  pendingSideChange: boolean;
+  mid11Triggered: boolean;
+  history: HistoryEntry[];
+  pendingFeedback: FeedbackEvent | null;
+  lastSetSummary: { winner: ServiceSide; a: number; b: number } | null;
+}
+
+interface HistoryEntry {
+  score1: number;
+  score2: number;
+  setWins: SetWins;
+  server: ServiceSide | null;
+  team: ServiceSide;
+  setEnded: boolean;
+  matchEnded: boolean;
+  setScoresLength: number;
+  pendingSideChange: boolean;
+  mid11Triggered: boolean;
 }
 
 const INITIAL_GAME_STATE: GameState = {
@@ -64,13 +108,32 @@ const INITIAL_GAME_STATE: GameState = {
   setWins: { team1: 0, team2: 0 },
   matchWinner: null,
   server: null,
+  setScores: [],
+  pendingSideChange: false,
+  mid11Triggered: false,
+  history: [],
+  pendingFeedback: null,
+  lastSetSummary: null,
 };
 
 type GameAction =
-  | { type: 'score'; team: ServiceSide; target: number; setsToWin: number }
+  | {
+      type: 'score';
+      team: ServiceSide;
+      target: number;
+      cap: PointsCap;
+      setsToWin: number;
+      sideChange: SideChange;
+      totalSets: number;
+    }
+  | { type: 'undo' }
   | { type: 'swap' }
   | { type: 'reset' }
-  | { type: 'restart' };
+  | { type: 'restart' }
+  | { type: 'dismissSideChange' }
+  | { type: 'clearFeedback' }
+  | { type: 'clearSetSummary' }
+  | { type: 'hydrate'; state: PersistedGameState };
 
 function flipSide(side: ServiceSide | null): ServiceSide | null {
   if (side === 'team1') return 'team2';
@@ -84,28 +147,102 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.matchWinner) return state;
       const nextS1 = action.team === 'team1' ? state.score1 + 1 : state.score1;
       const nextS2 = action.team === 'team2' ? state.score2 + 1 : state.score2;
-      const team1Won = isSetWon(nextS1, nextS2, action.target);
-      const team2Won = isSetWon(nextS2, nextS1, action.target);
-      if (team1Won || team2Won) {
+      const team1Won = isSetWon(nextS1, nextS2, action.target, action.cap);
+      const team2Won = isSetWon(nextS2, nextS1, action.target, action.cap);
+      const setEnded = team1Won || team2Won;
+
+      const baseHistory: HistoryEntry = {
+        score1: state.score1,
+        score2: state.score2,
+        setWins: state.setWins,
+        server: state.server,
+        team: action.team,
+        setEnded,
+        matchEnded: false,
+        setScoresLength: state.setScores.length,
+        pendingSideChange: state.pendingSideChange,
+        mid11Triggered: state.mid11Triggered,
+      };
+
+      if (setEnded) {
         const winnerSide: ServiceSide = team1Won ? 'team1' : 'team2';
         const nextSetWins: SetWins = {
           team1: state.setWins.team1 + (team1Won ? 1 : 0),
           team2: state.setWins.team2 + (team2Won ? 1 : 0),
         };
         const matchEnded = nextSetWins[winnerSide] >= action.setsToWin;
+        const nextSetScores = [
+          ...state.setScores,
+          { team1: nextS1, team2: nextS2 },
+        ];
+        const totalSetsPlayed = nextSetWins.team1 + nextSetWins.team2;
+        const isDecidingNext =
+          !matchEnded &&
+          Math.max(nextSetWins.team1, nextSetWins.team2) ===
+            action.setsToWin - 1 &&
+          totalSetsPlayed === action.totalSets - 1;
+        let pendingSideChange = false;
+        if (!matchEnded) {
+          if (action.sideChange === 'each-set') pendingSideChange = true;
+          else if (action.sideChange === 'decisive' && isDecidingNext)
+            pendingSideChange = true;
+        }
         return {
           score1: 0,
           score2: 0,
           server: null,
           setWins: nextSetWins,
           matchWinner: matchEnded ? winnerSide : null,
+          setScores: nextSetScores,
+          pendingSideChange,
+          mid11Triggered: false,
+          history: [...state.history, { ...baseHistory, matchEnded }],
+          pendingFeedback: matchEnded ? 'matchWon' : 'setWon',
+          lastSetSummary: {
+            winner: winnerSide,
+            a: nextS1,
+            b: nextS2,
+          },
         };
+      }
+
+      let pendingSideChange = state.pendingSideChange;
+      let mid11Triggered = state.mid11Triggered;
+      if (
+        action.sideChange === 'mid-match' &&
+        !mid11Triggered &&
+        (nextS1 === 11 || nextS2 === 11)
+      ) {
+        pendingSideChange = true;
+        mid11Triggered = true;
       }
       return {
         ...state,
         score1: nextS1,
         score2: nextS2,
         server: action.team,
+        pendingSideChange,
+        mid11Triggered,
+        history: [...state.history, baseHistory],
+        pendingFeedback: 'point',
+        lastSetSummary: null,
+      };
+    }
+    case 'undo': {
+      if (state.history.length === 0) return state;
+      const last = state.history[state.history.length - 1];
+      return {
+        score1: last.score1,
+        score2: last.score2,
+        setWins: last.setWins,
+        server: last.server,
+        matchWinner: null,
+        setScores: state.setScores.slice(0, last.setScoresLength),
+        pendingSideChange: last.pendingSideChange,
+        mid11Triggered: last.mid11Triggered,
+        history: state.history.slice(0, -1),
+        pendingFeedback: null,
+        lastSetSummary: null,
       };
     }
     case 'swap':
@@ -115,30 +252,127 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         setWins: { team1: state.setWins.team2, team2: state.setWins.team1 },
         matchWinner: flipSide(state.matchWinner),
         server: flipSide(state.server),
+        setScores: state.setScores.map(s => ({
+          team1: s.team2,
+          team2: s.team1,
+        })),
+        pendingSideChange: false,
+        mid11Triggered: state.mid11Triggered,
+        history: [],
+        pendingFeedback: null,
+        lastSetSummary: state.lastSetSummary
+          ? {
+              winner: flipSide(state.lastSetSummary.winner) ?? 'team1',
+              a: state.lastSetSummary.b,
+              b: state.lastSetSummary.a,
+            }
+          : null,
       };
     case 'reset':
       return {
-        ...state,
-        score1: 0,
-        score2: 0,
-        setWins: { team1: 0, team2: 0 },
-        matchWinner: null,
-        server: null,
+        ...INITIAL_GAME_STATE,
       };
     case 'restart':
       return INITIAL_GAME_STATE;
+    case 'dismissSideChange':
+      return { ...state, pendingSideChange: false };
+    case 'clearFeedback':
+      return { ...state, pendingFeedback: null };
+    case 'clearSetSummary':
+      return { ...state, lastSetSummary: null };
+    case 'hydrate':
+      return {
+        ...INITIAL_GAME_STATE,
+        ...action.state,
+        history: [],
+        pendingFeedback: null,
+        lastSetSummary: null,
+      };
   }
 }
 
-export function HomeView() {
-  const { t } = useI18n();
+function loadInitialMatch(): MatchConfig | null {
+  return storage.loadActiveMatch();
+}
 
-  const [game, dispatch] = useReducer(gameReducer, INITIAL_GAME_STATE);
-  const { score1, score2, setWins, matchWinner, server } = game;
-  const [match, setMatch] = useState<MatchConfig | null>(null);
+function loadInitialGame(): GameState {
+  const stored = storage.loadActiveGame();
+  if (!stored) return INITIAL_GAME_STATE;
+  return {
+    ...INITIAL_GAME_STATE,
+    ...stored,
+    history: [],
+    pendingFeedback: null,
+    lastSetSummary: null,
+  };
+}
+
+export function HomeView() {
+  const { t, locale } = useI18n();
+  const feedback = useFeedback();
+
+  const [game, dispatch] = useReducer(gameReducer, undefined, loadInitialGame);
+  const {
+    score1,
+    score2,
+    setWins,
+    matchWinner,
+    server,
+    setScores,
+    pendingSideChange,
+    pendingFeedback,
+    lastSetSummary,
+  } = game;
+  const [match, setMatch] = useState<MatchConfig | null>(loadInitialMatch);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [team1Inverted, setTeam1Inverted] = useState(false);
   const [team2Inverted, setTeam2Inverted] = useState(false);
+  const savedMatchIdRef = useRef<string | null>(null);
+
+  // Persist match config and game state across reloads.
+  useEffect(() => {
+    storage.saveActiveMatch(match);
+  }, [match]);
+
+  useEffect(() => {
+    if (matchWinner) {
+      storage.saveActiveGame(null);
+      return;
+    }
+    if (match) {
+      const persisted: PersistedGameState = {
+        score1,
+        score2,
+        setWins,
+        matchWinner,
+        server,
+        setScores,
+        pendingSideChange,
+        mid11Triggered: game.mid11Triggered,
+      };
+      storage.saveActiveGame(persisted);
+    } else {
+      storage.saveActiveGame(null);
+    }
+  }, [
+    match,
+    score1,
+    score2,
+    setWins,
+    server,
+    setScores,
+    pendingSideChange,
+    matchWinner,
+    game.mid11Triggered,
+  ]);
+
+  // Fire feedback effects (sound + haptic) after the reducer marks an event.
+  useEffect(() => {
+    if (pendingFeedback) {
+      feedback.trigger(pendingFeedback);
+      dispatch({ type: 'clearFeedback' });
+    }
+  }, [pendingFeedback, feedback]);
 
   const player1Label = match
     ? resolveTeamLabel(match.team1, [
@@ -179,28 +413,39 @@ export function HomeView() {
     t('players.partner2'),
   ]);
 
-  const handleScore = (which: ServiceSide) => {
-    if (!match) {
-      setWizardOpen(true);
-      return;
-    }
-    dispatch({
-      type: 'score',
-      team: which,
-      target: match.points,
-      setsToWin: setsNeededToWin(match.sets),
-    });
-  };
+  const handleScore = useCallback(
+    (which: ServiceSide) => {
+      if (!match) {
+        setWizardOpen(true);
+        return;
+      }
+      dispatch({
+        type: 'score',
+        team: which,
+        target: match.points,
+        cap: match.cap,
+        setsToWin: setsNeededToWin(match.sets),
+        sideChange: match.sideChange,
+        totalSets: match.sets,
+      });
+    },
+    [match]
+  );
+
+  const handleUndo = useCallback(() => {
+    dispatch({ type: 'undo' });
+  }, []);
 
   const handleComplete = (config: MatchConfig) => {
     setMatch(config);
     dispatch({ type: 'restart' });
     setTeam1Inverted(false);
     setTeam2Inverted(false);
+    savedMatchIdRef.current = null;
     setWizardOpen(false);
   };
 
-  const handleSwap = () => {
+  const handleSwap = useCallback(() => {
     if (!match) {
       setWizardOpen(true);
       return;
@@ -210,11 +455,25 @@ export function HomeView() {
     setTeam1Inverted(team2Inverted);
     setTeam2Inverted(prevT1);
     dispatch({ type: 'swap' });
-  };
+  }, [match, team1Inverted, team2Inverted]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     dispatch({ type: 'reset' });
-  };
+    savedMatchIdRef.current = null;
+  }, []);
+
+  useKeyboardShortcuts(
+    useMemo(
+      () => ({
+        onTeam1: () => handleScore('team1'),
+        onTeam2: () => handleScore('team2'),
+        onUndo: handleUndo,
+        onReset: handleReset,
+        onSwap: handleSwap,
+      }),
+      [handleScore, handleUndo, handleReset, handleSwap]
+    )
+  );
 
   const serverScore = server === 'team1' ? score1 : score2;
   const winnerLabel =
@@ -224,9 +483,77 @@ export function HomeView() {
         ? player2Label
         : '';
 
+  const setNumber = setScores.length + 1;
+  const totalSets = match?.sets ?? 0;
+  const pointsTarget = match?.points;
+
+  const team1AtSetPoint =
+    !!match &&
+    !matchWinner &&
+    isSetPoint(score1, score2, match.points, match.cap);
+  const team2AtSetPoint =
+    !!match &&
+    !matchWinner &&
+    isSetPoint(score2, score1, match.points, match.cap);
+  const setsToWin = match ? setsNeededToWin(match.sets) : 0;
+  const team1AtMatchPoint = team1AtSetPoint && setWins.team1 + 1 >= setsToWin;
+  const team2AtMatchPoint = team2AtSetPoint && setWins.team2 + 1 >= setsToWin;
+
+  // Save completed match to history (once per finished match).
+  useEffect(() => {
+    if (!matchWinner || !match) {
+      savedMatchIdRef.current = null;
+      return;
+    }
+    if (savedMatchIdRef.current) return;
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    savedMatchIdRef.current = id;
+    const saved: SavedMatch = {
+      id,
+      completedAt: Date.now(),
+      config: match,
+      setScores,
+      finalSetWins: setWins,
+      winner: matchWinner,
+    };
+    storage.saveMatchToHistory(saved);
+  }, [matchWinner, match, setScores, setWins]);
+
+  const handleShare = async () => {
+    if (!match || !matchWinner) return;
+    const setsText = setScores.map(s => `${s.team1}-${s.team2}`).join(', ');
+    const body = t('scoreboard.shareBody', {
+      a: player1Label,
+      sa: setWins.team1,
+      sb: setWins.team2,
+      b: player2Label,
+      sets: setsText,
+    });
+    try {
+      if (typeof navigator !== 'undefined' && 'share' in navigator) {
+        await (
+          navigator as Navigator & {
+            share: (data: { title: string; text: string }) => Promise<void>;
+          }
+        ).share({
+          title: t('scoreboard.shareTitle'),
+          text: body,
+        });
+      } else if (
+        typeof navigator !== 'undefined' &&
+        navigator.clipboard?.writeText
+      ) {
+        await navigator.clipboard.writeText(body);
+      }
+    } catch {
+      /* user cancelled or share failed */
+    }
+  };
+
   return (
     <>
       <FullscreenPrompt />
+      <PwaInstallPrompt />
       <section
         aria-label={t('home.scoreboardLabel')}
         className="relative w-full overflow-hidden shadow-2xl"
@@ -249,8 +576,36 @@ export function HomeView() {
 
         <CourtOverlay server={server} serverScore={serverScore} />
 
-        <ScoreDisplay side="left" score={score1} background={RED} />
-        <ScoreDisplay side="right" score={score2} background={BLUE} />
+        {match && pointsTarget && (
+          <SetHeader
+            label={t('scoreboard.setHeader', {
+              n: setNumber,
+              total: totalSets,
+              points: pointsTarget,
+            })}
+          />
+        )}
+
+        <ScoreDisplay
+          side="left"
+          score={score1}
+          background={RED}
+          locale={locale}
+          atSetPoint={team1AtSetPoint}
+          atMatchPoint={team1AtMatchPoint}
+          setPointLabel={t('scoreboard.setPoint')}
+          matchPointLabel={t('scoreboard.matchPoint')}
+        />
+        <ScoreDisplay
+          side="right"
+          score={score2}
+          background={BLUE}
+          locale={locale}
+          atSetPoint={team2AtSetPoint}
+          atMatchPoint={team2AtMatchPoint}
+          setPointLabel={t('scoreboard.setPoint')}
+          matchPointLabel={t('scoreboard.matchPoint')}
+        />
 
         <SetScoreDisplay side="left" count={setWins.team1} background={RED} />
         <SetScoreDisplay side="right" count={setWins.team2} background={BLUE} />
@@ -263,7 +618,7 @@ export function HomeView() {
               label={team1Pair.top}
               background={RED}
               onSwap={() => setTeam1Inverted(s => !s)}
-              swapLabel={t('scoreboardExtra.invertPlayers')}
+              swapLabel={t('scoreboard.invertPlayers')}
             />
             <LabelDisplay
               side="left"
@@ -271,7 +626,7 @@ export function HomeView() {
               label={team1Pair.bottom}
               background={RED}
               onSwap={() => setTeam1Inverted(s => !s)}
-              swapLabel={t('scoreboardExtra.invertPlayers')}
+              swapLabel={t('scoreboard.invertPlayers')}
             />
             <LabelDisplay
               side="right"
@@ -279,7 +634,7 @@ export function HomeView() {
               label={team2Pair.top}
               background={BLUE}
               onSwap={() => setTeam2Inverted(s => !s)}
-              swapLabel={t('scoreboardExtra.invertPlayers')}
+              swapLabel={t('scoreboard.invertPlayers')}
             />
             <LabelDisplay
               side="right"
@@ -287,7 +642,7 @@ export function HomeView() {
               label={team2Pair.bottom}
               background={BLUE}
               onSwap={() => setTeam2Inverted(s => !s)}
-              swapLabel={t('scoreboardExtra.invertPlayers')}
+              swapLabel={t('scoreboard.invertPlayers')}
             />
           </>
         ) : (
@@ -349,6 +704,15 @@ export function HomeView() {
             </button>
             <button
               type="button"
+              onClick={handleUndo}
+              disabled={game.history.length === 0}
+              aria-label={t('scoreboard.undo')}
+              className="rounded-md px-2 py-1 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <span aria-hidden>↶</span>
+            </button>
+            <button
+              type="button"
               onClick={handleReset}
               aria-label={t('scoreboard.reset')}
               className="rounded-md px-2 py-1 hover:bg-white/10"
@@ -358,11 +722,37 @@ export function HomeView() {
           </div>
         </footer>
 
+        {pendingSideChange && !matchWinner && (
+          <SideChangeBanner
+            onSwap={() => {
+              handleSwap();
+            }}
+            onDismiss={() => dispatch({ type: 'dismissSideChange' })}
+          />
+        )}
+
+        {lastSetSummary && !matchWinner && (
+          <SetTransitionBanner
+            winnerName={
+              lastSetSummary.winner === 'team1' ? player1Label : player2Label
+            }
+            scoreA={lastSetSummary.a}
+            scoreB={lastSetSummary.b}
+            onClose={() => dispatch({ type: 'clearSetSummary' })}
+          />
+        )}
+
         {matchWinner && (
           <MatchOverOverlay
             winnerLabel={winnerLabel}
             setWins={setWins}
+            setScores={setScores}
             onNewMatch={() => setWizardOpen(true)}
+            onShare={handleShare}
+            canShare={
+              typeof navigator !== 'undefined' &&
+              ('share' in navigator || !!navigator.clipboard)
+            }
           />
         )}
       </section>
@@ -406,9 +796,23 @@ interface ScoreDisplayProps {
   side: 'left' | 'right';
   score: number;
   background: string;
+  locale: string;
+  atSetPoint: boolean;
+  atMatchPoint: boolean;
+  setPointLabel: string;
+  matchPointLabel: string;
 }
 
-function ScoreDisplay({ side, score, background }: ScoreDisplayProps) {
+function ScoreDisplay({
+  side,
+  score,
+  background,
+  locale,
+  atSetPoint,
+  atMatchPoint,
+  setPointLabel,
+  matchPointLabel,
+}: ScoreDisplayProps) {
   const aura = [
     `0 0 6px ${background}`,
     `0 0 14px ${background}`,
@@ -417,21 +821,44 @@ function ScoreDisplay({ side, score, background }: ScoreDisplayProps) {
     '0 6px 22px rgba(0,0,0,0.32)',
   ].join(', ');
 
+  const baseTransform = `translate(${side === 'left' ? '-50%' : '50%'}, -50%)`;
+  const label = atMatchPoint
+    ? matchPointLabel
+    : atSetPoint
+      ? setPointLabel
+      : '';
+
   return (
     <span
       aria-hidden
+      key={`${score}-${locale}`}
       className="pointer-events-none absolute z-[5] select-none font-medium leading-none text-white"
       style={{
         top: '50%',
         [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
-        transform: `translate(${side === 'left' ? '-50%' : '50%'}, -50%)`,
+        transform: baseTransform,
         fontVariantNumeric: 'tabular-nums',
         fontSize: 'clamp(5rem, 22vw, 18rem)',
         letterSpacing: '-0.04em',
         textShadow: aura,
+        ['--mb-score-transform' as string]: baseTransform,
+        animation: 'mb-score-pop 220ms ease-out',
       }}
     >
       {formatScore(score)}
+      {label && (
+        <span
+          aria-hidden
+          className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-center text-[0.18em] font-bold uppercase tracking-widest"
+          style={{
+            top: '0.08em',
+            color: '#fff200',
+            textShadow: `0 0 4px ${background}, 0 0 10px rgba(0,0,0,0.4)`,
+          }}
+        >
+          {label}
+        </span>
+      )}
     </span>
   );
 }
@@ -534,18 +961,42 @@ function LabelDisplay({
   );
 }
 
+interface SetHeaderProps {
+  label: string;
+}
+
+function SetHeader({ label }: SetHeaderProps) {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-1 z-[5] flex justify-center">
+      <span
+        className="rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white sm:text-xs"
+        style={{ background: 'rgba(0,0,0,0.55)' }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 interface MatchOverOverlayProps {
   winnerLabel: string;
   setWins: SetWins;
+  setScores: { team1: number; team2: number }[];
   onNewMatch: () => void;
+  onShare: () => void;
+  canShare: boolean;
 }
 
 function MatchOverOverlay({
   winnerLabel,
   setWins,
+  setScores,
   onNewMatch,
+  onShare,
+  canShare,
 }: MatchOverOverlayProps) {
   const { t } = useI18n();
+  const setsLine = setScores.map(s => `${s.team1}-${s.team2}`).join(', ');
   return (
     <div
       role="dialog"
@@ -573,14 +1024,35 @@ function MatchOverOverlay({
         <p className="text-sm" style={{ color: 'var(--muted)' }}>
           {t('matchOver.score', { a: setWins.team1, b: setWins.team2 })}
         </p>
-        <button
-          type="button"
-          onClick={onNewMatch}
-          className="mt-2 rounded-xl px-5 py-2 text-sm font-semibold text-white"
-          style={{ background: 'var(--primary)' }}
-        >
-          {t('matchOver.newMatch')}
-        </button>
+        {setsLine && (
+          <p className="text-xs" style={{ color: 'var(--muted)' }}>
+            {t('matchOver.setsList', { sets: setsLine })}
+          </p>
+        )}
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onNewMatch}
+            className="rounded-xl px-5 py-2 text-sm font-semibold text-white"
+            style={{ background: 'var(--primary)' }}
+          >
+            {t('matchOver.newMatch')}
+          </button>
+          {canShare && (
+            <button
+              type="button"
+              onClick={onShare}
+              className="rounded-xl px-5 py-2 text-sm font-semibold"
+              style={{
+                background: 'var(--surface-highlight)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+              }}
+            >
+              {t('matchOver.share')}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
