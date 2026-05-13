@@ -22,7 +22,7 @@
     "test:e2e:report": "playwright show-report",
     "test:all": "npm run test && npm run test:e2e",
     "icons": "node scripts/generate-pwa-icons.mjs",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc -b",
     "prepare": "husky"
   },
   "devDependencies": {

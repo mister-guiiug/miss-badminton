@@ -615,21 +615,16 @@ export function HomeView() {
       b: player2Label,
       sets: setsText,
     });
+    const nav: Navigator | undefined =
+      typeof navigator === 'undefined' ? undefined : navigator;
     try {
-      if (typeof navigator !== 'undefined' && 'share' in navigator) {
-        await (
-          navigator as Navigator & {
-            share: (data: { title: string; text: string }) => Promise<void>;
-          }
-        ).share({
+      if (nav && typeof nav.share === 'function') {
+        await nav.share({
           title: t('scoreboard.shareTitle'),
           text: body,
         });
-      } else if (
-        typeof navigator !== 'undefined' &&
-        navigator.clipboard?.writeText
-      ) {
-        await navigator.clipboard.writeText(body);
+      } else if (nav && typeof nav.clipboard?.writeText === 'function') {
+        await nav.clipboard.writeText(body);
       }
     } catch {
       /* user cancelled or share failed */
@@ -770,10 +765,11 @@ export function HomeView() {
         )}
 
         <div
-          className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
+          className="pointer-events-none absolute left-1/2 z-10"
           style={{
-            top: '12%',
-            width: 'min(18%, 110px)',
+            top: '18%',
+            transform: 'translate(-50%, -50%)',
+            width: 'min(14%, 92px)',
             aspectRatio: '1 / 1',
           }}
         >
@@ -859,7 +855,8 @@ export function HomeView() {
             onShare={handleShare}
             canShare={
               typeof navigator !== 'undefined' &&
-              ('share' in navigator || !!navigator.clipboard)
+              (typeof navigator.share === 'function' ||
+                typeof navigator.clipboard?.writeText === 'function')
             }
           />
         )}
@@ -929,7 +926,10 @@ function ScoreDisplay({
     '0 6px 22px rgba(0,0,0,0.32)',
   ].join(', ');
 
-  const baseTransform = `translate(${side === 'left' ? '-50%' : '50%'}, -50%)`;
+  // Small downward nudge so the digit's optical centre sits on the horizontal
+  // court line (font ascenders push the bounding-box centre above the visual
+  // centre of numerals).
+  const baseTransform = `translate(${side === 'left' ? '-50%' : '50%'}, calc(-50% + 0.06em))`;
   const label = atMatchPoint
     ? matchPointLabel
     : atSetPoint
@@ -992,11 +992,11 @@ function SetScoreDisplay({ side, count, background }: SetScoreDisplayProps) {
       aria-hidden
       className="pointer-events-none absolute z-[5] select-none font-medium leading-none text-white"
       style={{
-        top: '50%',
+        top: '18%',
         left: `${leftPct}%`,
         transform: 'translate(-50%, -50%)',
         fontVariantNumeric: 'tabular-nums',
-        fontSize: 'clamp(1.75rem, 5.5vw, 4.5rem)',
+        fontSize: 'clamp(1.5rem, 4.6vw, 3.75rem)',
         textShadow: aura,
       }}
     >
