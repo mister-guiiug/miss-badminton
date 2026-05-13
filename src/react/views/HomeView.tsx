@@ -996,7 +996,7 @@ function SetScoreDisplay({ side, count, background }: SetScoreDisplayProps) {
         left: `${leftPct}%`,
         transform: 'translate(-50%, -50%)',
         fontVariantNumeric: 'tabular-nums',
-        fontSize: 'clamp(1.5rem, 4.6vw, 3.75rem)',
+        fontSize: 'clamp(2.5rem, 7.5vw, 6rem)',
         textShadow: aura,
       }}
     >
