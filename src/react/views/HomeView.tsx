@@ -22,6 +22,7 @@ import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { useI18n } from '../../i18n/useI18n';
 import { useFeedback, type FeedbackEvent } from '../hooks/useFeedback';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useTeamColors } from '../hooks/useTeamColors';
 import {
   storage,
   type PersistedGameState,
@@ -31,8 +32,6 @@ import {
 const RIVE_SRC = `${import.meta.env.BASE_URL}rive/shuttle.riv`;
 const SCORE_INSET_PCT = 20.5;
 const SET_OFFSET_PCT = 7.34;
-const RED = '#e53935';
-const BLUE = '#26a3b8';
 
 interface SetWins {
   team1: number;
@@ -87,6 +86,12 @@ interface GameState {
   history: HistoryEntry[];
   pendingFeedback: FeedbackEvent | null;
   lastSetSummary: { winner: ServiceSide; a: number; b: number } | null;
+  startedAt: number | null;
+  endedAt: number | null;
+  streak1: number;
+  streak2: number;
+  maxStreak1: number;
+  maxStreak2: number;
 }
 
 interface HistoryEntry {
@@ -100,6 +105,12 @@ interface HistoryEntry {
   setScoresLength: number;
   pendingSideChange: boolean;
   mid11Triggered: boolean;
+  startedAt: number | null;
+  endedAt: number | null;
+  streak1: number;
+  streak2: number;
+  maxStreak1: number;
+  maxStreak2: number;
 }
 
 const INITIAL_GAME_STATE: GameState = {
@@ -114,6 +125,12 @@ const INITIAL_GAME_STATE: GameState = {
   history: [],
   pendingFeedback: null,
   lastSetSummary: null,
+  startedAt: null,
+  endedAt: null,
+  streak1: 0,
+  streak2: 0,
+  maxStreak1: 0,
+  maxStreak2: 0,
 };
 
 type GameAction =
@@ -125,6 +142,7 @@ type GameAction =
       setsToWin: number;
       sideChange: SideChange;
       totalSets: number;
+      now: number;
     }
   | { type: 'undo' }
   | { type: 'swap' }
@@ -162,7 +180,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         setScoresLength: state.setScores.length,
         pendingSideChange: state.pendingSideChange,
         mid11Triggered: state.mid11Triggered,
+        startedAt: state.startedAt,
+        endedAt: state.endedAt,
+        streak1: state.streak1,
+        streak2: state.streak2,
+        maxStreak1: state.maxStreak1,
+        maxStreak2: state.maxStreak2,
       };
+
+      const startedAt = state.startedAt ?? action.now;
+      const nextStreak1 = action.team === 'team1' ? state.streak1 + 1 : 0;
+      const nextStreak2 = action.team === 'team2' ? state.streak2 + 1 : 0;
+      const nextMaxStreak1 = Math.max(state.maxStreak1, nextStreak1);
+      const nextMaxStreak2 = Math.max(state.maxStreak2, nextStreak2);
 
       if (setEnded) {
         const winnerSide: ServiceSide = team1Won ? 'team1' : 'team2';
@@ -203,6 +233,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             a: nextS1,
             b: nextS2,
           },
+          startedAt,
+          endedAt: matchEnded ? action.now : null,
+          streak1: 0,
+          streak2: 0,
+          maxStreak1: nextMaxStreak1,
+          maxStreak2: nextMaxStreak2,
         };
       }
 
@@ -226,6 +262,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         history: [...state.history, baseHistory],
         pendingFeedback: 'point',
         lastSetSummary: null,
+        startedAt,
+        streak1: nextStreak1,
+        streak2: nextStreak2,
+        maxStreak1: nextMaxStreak1,
+        maxStreak2: nextMaxStreak2,
       };
     }
     case 'undo': {
@@ -243,6 +284,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         history: state.history.slice(0, -1),
         pendingFeedback: null,
         lastSetSummary: null,
+        startedAt: last.startedAt,
+        endedAt: last.endedAt,
+        streak1: last.streak1,
+        streak2: last.streak2,
+        maxStreak1: last.maxStreak1,
+        maxStreak2: last.maxStreak2,
       };
     }
     case 'swap':
@@ -267,6 +314,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               b: state.lastSetSummary.a,
             }
           : null,
+        startedAt: state.startedAt,
+        endedAt: state.endedAt,
+        streak1: state.streak2,
+        streak2: state.streak1,
+        maxStreak1: state.maxStreak2,
+        maxStreak2: state.maxStreak1,
       };
     case 'reset':
       return {
@@ -310,6 +363,7 @@ function loadInitialGame(): GameState {
 export function HomeView() {
   const { t, locale } = useI18n();
   const feedback = useFeedback();
+  const colors = useTeamColors();
 
   const [game, dispatch] = useReducer(gameReducer, undefined, loadInitialGame);
   const {
@@ -322,6 +376,12 @@ export function HomeView() {
     pendingSideChange,
     pendingFeedback,
     lastSetSummary,
+    startedAt,
+    endedAt,
+    streak1,
+    streak2,
+    maxStreak1,
+    maxStreak2,
   } = game;
   const [match, setMatch] = useState<MatchConfig | null>(loadInitialMatch);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -349,6 +409,12 @@ export function HomeView() {
         setScores,
         pendingSideChange,
         mid11Triggered: game.mid11Triggered,
+        startedAt,
+        endedAt,
+        streak1,
+        streak2,
+        maxStreak1,
+        maxStreak2,
       };
       storage.saveActiveGame(persisted);
     } else {
@@ -364,6 +430,12 @@ export function HomeView() {
     pendingSideChange,
     matchWinner,
     game.mid11Triggered,
+    startedAt,
+    endedAt,
+    streak1,
+    streak2,
+    maxStreak1,
+    maxStreak2,
   ]);
 
   // Fire feedback effects (sound + haptic) after the reducer marks an event.
@@ -427,6 +499,7 @@ export function HomeView() {
         setsToWin: setsNeededToWin(match.sets),
         sideChange: match.sideChange,
         totalSets: match.sets,
+        now: Date.now(),
       });
     },
     [match]
@@ -508,6 +581,8 @@ export function HomeView() {
     if (savedMatchIdRef.current) return;
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     savedMatchIdRef.current = id;
+    const durationMs =
+      startedAt && endedAt ? Math.max(0, endedAt - startedAt) : undefined;
     const saved: SavedMatch = {
       id,
       completedAt: Date.now(),
@@ -515,9 +590,20 @@ export function HomeView() {
       setScores,
       finalSetWins: setWins,
       winner: matchWinner,
+      durationMs,
+      maxStreak: { team1: maxStreak1, team2: maxStreak2 },
     };
     storage.saveMatchToHistory(saved);
-  }, [matchWinner, match, setScores, setWins]);
+  }, [
+    matchWinner,
+    match,
+    setScores,
+    setWins,
+    startedAt,
+    endedAt,
+    maxStreak1,
+    maxStreak2,
+  ]);
 
   const handleShare = async () => {
     if (!match || !matchWinner) return;
@@ -561,13 +647,13 @@ export function HomeView() {
       >
         <div className="absolute inset-0 grid grid-cols-2">
           <ScorePanel
-            background={RED}
+            background={colors.team1}
             textColor="#ffffff"
             onScore={() => handleScore('team1')}
             ariaLabel={t('scoreboard.addPoint', { name: player1Label })}
           />
           <ScorePanel
-            background={BLUE}
+            background={colors.team2}
             textColor="#ffffff"
             onScore={() => handleScore('team2')}
             ariaLabel={t('scoreboard.addPoint', { name: player2Label })}
@@ -589,7 +675,7 @@ export function HomeView() {
         <ScoreDisplay
           side="left"
           score={score1}
-          background={RED}
+          background={colors.team1}
           locale={locale}
           atSetPoint={team1AtSetPoint}
           atMatchPoint={team1AtMatchPoint}
@@ -599,7 +685,7 @@ export function HomeView() {
         <ScoreDisplay
           side="right"
           score={score2}
-          background={BLUE}
+          background={colors.team2}
           locale={locale}
           atSetPoint={team2AtSetPoint}
           atMatchPoint={team2AtMatchPoint}
@@ -607,8 +693,29 @@ export function HomeView() {
           matchPointLabel={t('scoreboard.matchPoint')}
         />
 
-        <SetScoreDisplay side="left" count={setWins.team1} background={RED} />
-        <SetScoreDisplay side="right" count={setWins.team2} background={BLUE} />
+        {streak1 >= 2 && (
+          <StreakBadge
+            side="left"
+            label={t('scoreboard.streak', { n: streak1 })}
+          />
+        )}
+        {streak2 >= 2 && (
+          <StreakBadge
+            side="right"
+            label={t('scoreboard.streak', { n: streak2 })}
+          />
+        )}
+
+        <SetScoreDisplay
+          side="left"
+          count={setWins.team1}
+          background={colors.team1}
+        />
+        <SetScoreDisplay
+          side="right"
+          count={setWins.team2}
+          background={colors.team2}
+        />
 
         {isDoubles ? (
           <>
@@ -616,7 +723,7 @@ export function HomeView() {
               side="left"
               position="top"
               label={team1Pair.top}
-              background={RED}
+              background={colors.team1}
               onSwap={() => setTeam1Inverted(s => !s)}
               swapLabel={t('scoreboard.invertPlayers')}
             />
@@ -624,7 +731,7 @@ export function HomeView() {
               side="left"
               position="bottom"
               label={team1Pair.bottom}
-              background={RED}
+              background={colors.team1}
               onSwap={() => setTeam1Inverted(s => !s)}
               swapLabel={t('scoreboard.invertPlayers')}
             />
@@ -632,7 +739,7 @@ export function HomeView() {
               side="right"
               position="top"
               label={team2Pair.top}
-              background={BLUE}
+              background={colors.team2}
               onSwap={() => setTeam2Inverted(s => !s)}
               swapLabel={t('scoreboard.invertPlayers')}
             />
@@ -640,7 +747,7 @@ export function HomeView() {
               side="right"
               position="bottom"
               label={team2Pair.bottom}
-              background={BLUE}
+              background={colors.team2}
               onSwap={() => setTeam2Inverted(s => !s)}
               swapLabel={t('scoreboard.invertPlayers')}
             />
@@ -651,13 +758,13 @@ export function HomeView() {
               side="left"
               position="bottom"
               label={player1Label}
-              background={RED}
+              background={colors.team1}
             />
             <LabelDisplay
               side="right"
               position="bottom"
               label={player2Label}
-              background={BLUE}
+              background={colors.team2}
             />
           </>
         )}
@@ -692,6 +799,7 @@ export function HomeView() {
           <span className="flex items-center gap-2 text-sm font-medium">
             <span aria-hidden>🏸</span>
             {t('scoreboard.title')}
+            <MatchDuration startedAt={startedAt} endedAt={endedAt} />
           </span>
           <div className="flex items-center gap-3 text-base">
             <button
@@ -1055,6 +1163,66 @@ function MatchOverOverlay({
         </div>
       </div>
     </div>
+  );
+}
+
+interface MatchDurationProps {
+  startedAt: number | null;
+  endedAt: number | null;
+}
+
+function formatDuration(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+  return `${m}:${pad(s)}`;
+}
+
+function MatchDuration({ startedAt, endedAt }: MatchDurationProps) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!startedAt || endedAt) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [startedAt, endedAt]);
+
+  if (!startedAt) return null;
+  const elapsed = (endedAt ?? now) - startedAt;
+  return (
+    <span
+      aria-hidden
+      className="ml-2 inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium tabular-nums opacity-90"
+    >
+      <span aria-hidden>⏱</span>
+      {formatDuration(elapsed)}
+    </span>
+  );
+}
+
+interface StreakBadgeProps {
+  side: 'left' | 'right';
+  label: string;
+}
+
+function StreakBadge({ side, label }: StreakBadgeProps) {
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute z-[5] flex select-none items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md sm:text-sm"
+      style={{
+        top: '78%',
+        [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
+        transform: `translateX(${side === 'left' ? '-50%' : '50%'})`,
+        background: 'rgba(0,0,0,0.55)',
+      }}
+    >
+      <span aria-hidden>🔥</span>
+      {label}
+    </span>
   );
 }
 

@@ -21,6 +21,12 @@ export interface PersistedGameState {
   setScores: { team1: number; team2: number }[];
   pendingSideChange: boolean;
   mid11Triggered: boolean;
+  startedAt: number | null;
+  endedAt: number | null;
+  streak1: number;
+  streak2: number;
+  maxStreak1: number;
+  maxStreak2: number;
 }
 
 export interface SavedMatch {
@@ -30,6 +36,8 @@ export interface SavedMatch {
   setScores: { team1: number; team2: number }[];
   finalSetWins: { team1: number; team2: number };
   winner: 'team1' | 'team2';
+  durationMs?: number;
+  maxStreak?: { team1: number; team2: number };
 }
 
 function safeRead<T>(key: string): T | null {

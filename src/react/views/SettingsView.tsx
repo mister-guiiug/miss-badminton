@@ -7,15 +7,27 @@ import {
   type ThemePreference,
 } from '../../theme';
 import { useFeedback } from '../hooks/useFeedback';
+import { useTeamColors } from '../hooks/useTeamColors';
+import {
+  DEFAULT_TEAM1_COLOR,
+  DEFAULT_TEAM2_COLOR,
+  resetTeamColors,
+  setTeamColor,
+} from '../../team-colors';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 
 export function SettingsView() {
   const { t, locale, setLocale } = useI18n();
   const feedback = useFeedback();
+  const colors = useTeamColors();
   const [theme, setTheme] = useState<ThemePreference>(() =>
     getStoredThemePreference()
   );
+
+  const colorsAreDefault =
+    colors.team1.toLowerCase() === DEFAULT_TEAM1_COLOR &&
+    colors.team2.toLowerCase() === DEFAULT_TEAM2_COLOR;
 
   useEffect(() => {
     setThemePreference(theme);
@@ -52,6 +64,37 @@ export function SettingsView() {
           options={THEMES.map(p => ({ value: p, label: themeLabel(p) }))}
           onChange={v => setTheme(v as ThemePreference)}
         />
+      </Section>
+
+      <Section
+        title={t('settings.colorsLabel')}
+        help={t('settings.colorsHelp')}
+      >
+        <div className="flex flex-wrap items-center gap-4">
+          <ColorField
+            label={t('settings.colorTeam1')}
+            value={colors.team1}
+            onChange={c => setTeamColor('team1', c)}
+          />
+          <ColorField
+            label={t('settings.colorTeam2')}
+            value={colors.team2}
+            onChange={c => setTeamColor('team2', c)}
+          />
+          {!colorsAreDefault && (
+            <button
+              type="button"
+              onClick={resetTeamColors}
+              className="rounded-lg border px-3 py-1.5 text-xs font-semibold"
+              style={{
+                borderColor: 'var(--border)',
+                color: 'var(--muted)',
+              }}
+            >
+              {t('settings.resetColors')}
+            </button>
+          )}
+        </div>
       </Section>
 
       <Section title={t('settings.soundLabel')} help={t('settings.soundHelp')}>
@@ -204,5 +247,32 @@ function Toggle({
         {value ? enabledLabel : disabledLabel}
       </span>
     </button>
+  );
+}
+
+interface ColorFieldProps {
+  label: string;
+  value: string;
+  onChange: (color: string) => void;
+}
+
+function ColorField({ label, value, onChange }: ColorFieldProps) {
+  return (
+    <label
+      className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium"
+      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+    >
+      <input
+        type="color"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
+        aria-label={label}
+      />
+      <span>{label}</span>
+      <span className="ml-1 text-xs font-mono uppercase opacity-60" aria-hidden>
+        {value}
+      </span>
+    </label>
   );
 }

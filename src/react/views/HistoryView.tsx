@@ -23,6 +23,16 @@ function formatDate(timestamp: number, locale: Locale): string {
   }
 }
 
+function formatDuration(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+  return `${m}:${pad(s)}`;
+}
+
 export function HistoryView() {
   const { t, locale } = useI18n();
   const [matches, setMatches] = useState<SavedMatch[]>(() =>
@@ -128,6 +138,28 @@ export function HistoryView() {
                   <p className="text-xs" style={{ color: 'var(--muted)' }}>
                     🏆 {winnerName} · {setsLine}
                   </p>
+                  <div
+                    className="flex flex-wrap gap-3 pt-1 text-xs"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    {typeof match.durationMs === 'number' && (
+                      <span>
+                        ⏱{' '}
+                        {t('history.duration', {
+                          time: formatDuration(match.durationMs),
+                        })}
+                      </span>
+                    )}
+                    {match.maxStreak && (
+                      <span>
+                        🔥{' '}
+                        {t('history.maxStreak', {
+                          a: match.maxStreak.team1,
+                          b: match.maxStreak.team2,
+                        })}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"

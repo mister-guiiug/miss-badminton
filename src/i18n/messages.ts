@@ -50,6 +50,8 @@ export interface Messages {
     setPoint: string;
     setHeader: string;
     invertPlayers: string;
+    streak: string;
+    duration: string;
   };
   sideChange: {
     title: string;
@@ -114,6 +116,8 @@ export interface Messages {
     clearAll: string;
     confirmClear: string;
     delete: string;
+    duration: string;
+    maxStreak: string;
   };
   pwa: {
     installPrompt: string;
@@ -134,6 +138,11 @@ export interface Messages {
     hapticHelp: string;
     enabled: string;
     disabled: string;
+    colorsLabel: string;
+    colorsHelp: string;
+    colorTeam1: string;
+    colorTeam2: string;
+    resetColors: string;
   };
   shortcuts: {
     title: string;
@@ -188,6 +197,8 @@ const fr: Messages = {
     setPoint: 'Balle de set',
     setHeader: 'Set {n} / {total} — {points} pts',
     invertPlayers: 'Intervertir haut et bas',
+    streak: '{n} d’affilée',
+    duration: 'Durée',
   },
   sideChange: {
     title: 'Changement de côté',
@@ -253,6 +264,8 @@ const fr: Messages = {
     clearAll: 'Tout effacer',
     confirmClear: "Effacer tout l'historique ?",
     delete: 'Supprimer',
+    duration: 'Durée : {time}',
+    maxStreak: 'Plus longue série : {a} – {b}',
   },
   pwa: {
     installPrompt: 'Installer Miss Badminton sur votre appareil.',
@@ -273,6 +286,11 @@ const fr: Messages = {
     hapticHelp: 'Retour haptique sur les appareils qui le supportent.',
     enabled: 'Activé',
     disabled: 'Désactivé',
+    colorsLabel: 'Couleurs des équipes',
+    colorsHelp: 'Choisissez la couleur de chaque équipe sur le tableau.',
+    colorTeam1: 'Équipe 1',
+    colorTeam2: 'Équipe 2',
+    resetColors: 'Couleurs par défaut',
   },
   shortcuts: {
     title: 'Raccourcis clavier',
@@ -326,6 +344,8 @@ const en: Messages = {
     setPoint: 'Set point',
     setHeader: 'Set {n} / {total} — {points} pts',
     invertPlayers: 'Swap top and bottom',
+    streak: '{n} in a row',
+    duration: 'Duration',
   },
   sideChange: {
     title: 'Change ends',
@@ -390,6 +410,8 @@ const en: Messages = {
     clearAll: 'Clear all',
     confirmClear: 'Clear the entire history?',
     delete: 'Delete',
+    duration: 'Duration: {time}',
+    maxStreak: 'Longest run: {a} – {b}',
   },
   pwa: {
     installPrompt: 'Install Miss Badminton on your device.',
@@ -410,6 +432,11 @@ const en: Messages = {
     hapticHelp: 'Vibration feedback on supported devices.',
     enabled: 'On',
     disabled: 'Off',
+    colorsLabel: 'Team colours',
+    colorsHelp: 'Pick the colour of each team on the scoreboard.',
+    colorTeam1: 'Team 1',
+    colorTeam2: 'Team 2',
+    resetColors: 'Reset to defaults',
   },
   shortcuts: {
     title: 'Keyboard shortcuts',
@@ -463,6 +490,8 @@ const es: Messages = {
     setPoint: 'Punto de set',
     setHeader: 'Set {n} / {total} — {points} pts',
     invertPlayers: 'Intercambiar arriba y abajo',
+    streak: '{n} seguidos',
+    duration: 'Duración',
   },
   sideChange: {
     title: 'Cambio de lado',
@@ -528,6 +557,8 @@ const es: Messages = {
     clearAll: 'Borrar todo',
     confirmClear: '¿Borrar todo el historial?',
     delete: 'Eliminar',
+    duration: 'Duración: {time}',
+    maxStreak: 'Mejor racha: {a} – {b}',
   },
   pwa: {
     installPrompt: 'Instala Miss Badminton en tu dispositivo.',
@@ -548,6 +579,11 @@ const es: Messages = {
     hapticHelp: 'Respuesta háptica en los dispositivos compatibles.',
     enabled: 'Activado',
     disabled: 'Desactivado',
+    colorsLabel: 'Colores de los equipos',
+    colorsHelp: 'Elige el color de cada equipo en el marcador.',
+    colorTeam1: 'Equipo 1',
+    colorTeam2: 'Equipo 2',
+    resetColors: 'Restablecer colores',
   },
   shortcuts: {
     title: 'Atajos de teclado',
