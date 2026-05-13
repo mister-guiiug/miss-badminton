@@ -92,11 +92,10 @@ export default defineConfig(({ command }) => {
         manifest: {
           id: '/miss-badminton/',
           name: 'Miss Badminton',
-          short_name: 'Badminton',
-          description:
-            'Suivez vos scores et statistiques de badminton en temps réel.',
-          theme_color: '#166534',
-          background_color: '#f0fdf4',
+          short_name: 'Miss Badminton',
+          description: 'Suivi simplifié de scores de badminton et plus encore',
+          theme_color: '#4f46e5',
+          background_color: '#f8fafc',
           display: 'standalone',
           orientation: 'portrait-primary',
           start_url: '/miss-badminton/',

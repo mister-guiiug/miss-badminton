@@ -46,3 +46,32 @@ export function registerServiceWorker(): void {
     onOfflineReady() {},
   });
 }
+
+/**
+ * Force the PWA to fetch any waiting service worker, activate it and reload
+ * the page. In dev (no SW) or when no update is found, falls back to a hard
+ * reload so the user always gets the latest assets.
+ */
+export async function forceAppUpdate(): Promise<void> {
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(
+        registrations.map(reg => reg.update().catch(() => undefined))
+      );
+    }
+  } catch {
+    /* registration check failed, fall through to reload */
+  }
+
+  if (updateSWFn) {
+    try {
+      await updateSWFn(true);
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  window.location.reload();
+}

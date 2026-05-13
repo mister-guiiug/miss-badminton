@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useI18n } from '../../i18n/useI18n';
 import { storage, type SavedMatch } from '../../storage';
 import type { Locale } from '../../i18n/messages';
+import { useTeamColors } from '../hooks/useTeamColors';
 
 function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
   const primary = team.primary || fallback;
@@ -35,6 +36,7 @@ function formatDuration(ms: number): string {
 
 export function HistoryView() {
   const { t, locale } = useI18n();
+  const colors = useTeamColors();
   const [matches, setMatches] = useState<SavedMatch[]>(() =>
     storage.loadHistory()
   );
@@ -114,7 +116,8 @@ export function HistoryView() {
                   <p className="text-base font-semibold">
                     <span
                       style={{
-                        color: match.winner === 'team1' ? '#dc2626' : undefined,
+                        color:
+                          match.winner === 'team1' ? colors.team1 : undefined,
                       }}
                     >
                       {t1}
@@ -129,7 +132,8 @@ export function HistoryView() {
                     {'  '}
                     <span
                       style={{
-                        color: match.winner === 'team2' ? '#0891b2' : undefined,
+                        color:
+                          match.winner === 'team2' ? colors.team2 : undefined,
                       }}
                     >
                       {t2}

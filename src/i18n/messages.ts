@@ -143,6 +143,10 @@ export interface Messages {
     colorTeam1: string;
     colorTeam2: string;
     resetColors: string;
+    updateLabel: string;
+    updateHelp: string;
+    updateButton: string;
+    updateChecking: string;
   };
   shortcuts: {
     title: string;
@@ -291,6 +295,11 @@ const fr: Messages = {
     colorTeam1: 'Équipe 1',
     colorTeam2: 'Équipe 2',
     resetColors: 'Couleurs par défaut',
+    updateLabel: 'Mises à jour',
+    updateHelp:
+      "Force la recherche d'une nouvelle version et recharge l'application.",
+    updateButton: 'Forcer la mise à jour',
+    updateChecking: 'Vérification…',
   },
   shortcuts: {
     title: 'Raccourcis clavier',
@@ -437,6 +446,10 @@ const en: Messages = {
     colorTeam1: 'Team 1',
     colorTeam2: 'Team 2',
     resetColors: 'Reset to defaults',
+    updateLabel: 'Updates',
+    updateHelp: 'Force a check for a new version and reload the app.',
+    updateButton: 'Force update',
+    updateChecking: 'Checking…',
   },
   shortcuts: {
     title: 'Keyboard shortcuts',
@@ -584,6 +597,11 @@ const es: Messages = {
     colorTeam1: 'Equipo 1',
     colorTeam2: 'Equipo 2',
     resetColors: 'Restablecer colores',
+    updateLabel: 'Actualizaciones',
+    updateHelp:
+      'Fuerza la búsqueda de una nueva versión y recarga la aplicación.',
+    updateButton: 'Forzar actualización',
+    updateChecking: 'Comprobando…',
   },
   shortcuts: {
     title: 'Atajos de teclado',

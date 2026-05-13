@@ -27,7 +27,7 @@ export function applyTheme(theme: ResolvedTheme): void {
     'meta[name="theme-color"]'
   );
   if (meta) {
-    meta.setAttribute('content', theme === 'light' ? '#166534' : '#052e16');
+    meta.setAttribute('content', theme === 'light' ? '#4f46e5' : '#0f172a');
   }
   listeners.forEach(l => l(theme));
 }

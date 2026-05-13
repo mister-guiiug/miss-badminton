@@ -14,6 +14,7 @@ import {
   resetTeamColors,
   setTeamColor,
 } from '../../team-colors';
+import { forceAppUpdate } from '../../register-sw';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 
@@ -28,6 +29,19 @@ export function SettingsView() {
   const colorsAreDefault =
     colors.team1.toLowerCase() === DEFAULT_TEAM1_COLOR &&
     colors.team2.toLowerCase() === DEFAULT_TEAM2_COLOR;
+
+  const [updating, setUpdating] = useState(false);
+  const handleForceUpdate = async () => {
+    if (updating) return;
+    setUpdating(true);
+    try {
+      await forceAppUpdate();
+    } finally {
+      // forceAppUpdate triggers a reload, but if it falls through (no SW),
+      // restore the button state so the user can retry.
+      setUpdating(false);
+    }
+  };
 
   useEffect(() => {
     setThemePreference(theme);
@@ -118,6 +132,22 @@ export function SettingsView() {
           enabledLabel={t('settings.enabled')}
           disabledLabel={t('settings.disabled')}
         />
+      </Section>
+
+      <Section
+        title={t('settings.updateLabel')}
+        help={t('settings.updateHelp')}
+      >
+        <button
+          type="button"
+          onClick={handleForceUpdate}
+          disabled={updating}
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ background: 'var(--primary)' }}
+        >
+          <span aria-hidden>{updating ? '⟳' : '⤓'}</span>
+          {updating ? t('settings.updateChecking') : t('settings.updateButton')}
+        </button>
       </Section>
 
       <Section title={t('shortcuts.title')}>
