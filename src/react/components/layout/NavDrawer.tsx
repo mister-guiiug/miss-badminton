@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '../../../i18n/useI18n';
 import { LOCALES, LOCALE_LABELS } from '../../../i18n/messages';
+import { Logo } from '../Logo';
 
 interface NavDrawerProps {
   onClose: () => void;
@@ -49,10 +50,11 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
       >
         <header className="flex items-center justify-between">
           <span
-            className="text-lg font-bold"
+            className="inline-flex items-center gap-2 text-lg font-bold"
             style={{ color: 'var(--primary)' }}
           >
-            🏸 {t('appName')}
+            <Logo size={28} />
+            {t('appName')}
           </span>
           <button
             type="button"
