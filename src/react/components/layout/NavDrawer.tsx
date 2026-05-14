@@ -7,16 +7,31 @@ import {
   LOCALE_LABELS,
 } from '../../../i18n/messages';
 import { Logo } from '../Logo';
+import {
+  HistoryIcon,
+  HomeIcon,
+  SettingsIcon,
+  XIcon,
+} from '../icons';
 
 interface NavDrawerProps {
   onClose: () => void;
 }
 
 const ROUTES = [
-  { to: '/', end: true, key: 'nav.home' as const },
-  { to: '/match', end: false, key: 'nav.match' as const },
-  { to: '/historique', end: false, key: 'nav.history' as const },
-  { to: '/parametres', end: false, key: 'nav.settings' as const },
+  { to: '/', end: true, key: 'nav.home' as const, Icon: HomeIcon },
+  {
+    to: '/historique',
+    end: false,
+    key: 'nav.history' as const,
+    Icon: HistoryIcon,
+  },
+  {
+    to: '/parametres',
+    end: false,
+    key: 'nav.settings' as const,
+    Icon: SettingsIcon,
+  },
 ];
 
 export function NavDrawer({ onClose }: NavDrawerProps) {
@@ -64,33 +79,37 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
             type="button"
             onClick={onClose}
             aria-label={t('nav.closeMenu')}
-            className="flex touch-target items-center justify-center rounded-md text-xl leading-none hover:bg-black/5"
+            className="flex touch-target items-center justify-center rounded-md hover:bg-black/5"
             style={{ color: 'var(--muted)' }}
           >
-            ×
+            <XIcon size={22} />
           </button>
         </header>
 
         <nav className="flex flex-col gap-1">
-          {ROUTES.map(route => (
-            <NavLink
-              key={route.to}
-              to={route.to}
-              end={route.end}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive ? '' : 'hover:bg-black/5'
-                }`
-              }
-              style={({ isActive }) => ({
-                background: isActive ? 'var(--primary)' : 'transparent',
-                color: isActive ? '#fff' : 'var(--text)',
-              })}
-            >
-              {t(route.key)}
-            </NavLink>
-          ))}
+          {ROUTES.map(route => {
+            const RouteIcon = route.Icon;
+            return (
+              <NavLink
+                key={route.to}
+                to={route.to}
+                end={route.end}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive ? '' : 'hover:bg-black/5'
+                  }`
+                }
+                style={({ isActive }) => ({
+                  background: isActive ? 'var(--primary)' : 'transparent',
+                  color: isActive ? '#fff' : 'var(--text)',
+                })}
+              >
+                <RouteIcon size={18} />
+                <span>{t(route.key)}</span>
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div

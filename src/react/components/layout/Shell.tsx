@@ -3,6 +3,7 @@ import { useI18n } from '../../../i18n/useI18n';
 import { NavDrawer } from './NavDrawer';
 import { PersistentSidebar } from './PersistentSidebar';
 import { OfflineIndicator } from '../OfflineIndicator';
+import { MenuIcon } from '../icons';
 
 interface ShellProps {
   children: ReactNode;
@@ -19,10 +20,10 @@ export function Shell({ children }: ShellProps) {
         type="button"
         onClick={() => setDrawerOpen(true)}
         aria-label={t('nav.openMenu')}
-        className="fixed left-safe-3 top-safe-3 z-30 flex touch-target items-center justify-center rounded-full text-lg text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105 active:scale-95 lg:hidden"
+        className="fixed left-safe-3 top-safe-3 z-30 flex touch-target items-center justify-center rounded-full text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105 active:scale-95 lg:hidden"
         style={{ background: 'rgba(0,0,0,0.55)' }}
       >
-        <span aria-hidden>☰</span>
+        <MenuIcon size={22} />
       </button>
       <main className="min-w-0 flex-1">{children}</main>
       <OfflineIndicator />

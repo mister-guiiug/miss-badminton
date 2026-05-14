@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useI18n } from '../../i18n/useI18n';
 import {
   LOCALES,
@@ -22,8 +22,31 @@ import {
 import { forceAppUpdate } from '../../register-sw';
 import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
+import { RefreshCwIcon } from '../components/icons';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
+
+const KEYBOARD_QUERY = '(hover: hover) and (pointer: fine)';
+
+/**
+ * Vrai si le device a un pointeur fin + survol — heuristique fiable pour
+ * "il y a probablement un clavier". Faux sur smartphone / tablette pur tactile.
+ */
+function useLikelyHasKeyboard(): boolean {
+  return useSyncExternalStore(
+    cb => {
+      if (typeof window === 'undefined') return () => {};
+      const mq = window.matchMedia(KEYBOARD_QUERY);
+      mq.addEventListener('change', cb);
+      return () => mq.removeEventListener('change', cb);
+    },
+    () =>
+      typeof window === 'undefined'
+        ? true
+        : window.matchMedia(KEYBOARD_QUERY).matches,
+    () => true
+  );
+}
 
 export function SettingsView() {
   const { t, locale, setLocale } = useI18n();
@@ -32,6 +55,7 @@ export function SettingsView() {
   const [theme, setTheme] = useState<ThemePreference>(() =>
     getStoredThemePreference()
   );
+  const hasKeyboard = useLikelyHasKeyboard();
 
   const colorsAreDefault =
     colors.team1.toLowerCase() === DEFAULT_TEAM1_COLOR &&
@@ -182,20 +206,25 @@ export function SettingsView() {
           className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           style={{ background: 'var(--primary)' }}
         >
-          <span aria-hidden>{updating ? '⟳' : '⤓'}</span>
+          <RefreshCwIcon
+            size={16}
+            className={updating ? 'animate-spin' : undefined}
+          />
           {updating ? t('settings.updateChecking') : t('settings.updateButton')}
         </button>
       </Section>
 
-      <Section title={t('shortcuts.title')}>
-        <ul className="space-y-1 text-sm" style={{ color: 'var(--text)' }}>
-          <li>{t('shortcuts.addTeam1')}</li>
-          <li>{t('shortcuts.addTeam2')}</li>
-          <li>{t('shortcuts.undo')}</li>
-          <li>{t('shortcuts.reset')}</li>
-          <li>{t('shortcuts.swap')}</li>
-        </ul>
-      </Section>
+      {hasKeyboard && (
+        <Section title={t('shortcuts.title')}>
+          <ul className="space-y-1 text-sm" style={{ color: 'var(--text)' }}>
+            <li>{t('shortcuts.addTeam1')}</li>
+            <li>{t('shortcuts.addTeam2')}</li>
+            <li>{t('shortcuts.undo')}</li>
+            <li>{t('shortcuts.reset')}</li>
+            <li>{t('shortcuts.swap')}</li>
+          </ul>
+        </Section>
+      )}
     </PageContainer>
   );
 }

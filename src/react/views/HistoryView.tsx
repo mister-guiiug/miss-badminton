@@ -6,6 +6,12 @@ import type { Locale } from '../../i18n/messages';
 import { useTeamColors } from '../hooks/useTeamColors';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import {
+  FlameIcon,
+  RotateCwIcon,
+  Trash2Icon,
+  TrophyIcon,
+} from '../components/icons';
 
 function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
   const primary = team.primary || fallback;
@@ -265,8 +271,11 @@ export function HistoryView() {
                       {t2}
                     </span>
                   </p>
-                  <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                    🏆 {winnerName} · {setsLine}
+                  <p
+                    className="inline-flex items-center gap-1 text-xs"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    <TrophyIcon size={14} /> {winnerName} · {setsLine}
                   </p>
                   <div
                     className="flex flex-wrap gap-3 pt-1 text-xs"
@@ -281,8 +290,8 @@ export function HistoryView() {
                       </span>
                     )}
                     {match.maxStreak && (
-                      <span>
-                        🔥{' '}
+                      <span className="inline-flex items-center gap-1">
+                        <FlameIcon size={14} />
                         {t('history.maxStreak', {
                           a: match.maxStreak.team1,
                           b: match.maxStreak.team2,
@@ -297,19 +306,19 @@ export function HistoryView() {
                     onClick={() => handleReplay(match)}
                     aria-label={t('historyExtra.replay')}
                     title={t('historyExtra.replay')}
-                    className="flex touch-target items-center justify-center rounded-md text-base leading-none hover:bg-black/5"
+                    className="flex touch-target items-center justify-center rounded-md hover:bg-black/5"
                     style={{ color: 'var(--primary)' }}
                   >
-                    🔁
+                    <RotateCwIcon size={18} />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(match.id)}
                     aria-label={t('history.delete')}
-                    className="flex touch-target items-center justify-center rounded-md text-base leading-none hover:bg-black/5"
+                    className="flex touch-target items-center justify-center rounded-md hover:bg-black/5"
                     style={{ color: 'var(--muted)' }}
                   >
-                    ×
+                    <Trash2Icon size={18} />
                   </button>
                 </div>
               </li>
