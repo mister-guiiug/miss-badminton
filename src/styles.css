@@ -102,7 +102,7 @@ body {
 /* ── Bannière mise à jour SW ─────────────────────────────────── */
 .sw-update-banner {
   position: fixed;
-  bottom: 1rem;
+  bottom: calc(1rem + max(env(safe-area-inset-bottom), 0px));
   left: 50%;
   transform: translateX(-50%);
   background: var(--surface);
@@ -136,6 +136,30 @@ body {
 
 .sw-update-banner__btn:hover {
   background: var(--primary-hover);
+}
+
+/* ── Scoreboard responsive (orientation + tablette) ──────────── */
+.mb-scoreboard {
+  aspect-ratio: 16 / 10;
+}
+
+/* Téléphones en portrait : on troque l'aspect 16/10 contre un format
+   plus carré et on remplit l'espace vertical disponible. */
+@media (orientation: portrait) {
+  .mb-scoreboard {
+    aspect-ratio: auto;
+    min-height: calc(100svh - env(safe-area-inset-top, 0px));
+  }
+}
+
+/* Tablette et plus en paysage : on borne la hauteur pour éviter
+   un scoreboard qui déborde verticalement, et on centre. */
+@media (orientation: landscape) and (min-width: 768px) {
+  .mb-scoreboard {
+    max-height: calc(100svh - env(safe-area-inset-top, 0px));
+    margin-inline: auto;
+    max-width: min(100%, calc(1.6 * (100svh - env(safe-area-inset-top, 0px))));
+  }
 }
 
 @keyframes mb-shuttle-float {

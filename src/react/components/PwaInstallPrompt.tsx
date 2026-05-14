@@ -55,7 +55,7 @@ export function PwaInstallPrompt() {
     <div
       role="dialog"
       aria-label={t('pwa.installPrompt')}
-      className="pointer-events-none fixed inset-x-0 bottom-3 z-[55] flex justify-center px-3"
+      className="pointer-events-none fixed inset-x-0 bottom-safe-3 z-[55] flex justify-center px-safe pl-3 pr-3"
     >
       <div
         className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-xl border p-3 shadow-lg"
@@ -72,7 +72,7 @@ export function PwaInstallPrompt() {
         <button
           type="button"
           onClick={onInstall}
-          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
+          className="inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
           style={{ background: 'var(--primary)' }}
         >
           {t('pwa.install')}
@@ -81,7 +81,7 @@ export function PwaInstallPrompt() {
           type="button"
           onClick={onDismiss}
           aria-label={t('pwa.dismiss')}
-          className="px-1 text-xl leading-none"
+          className="flex touch-target items-center justify-center text-xl leading-none"
           style={{ color: 'var(--muted)' }}
         >
           ×

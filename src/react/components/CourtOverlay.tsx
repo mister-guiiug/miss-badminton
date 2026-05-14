@@ -54,7 +54,7 @@ export function CourtOverlay({
     <svg
       className="pointer-events-none absolute inset-0 h-full w-full"
       viewBox={`0 0 ${COURT.width} ${COURT.height}`}
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMidYMid meet"
       stroke="rgba(255,255,255,0.85)"
       fill="none"
       strokeWidth={2}

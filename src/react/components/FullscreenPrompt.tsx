@@ -62,7 +62,7 @@ export function FullscreenPrompt() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-3 z-[60] flex justify-center px-3"
+      className="pointer-events-none fixed inset-x-0 top-safe-3 z-[60] flex justify-center px-safe pl-3 pr-3"
       role="dialog"
       aria-live="polite"
       aria-label={t('fullscreen.dialogLabel')}
@@ -82,7 +82,7 @@ export function FullscreenPrompt() {
         <button
           type="button"
           onClick={activate}
-          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
+          className="inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
           style={{ background: 'var(--primary)' }}
         >
           {t('fullscreen.activate')}
@@ -91,7 +91,7 @@ export function FullscreenPrompt() {
           type="button"
           onClick={dismiss}
           aria-label={t('fullscreen.dismiss')}
-          className="px-1 text-xl leading-none"
+          className="flex touch-target items-center justify-center text-xl leading-none"
           style={{ color: 'var(--muted)' }}
         >
           ×

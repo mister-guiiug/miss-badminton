@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { storage, type SavedMatch } from '../../storage';
 import type { Locale } from '../../i18n/messages';
 import { useTeamColors } from '../hooks/useTeamColors';
+import { PageContainer } from '../components/layout/PageContainer';
 
 function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
   const primary = team.primary || fallback;
@@ -57,16 +58,22 @@ export function HistoryView() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-16">
+    <PageContainer width="xl">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>
+        <h1
+          className="font-bold"
+          style={{
+            color: 'var(--primary)',
+            fontSize: 'clamp(1.5rem, 4.5vw, 2.25rem)',
+          }}
+        >
           {t('history.title')}
         </h1>
         {matches.length > 0 && (
           <button
             type="button"
             onClick={handleClear}
-            className="rounded-lg border px-3 py-1 text-xs font-semibold"
+            className="inline-flex min-h-9 items-center rounded-lg border px-3 py-1 text-xs font-semibold"
             style={{
               borderColor: 'var(--border)',
               color: 'var(--muted)',
@@ -79,17 +86,18 @@ export function HistoryView() {
 
       {matches.length === 0 ? (
         <p
-          className="rounded-2xl border p-6 text-center text-sm"
+          className="rounded-2xl border text-center text-sm"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
             color: 'var(--muted)',
+            padding: 'clamp(1rem, 3.2vw, 1.75rem)',
           }}
         >
           {t('history.empty')}
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-2">
           {matches.map(match => {
             const t1 = teamLabel(match.config.team1, t('players.player1'));
             const t2 = teamLabel(match.config.team2, t('players.player2'));
@@ -100,11 +108,12 @@ export function HistoryView() {
             return (
               <li
                 key={match.id}
-                className="flex items-start justify-between gap-3 rounded-2xl border p-4"
+                className="flex items-start justify-between gap-3 rounded-2xl border"
                 style={{
                   background: 'var(--surface)',
                   borderColor: 'var(--border)',
                   color: 'var(--text)',
+                  padding: 'clamp(0.75rem, 2.4vw, 1.25rem)',
                 }}
               >
                 <div className="flex-1 space-y-1">
@@ -113,7 +122,10 @@ export function HistoryView() {
                       date: formatDate(match.completedAt, locale),
                     })}
                   </p>
-                  <p className="text-base font-semibold">
+                  <p
+                    className="font-semibold break-words"
+                    style={{ fontSize: 'clamp(0.95rem, 2.4vw, 1.125rem)' }}
+                  >
                     <span
                       style={{
                         color:
@@ -169,7 +181,7 @@ export function HistoryView() {
                   type="button"
                   onClick={() => handleDelete(match.id)}
                   aria-label={t('history.delete')}
-                  className="rounded-md px-2 py-1 text-base leading-none hover:bg-black/5"
+                  className="flex touch-target items-center justify-center rounded-md text-base leading-none hover:bg-black/5"
                   style={{ color: 'var(--muted)' }}
                 >
                   ×
@@ -179,6 +191,6 @@ export function HistoryView() {
           })}
         </ul>
       )}
-    </div>
+    </PageContainer>
   );
 }
