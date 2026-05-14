@@ -81,11 +81,16 @@ export interface Messages {
     doublesTitle: string;
     doublesSubtitle: string;
     sets: string;
+    setsHelp: string;
+    setsWinning: string;
     points: string;
+    pointsHelp: string;
     cap: string;
+    capHelp: string;
     capNone: string;
     capValue: string;
     sideChange: string;
+    sideChangeHelp: string;
     sideChangeDecisive: string;
     sideChangeEachSet: string;
     sideChangeMidMatch: string;
@@ -94,6 +99,7 @@ export interface Messages {
     back: string;
     next: string;
     start: string;
+    summaryLabel: string;
   };
   players: {
     player1: string;
@@ -272,12 +278,17 @@ const fr: Messages = {
     singlesSubtitle: 'Simple — 1 vs 1',
     doublesTitle: 'En double',
     doublesSubtitle: 'Double — 2 vs 2',
-    sets: 'Nombre de sets',
+    sets: 'Format',
+    setsHelp: 'Premier à {wins} sets gagnants',
+    setsWinning: '{wins} sets gagnants',
     points: 'Points par set',
+    pointsHelp: 'Le set s’arrête au premier à ce score',
     cap: 'Plafond',
+    capHelp: 'Score limite si égalité prolongée',
     capNone: 'Sans',
     capValue: '{n}',
     sideChange: 'Changement de côté',
+    sideChangeHelp: 'Quand échanger les zones du terrain',
     sideChangeDecisive: 'Set décisif uniquement',
     sideChangeEachSet: 'Chaque set',
     sideChangeMidMatch: 'Mi-match (à 11)',
@@ -286,6 +297,7 @@ const fr: Messages = {
     back: 'Retour',
     next: 'Suivant',
     start: 'Commencer',
+    summaryLabel: 'Résumé',
   },
   players: {
     player1: 'joueur 1',
@@ -393,7 +405,7 @@ const fr: Messages = {
   },
   wizardExtra: {
     quickStart: 'Match standard',
-    quickStartHint: 'Simple · 3 sets · 21 pts · plafond 30',
+    quickStartHint: 'Simple · 2 sets gagnants · 21 pts · plafond 30',
   },
   settingsExtra: {
     contrastWarning:
@@ -466,12 +478,17 @@ const en: Messages = {
     singlesSubtitle: 'Singles — 1 vs 1',
     doublesTitle: 'Doubles',
     doublesSubtitle: 'Doubles — 2 vs 2',
-    sets: 'Number of sets',
+    sets: 'Format',
+    setsHelp: 'First to {wins} winning sets',
+    setsWinning: '{wins} winning sets',
     points: 'Points per set',
+    pointsHelp: 'A set ends at this score',
     cap: 'Cap',
+    capHelp: 'Maximum score to close a tied set',
     capNone: 'None',
     capValue: '{n}',
     sideChange: 'Side change',
+    sideChangeHelp: 'When to swap court sides',
     sideChangeDecisive: 'Decisive set only',
     sideChangeEachSet: 'Each set',
     sideChangeMidMatch: 'Mid-match (at 11)',
@@ -480,6 +497,7 @@ const en: Messages = {
     back: 'Back',
     next: 'Next',
     start: 'Start',
+    summaryLabel: 'Summary',
   },
   players: {
     player1: 'player 1',
@@ -585,7 +603,7 @@ const en: Messages = {
   },
   wizardExtra: {
     quickStart: 'Standard match',
-    quickStartHint: 'Singles · 3 sets · 21 pts · cap 30',
+    quickStartHint: 'Singles · Best of 3 · 21 pts · cap 30',
   },
   settingsExtra: {
     contrastWarning:
@@ -658,12 +676,17 @@ const es: Messages = {
     singlesSubtitle: 'Individual — 1 vs 1',
     doublesTitle: 'Dobles',
     doublesSubtitle: 'Dobles — 2 vs 2',
-    sets: 'Número de sets',
+    sets: 'Formato',
+    setsHelp: 'Primer a {wins} sets ganados',
+    setsWinning: '{wins} sets ganados',
     points: 'Puntos por set',
+    pointsHelp: 'Un set termina al primero en alcanzar este puntaje',
     cap: 'Tope',
+    capHelp: 'Puntaje límite en caso de empate',
     capNone: 'Sin tope',
     capValue: '{n}',
     sideChange: 'Cambio de lado',
+    sideChangeHelp: 'Cuándo intercambiar lados de la pista',
     sideChangeDecisive: 'Solo set decisivo',
     sideChangeEachSet: 'Cada set',
     sideChangeMidMatch: 'A mitad de partido (a 11)',
@@ -672,6 +695,7 @@ const es: Messages = {
     back: 'Atrás',
     next: 'Siguiente',
     start: 'Empezar',
+    summaryLabel: 'Resumen',
   },
   players: {
     player1: 'jugador 1',
@@ -779,7 +803,7 @@ const es: Messages = {
   },
   wizardExtra: {
     quickStart: 'Partido estándar',
-    quickStartHint: 'Individual · 3 sets · 21 pts · tope 30',
+    quickStartHint: 'Individual · Al mejor de 3 · 21 pts · tope 30',
   },
   settingsExtra: {
     contrastWarning:
