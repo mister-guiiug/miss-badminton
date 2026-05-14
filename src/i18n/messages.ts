@@ -25,6 +25,8 @@ export interface Messages {
     openMenu: string;
     closeMenu: string;
     menuLabel: string;
+    forceLandscape: string;
+    forcePortrait: string;
   };
   documentTitle: {
     home: string;
@@ -62,6 +64,7 @@ export interface Messages {
     pauseChrono: string;
     resumeChrono: string;
     resetChrono: string;
+    confirmResetChrono: string;
   };
   sideChange: {
     title: string;
@@ -225,6 +228,8 @@ const fr: Messages = {
     openMenu: 'Ouvrir le menu',
     closeMenu: 'Fermer le menu',
     menuLabel: 'Menu de navigation',
+    forceLandscape: 'Forcer le mode paysage',
+    forcePortrait: 'Forcer le mode portrait',
   },
   documentTitle: {
     home: 'Miss Badminton',
@@ -263,6 +268,7 @@ const fr: Messages = {
     pauseChrono: 'Mettre le chrono en pause',
     resumeChrono: 'Reprendre le chrono',
     resetChrono: 'Remettre le chrono à zéro',
+    confirmResetChrono: 'Remettre le chrono à 0 ?',
   },
   sideChange: {
     title: 'Changement de côté',
@@ -429,6 +435,8 @@ const en: Messages = {
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
     menuLabel: 'Navigation menu',
+    forceLandscape: 'Force landscape mode',
+    forcePortrait: 'Force portrait mode',
   },
   documentTitle: {
     home: 'Miss Badminton',
@@ -466,6 +474,7 @@ const en: Messages = {
     pauseChrono: 'Pause the timer',
     resumeChrono: 'Resume the timer',
     resetChrono: 'Reset the timer to zero',
+    confirmResetChrono: 'Reset the timer to 0?',
   },
   sideChange: {
     title: 'Change ends',
@@ -630,6 +639,8 @@ const es: Messages = {
     openMenu: 'Abrir el menú',
     closeMenu: 'Cerrar el menú',
     menuLabel: 'Menú de navegación',
+    forceLandscape: 'Forzar modo paisaje',
+    forcePortrait: 'Forzar modo retrato',
   },
   documentTitle: {
     home: 'Miss Badminton',
@@ -667,6 +678,7 @@ const es: Messages = {
     pauseChrono: 'Pausar el cronómetro',
     resumeChrono: 'Reanudar el cronómetro',
     resetChrono: 'Reiniciar el cronómetro',
+    confirmResetChrono: '¿Reiniciar el cronómetro a 0?',
   },
   sideChange: {
     title: 'Cambio de lado',

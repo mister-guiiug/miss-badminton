@@ -3,6 +3,7 @@ import { useI18n } from '../../../i18n/useI18n';
 import { NavDrawer } from './NavDrawer';
 import { PersistentSidebar } from './PersistentSidebar';
 import { OfflineIndicator } from '../OfflineIndicator';
+import { OrientationToggle } from '../OrientationToggle';
 import { MenuIcon } from '../icons';
 
 interface ShellProps {
@@ -25,6 +26,7 @@ export function Shell({ children }: ShellProps) {
       >
         <MenuIcon size={22} />
       </button>
+      <OrientationToggle />
       <main className="min-w-0 flex-1">{children}</main>
       <OfflineIndicator />
       {drawerOpen && <NavDrawer onClose={() => setDrawerOpen(false)} />}

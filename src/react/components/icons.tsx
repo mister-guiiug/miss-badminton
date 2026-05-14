@@ -157,6 +157,44 @@ export const FlameIcon = makeIcon(
   'FlameIcon'
 );
 
+export const ArrowLeftRightIcon = makeIcon(
+  <>
+    <path d="M8 3 4 7l4 4" />
+    <path d="M4 7h16" />
+    <path d="m16 21 4-4-4-4" />
+    <path d="M20 17H4" />
+  </>,
+  'ArrowLeftRightIcon'
+);
+
+export const ArrowUpDownIcon = makeIcon(
+  <>
+    <path d="m21 16-4 4-4-4" />
+    <path d="M17 20V4" />
+    <path d="m3 8 4-4 4 4" />
+    <path d="M7 4v16" />
+  </>,
+  'ArrowUpDownIcon'
+);
+
+/** Écran en mode portrait — utilisé pour "forcer en portrait" */
+export const ScreenPortraitIcon = makeIcon(
+  <>
+    <rect x="6" y="2" width="12" height="20" rx="2" ry="2" />
+    <path d="M12 18.5h.01" />
+  </>,
+  'ScreenPortraitIcon'
+);
+
+/** Écran en mode paysage — utilisé pour "forcer en paysage" */
+export const ScreenLandscapeIcon = makeIcon(
+  <>
+    <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
+    <path d="M5.5 12h.01" />
+  </>,
+  'ScreenLandscapeIcon'
+);
+
 export const PlayIcon = makeIcon(
   <polygon points="6 3 20 12 6 21 6 3" />,
   'PlayIcon'
