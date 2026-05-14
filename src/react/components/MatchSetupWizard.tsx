@@ -362,38 +362,93 @@ const CAP_OPTIONS: PointsCap[] = [null, 30];
 
 function Step2({ sets, points, cap, sideChange, onChange }: Step2Props) {
   const { t } = useI18n();
+  const sideChangeLabels: Record<SideChange, string> = {
+    decisive: t('wizard.sideChangeDecisive'),
+    'each-set': t('wizard.sideChangeEachSet'),
+    'mid-match': t('wizard.sideChangeMidMatch'),
+  };
   const sideChangeOptions: { value: SideChange; label: string }[] = [
-    { value: 'decisive', label: t('wizard.sideChangeDecisive') },
-    { value: 'each-set', label: t('wizard.sideChangeEachSet') },
-    { value: 'mid-match', label: t('wizard.sideChangeMidMatch') },
+    { value: 'decisive', label: sideChangeLabels.decisive },
+    { value: 'each-set', label: sideChangeLabels['each-set'] },
+    { value: 'mid-match', label: sideChangeLabels['mid-match'] },
   ];
   const capOptions: { value: string; label: string }[] = CAP_OPTIONS.map(c => ({
     value: c === null ? 'none' : String(c),
     label: c === null ? t('wizard.capNone') : t('wizard.capValue', { n: c }),
   }));
   const capKey = cap === null ? 'none' : String(cap);
+  const setsNeeded = Math.floor(sets / 2) + 1;
+  const capLabel =
+    cap === null ? t('wizard.capNone') : t('wizard.capValue', { n: cap });
+  const summaryItems = [
+    t('wizard.setsWinning', { wins: setsNeeded }),
+    `${points} pts`,
+    capLabel,
+    sideChangeLabels[sideChange],
+  ];
+
   return (
     <div className="flex flex-col gap-4">
+      {/* Résumé en direct — toujours visible en haut de l'étape Règles */}
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-xl border px-3 py-2"
+        style={{
+          background: 'var(--surface-highlight)',
+          borderColor: 'var(--border)',
+        }}
+      >
+        <p
+          className="text-[0.65rem] font-semibold uppercase tracking-wider"
+          style={{ color: 'var(--muted)' }}
+        >
+          {t('wizard.summaryLabel')}
+        </p>
+        <p
+          className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-medium"
+          style={{ color: 'var(--text)' }}
+        >
+          {summaryItems.map((label, i) => (
+            <span key={i} className="inline-flex items-center gap-1.5">
+              {i > 0 && (
+                <span aria-hidden style={{ color: 'var(--muted)' }}>
+                  ·
+                </span>
+              )}
+              <span>{label}</span>
+            </span>
+          ))}
+        </p>
+      </div>
+
       <PillGroup
         label={t('wizard.sets')}
+        help={t('wizard.setsHelp', { wins: setsNeeded })}
         value={sets}
         options={SET_OPTIONS.map(v => ({ value: v, label: `${v}` }))}
         onChange={v => onChange({ sets: v })}
+        equalWidth
       />
       <PillGroup
         label={t('wizard.points')}
+        help={t('wizard.pointsHelp')}
         value={points}
         options={POINT_OPTIONS.map(v => ({ value: v, label: `${v}` }))}
         onChange={v => onChange({ points: v })}
+        equalWidth
       />
       <PillGroup
         label={t('wizard.cap')}
+        help={t('wizard.capHelp')}
         value={capKey}
         options={capOptions}
         onChange={v => onChange({ cap: v === 'none' ? null : 30 })}
+        equalWidth
       />
       <PillGroup
         label={t('wizard.sideChange')}
+        help={t('wizard.sideChangeHelp')}
         value={sideChange}
         options={sideChangeOptions}
         onChange={v => onChange({ sideChange: v })}
@@ -552,26 +607,56 @@ function OptionCard({ selected, onClick, title, subtitle }: OptionCardProps) {
 
 interface PillGroupProps<T extends string | number> {
   label: string;
+  help?: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  /**
+   * Si vrai, toutes les pills occupent une largeur égale (1fr) — pratique
+   * pour les choix numériques type "segmented control" sur mobile.
+   */
+  equalWidth?: boolean;
 }
 
 function PillGroup<T extends string | number>({
   label,
+  help,
   value,
   options,
   onChange,
+  equalWidth,
 }: PillGroupProps<T>) {
   return (
-    <div className="flex flex-col gap-2">
-      <span className="text-sm font-medium" style={{ color: 'var(--muted)' }}>
-        {label}
-      </span>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col">
+        <span
+          className="text-[0.7rem] font-semibold uppercase tracking-wide"
+          style={{ color: 'var(--muted)' }}
+        >
+          {label}
+        </span>
+        {help && (
+          <span
+            className="text-xs leading-snug"
+            style={{ color: 'var(--muted)' }}
+          >
+            {help}
+          </span>
+        )}
+      </div>
       <div
         role="radiogroup"
         aria-label={label}
-        className="flex flex-wrap gap-2"
+        className={
+          equalWidth
+            ? 'grid gap-2'
+            : 'flex flex-wrap gap-2'
+        }
+        style={
+          equalWidth
+            ? { gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }
+            : undefined
+        }
       >
         {options.map(opt => {
           const isSelected = opt.value === value;
@@ -582,7 +667,7 @@ function PillGroup<T extends string | number>({
               role="radio"
               aria-checked={isSelected}
               onClick={() => onChange(opt.value)}
-              className="inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+              className={`inline-flex min-h-11 items-center justify-center rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${equalWidth ? 'w-full' : ''}`}
               style={{
                 borderColor: isSelected ? 'var(--primary)' : 'var(--border)',
                 background: isSelected ? 'var(--primary)' : 'transparent',
