@@ -1,9 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import { storage, type SavedMatch } from '../../storage';
 import type { Locale } from '../../i18n/messages';
 import { useTeamColors } from '../hooks/useTeamColors';
 import { PageContainer } from '../components/layout/PageContainer';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
   const primary = team.primary || fallback;
@@ -35,12 +37,60 @@ function formatDuration(ms: number): string {
   return `${m}:${pad(s)}`;
 }
 
+interface PlayerStat {
+  name: string;
+  wins: number;
+  total: number;
+}
+
+function computeStats(matches: SavedMatch[]): {
+  total: number;
+  topPlayer: PlayerStat | null;
+} {
+  if (matches.length === 0) return { total: 0, topPlayer: null };
+  const stats = new Map<string, PlayerStat>();
+  const bump = (name: string, won: boolean) => {
+    const key = name.trim().toLowerCase();
+    if (!key) return;
+    const existing = stats.get(key) ?? { name: name.trim(), wins: 0, total: 0 };
+    existing.total += 1;
+    if (won) existing.wins += 1;
+    stats.set(key, existing);
+  };
+  for (const m of matches) {
+    const names1 = [m.config.team1.primary, m.config.team1.partner].filter(
+      (n): n is string => !!n && n.trim().length > 0
+    );
+    const names2 = [m.config.team2.primary, m.config.team2.partner].filter(
+      (n): n is string => !!n && n.trim().length > 0
+    );
+    const winner1 = m.winner === 'team1';
+    names1.forEach(n => bump(n, winner1));
+    names2.forEach(n => bump(n, !winner1));
+  }
+  let best: PlayerStat | null = null;
+  for (const stat of stats.values()) {
+    if (stat.total < 2) continue;
+    if (
+      !best ||
+      stat.wins / stat.total > best.wins / best.total ||
+      (stat.wins / stat.total === best.wins / best.total &&
+        stat.total > best.total)
+    ) {
+      best = stat;
+    }
+  }
+  return { total: matches.length, topPlayer: best };
+}
+
 export function HistoryView() {
   const { t, locale } = useI18n();
+  const navigate = useNavigate();
   const colors = useTeamColors();
   const [matches, setMatches] = useState<SavedMatch[]>(() =>
     storage.loadHistory()
   );
+  const [clearOpen, setClearOpen] = useState(false);
 
   const refresh = useCallback(() => {
     setMatches(storage.loadHistory());
@@ -52,10 +102,21 @@ export function HistoryView() {
   };
 
   const handleClear = () => {
-    if (!window.confirm(t('history.confirmClear'))) return;
+    setClearOpen(true);
+  };
+
+  const confirmClear = () => {
     storage.clearHistory();
     refresh();
+    setClearOpen(false);
   };
+
+  const handleReplay = (m: SavedMatch) => {
+    storage.setPendingReplay(m.config);
+    navigate('/');
+  };
+
+  const stats = useMemo(() => computeStats(matches), [matches]);
 
   return (
     <PageContainer width="xl">
@@ -83,6 +144,59 @@ export function HistoryView() {
           </button>
         )}
       </header>
+
+      {matches.length > 0 && (
+        <section
+          aria-label={t('historyExtra.statsTitle')}
+          className="grid grid-cols-2 gap-3 rounded-2xl border md:grid-cols-3"
+          style={{
+            background: 'var(--surface)',
+            borderColor: 'var(--border)',
+            padding: 'clamp(0.75rem, 2.4vw, 1.25rem)',
+          }}
+        >
+          <div>
+            <p
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: 'var(--muted)' }}
+            >
+              {t('historyExtra.statsTitle')}
+            </p>
+            <p
+              className="font-bold"
+              style={{
+                color: 'var(--primary)',
+                fontSize: 'clamp(1.25rem, 4vw, 1.75rem)',
+              }}
+            >
+              {stats.total}
+            </p>
+          </div>
+          <div className="md:col-span-2">
+            <p
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: 'var(--muted)' }}
+            >
+              {t('historyExtra.statsWinRate')}
+            </p>
+            <p
+              className="font-semibold"
+              style={{
+                color: 'var(--text)',
+                fontSize: 'clamp(0.95rem, 2.6vw, 1.125rem)',
+              }}
+            >
+              {stats.topPlayer
+                ? t('historyExtra.statsTopPlayer', {
+                    name: stats.topPlayer.name,
+                    wins: stats.topPlayer.wins,
+                    total: stats.topPlayer.total,
+                  })
+                : t('historyExtra.statsNone')}
+            </p>
+          </div>
+        </section>
+      )}
 
       {matches.length === 0 ? (
         <p
@@ -177,19 +291,39 @@ export function HistoryView() {
                     )}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(match.id)}
-                  aria-label={t('history.delete')}
-                  className="flex touch-target items-center justify-center rounded-md text-base leading-none hover:bg-black/5"
-                  style={{ color: 'var(--muted)' }}
-                >
-                  ×
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleReplay(match)}
+                    aria-label={t('historyExtra.replay')}
+                    title={t('historyExtra.replay')}
+                    className="flex touch-target items-center justify-center rounded-md text-base leading-none hover:bg-black/5"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    🔁
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(match.id)}
+                    aria-label={t('history.delete')}
+                    className="flex touch-target items-center justify-center rounded-md text-base leading-none hover:bg-black/5"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    ×
+                  </button>
+                </div>
               </li>
             );
           })}
         </ul>
+      )}
+      {clearOpen && (
+        <ConfirmDialog
+          message={t('history.confirmClear')}
+          danger
+          onConfirm={confirmClear}
+          onCancel={() => setClearOpen(false)}
+        />
       )}
     </PageContainer>
   );

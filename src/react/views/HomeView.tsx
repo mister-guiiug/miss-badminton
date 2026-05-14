@@ -23,6 +23,10 @@ import { useI18n } from '../../i18n/useI18n';
 import { useFeedback, type FeedbackEvent } from '../hooks/useFeedback';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useTeamColors } from '../hooks/useTeamColors';
+import { useTapOrLongPress } from '../hooks/useTapOrLongPress';
+import { ScoreToast } from '../components/ScoreToast';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { OnboardingHint } from '../components/OnboardingHint';
 import {
   storage,
   type PersistedGameState,
@@ -144,6 +148,7 @@ type GameAction =
       totalSets: number;
       now: number;
     }
+  | { type: 'subtract'; team: ServiceSide }
   | { type: 'undo' }
   | { type: 'swap' }
   | { type: 'reset' }
@@ -269,6 +274,44 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         maxStreak2: nextMaxStreak2,
       };
     }
+    case 'subtract': {
+      if (state.matchWinner) return state;
+      const cur = action.team === 'team1' ? state.score1 : state.score2;
+      if (cur <= 0) return state;
+      const nextS1 = action.team === 'team1' ? state.score1 - 1 : state.score1;
+      const nextS2 = action.team === 'team2' ? state.score2 - 1 : state.score2;
+      // On enregistre dans l'historique pour permettre l'undo classique.
+      const baseHistory: HistoryEntry = {
+        score1: state.score1,
+        score2: state.score2,
+        setWins: state.setWins,
+        server: state.server,
+        team: action.team,
+        setEnded: false,
+        matchEnded: false,
+        setScoresLength: state.setScores.length,
+        pendingSideChange: state.pendingSideChange,
+        mid11Triggered: state.mid11Triggered,
+        startedAt: state.startedAt,
+        endedAt: state.endedAt,
+        streak1: state.streak1,
+        streak2: state.streak2,
+        maxStreak1: state.maxStreak1,
+        maxStreak2: state.maxStreak2,
+      };
+      return {
+        ...state,
+        score1: nextS1,
+        score2: nextS2,
+        // L'équipe qui perd un point ne récupère pas le service, on garde
+        // simplement l'état précédent côté serveur (ou null si égalité 0-0).
+        history: [...state.history, baseHistory],
+        pendingFeedback: 'point',
+        // Réinitialise les streaks (le point était une erreur).
+        streak1: action.team === 'team1' ? 0 : state.streak1,
+        streak2: action.team === 'team2' ? 0 : state.streak2,
+      };
+    }
     case 'undo': {
       if (state.history.length === 0) return state;
       const last = state.history[state.history.length - 1];
@@ -387,7 +430,25 @@ export function HomeView() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [team1Inverted, setTeam1Inverted] = useState(false);
   const [team2Inverted, setTeam2Inverted] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [toast, setToast] = useState<{
+    key: number;
+    message: string;
+    color: string;
+  } | null>(null);
   const savedMatchIdRef = useRef<string | null>(null);
+  const toastKeyRef = useRef(0);
+
+  // "Rejouer" depuis l'historique : ouvre le wizard pré-rempli au montage.
+  useEffect(() => {
+    const pending = storage.consumePendingReplay();
+    if (pending) {
+      setMatch(pending);
+      dispatch({ type: 'restart' });
+      setWizardOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Persist match config and game state across reloads.
   useEffect(() => {
@@ -485,6 +546,11 @@ export function HomeView() {
     t('players.partner2'),
   ]);
 
+  const showToast = useCallback((message: string, color: string) => {
+    toastKeyRef.current += 1;
+    setToast({ key: toastKeyRef.current, message, color });
+  }, []);
+
   const handleScore = useCallback(
     (which: ServiceSide) => {
       if (!match) {
@@ -501,6 +567,14 @@ export function HomeView() {
         totalSets: match.sets,
         now: Date.now(),
       });
+    },
+    [match]
+  );
+
+  const handleSubtract = useCallback(
+    (which: ServiceSide) => {
+      if (!match) return;
+      dispatch({ type: 'subtract', team: which });
     },
     [match]
   );
@@ -531,9 +605,22 @@ export function HomeView() {
   }, [match, team1Inverted, team2Inverted]);
 
   const handleReset = useCallback(() => {
+    setResetConfirmOpen(true);
+  }, []);
+
+  const confirmReset = useCallback(() => {
     dispatch({ type: 'reset' });
     savedMatchIdRef.current = null;
+    setResetConfirmOpen(false);
   }, []);
+
+  const handleRematch = useCallback(() => {
+    if (!match) return;
+    dispatch({ type: 'restart' });
+    setTeam1Inverted(false);
+    setTeam2Inverted(false);
+    savedMatchIdRef.current = null;
+  }, [match]);
 
   useKeyboardShortcuts(
     useMemo(
@@ -635,6 +722,7 @@ export function HomeView() {
     <>
       <FullscreenPrompt />
       <PwaInstallPrompt />
+      <OnboardingHint />
       <section
         aria-label={t('home.scoreboardLabel')}
         className="mb-scoreboard relative w-full overflow-hidden shadow-2xl"
@@ -644,18 +732,69 @@ export function HomeView() {
           <ScorePanel
             background={colors.team1}
             textColor="#ffffff"
-            onScore={() => handleScore('team1')}
+            onScore={() => {
+              handleScore('team1');
+              showToast(
+                t('toast.pointAdded', { name: player1Label }),
+                colors.team1
+              );
+            }}
+            onSubtract={() => {
+              if (score1 > 0) {
+                handleSubtract('team1');
+                showToast(
+                  t('toast.pointRemoved', { name: player1Label }),
+                  colors.team1
+                );
+              }
+            }}
             ariaLabel={t('scoreboard.addPoint', { name: player1Label })}
+            subtractLabel={t('scoreSubtract', { name: player1Label })}
           />
           <ScorePanel
             background={colors.team2}
             textColor="#ffffff"
-            onScore={() => handleScore('team2')}
+            onScore={() => {
+              handleScore('team2');
+              showToast(
+                t('toast.pointAdded', { name: player2Label }),
+                colors.team2
+              );
+            }}
+            onSubtract={() => {
+              if (score2 > 0) {
+                handleSubtract('team2');
+                showToast(
+                  t('toast.pointRemoved', { name: player2Label }),
+                  colors.team2
+                );
+              }
+            }}
             ariaLabel={t('scoreboard.addPoint', { name: player2Label })}
+            subtractLabel={t('scoreSubtract', { name: player2Label })}
           />
         </div>
 
-        <CourtOverlay server={server} serverScore={serverScore} />
+        <CourtOverlay
+          server={server}
+          serverScore={serverScore}
+          team1Color={colors.team1}
+          team2Color={colors.team2}
+        />
+
+        {/* Annonce vocale du score pour les lecteurs d'écran */}
+        <span className="sr-only" role="status" aria-live="polite">
+          {t('liveScore', { a: score1, b: score2 })}
+        </span>
+
+        {toast && (
+          <ScoreToast
+            key={toast.key}
+            triggerKey={toast.key}
+            message={toast.message}
+            background={toast.color}
+          />
+        )}
 
         {match && pointsTarget && (
           <SetHeader
@@ -862,6 +1001,7 @@ export function HomeView() {
             setWins={setWins}
             setScores={setScores}
             onNewMatch={() => setWizardOpen(true)}
+            onRematch={handleRematch}
             onShare={handleShare}
             canShare={
               typeof navigator !== 'undefined' &&
@@ -879,6 +1019,14 @@ export function HomeView() {
           onComplete={handleComplete}
         />
       )}
+      {resetConfirmOpen && (
+        <ConfirmDialog
+          message={t('scoreboard.reset')}
+          danger
+          onConfirm={confirmReset}
+          onCancel={() => setResetConfirmOpen(false)}
+        />
+      )}
     </>
   );
 }
@@ -887,22 +1035,35 @@ interface ScorePanelProps {
   background: string;
   textColor: string;
   ariaLabel: string;
+  subtractLabel: string;
   onScore: () => void;
+  onSubtract: () => void;
 }
 
 function ScorePanel({
   background,
   textColor,
   ariaLabel,
+  subtractLabel,
   onScore,
+  onSubtract,
 }: ScorePanelProps) {
+  const { isPressing, handlers } = useTapOrLongPress(onScore, onSubtract);
   return (
     <button
       type="button"
-      onClick={onScore}
       aria-label={ariaLabel}
+      title={`${ariaLabel} — ${subtractLabel}`}
+      {...handlers}
       className="relative h-full w-full select-none text-left transition-[filter] duration-150 active:brightness-90"
-      style={{ background, color: textColor, touchAction: 'manipulation' }}
+      style={{
+        background,
+        color: textColor,
+        touchAction: 'manipulation',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        filter: isPressing ? 'brightness(0.78)' : undefined,
+      }}
     />
   );
 }
@@ -950,7 +1111,9 @@ function ScoreDisplay({
     <span
       aria-hidden
       key={`${score}-${locale}`}
-      className="pointer-events-none absolute z-[5] select-none font-medium leading-none text-white"
+      className={`pointer-events-none absolute z-[5] select-none font-medium leading-none text-white ${
+        atMatchPoint ? 'mb-match-point-aura' : ''
+      }`}
       style={{
         top: '50%',
         [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
@@ -959,6 +1122,8 @@ function ScoreDisplay({
         fontSize: 'clamp(5rem, 22vw, 18rem)',
         letterSpacing: '-0.04em',
         textShadow: aura,
+        borderRadius: '12%',
+        padding: '0.05em',
         ['--mb-score-transform' as string]: baseTransform,
         animation: 'mb-score-pop 220ms ease-out',
       }}
@@ -1101,6 +1266,7 @@ interface MatchOverOverlayProps {
   setWins: SetWins;
   setScores: { team1: number; team2: number }[];
   onNewMatch: () => void;
+  onRematch: () => void;
   onShare: () => void;
   canShare: boolean;
 }
@@ -1110,6 +1276,7 @@ function MatchOverOverlay({
   setWins,
   setScores,
   onNewMatch,
+  onRematch,
   onShare,
   canShare,
 }: MatchOverOverlayProps) {
@@ -1133,6 +1300,7 @@ function MatchOverOverlay({
           borderColor: 'var(--border)',
           color: 'var(--text)',
           padding: 'clamp(1rem, 3.2vw, 1.75rem)',
+          animation: 'mb-match-celebration 480ms ease-out',
         }}
       >
         <p
@@ -1158,12 +1326,24 @@ function MatchOverOverlay({
             {t('matchOver.setsList', { sets: setsLine })}
           </p>
         )}
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={onRematch}
+            className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-white"
+            style={{ background: 'var(--primary)' }}
+          >
+            🔁 {t('matchOverExtra.rematch')}
+          </button>
           <button
             type="button"
             onClick={onNewMatch}
-            className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-white"
-            style={{ background: 'var(--primary)' }}
+            className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold"
+            style={{
+              background: 'var(--surface-highlight)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+            }}
           >
             {t('matchOver.newMatch')}
           </button>

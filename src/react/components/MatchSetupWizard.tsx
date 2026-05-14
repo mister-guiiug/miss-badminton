@@ -187,10 +187,46 @@ export function MatchSetupWizard({
         <StepIndicator current={step} />
 
         {step === 1 && (
-          <Step1
-            value={draft.type}
-            onChange={type => setDraft(d => ({ ...d, type }))}
-          />
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(d => ({
+                  ...d,
+                  type: 'singles',
+                  sets: 3,
+                  points: 21,
+                  cap: 30,
+                  sideChange: 'each-set',
+                }));
+                setStep(3);
+              }}
+              className="flex w-full items-center justify-between gap-3 rounded-xl border-2 border-dashed px-4 py-3 text-left transition-colors hover:bg-black/[0.03]"
+              style={{ borderColor: 'var(--primary)' }}
+            >
+              <span>
+                <span
+                  className="block text-sm font-bold"
+                  style={{ color: 'var(--primary)' }}
+                >
+                  ⚡ {t('wizardExtra.quickStart')}
+                </span>
+                <span
+                  className="block text-xs"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  {t('wizardExtra.quickStartHint')}
+                </span>
+              </span>
+              <span aria-hidden className="text-xl">
+                →
+              </span>
+            </button>
+            <Step1
+              value={draft.type}
+              onChange={type => setDraft(d => ({ ...d, type }))}
+            />
+          </>
         )}
         {step === 2 && (
           <Step2
