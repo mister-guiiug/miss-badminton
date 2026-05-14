@@ -28,7 +28,7 @@ export function SideChangeBanner({ onSwap, onDismiss }: SideChangeBannerProps) {
       <button
         type="button"
         onClick={onSwap}
-        className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
+        className="inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
         style={{ background: 'var(--primary)' }}
       >
         {t('sideChange.swapNow')}
@@ -37,7 +37,7 @@ export function SideChangeBanner({ onSwap, onDismiss }: SideChangeBannerProps) {
         type="button"
         onClick={onDismiss}
         aria-label={t('sideChange.later')}
-        className="rounded-md px-2 py-1 text-base leading-none hover:bg-white/10"
+        className="flex touch-target items-center justify-center rounded-md text-base leading-none hover:bg-white/10"
       >
         ×
       </button>

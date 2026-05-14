@@ -128,8 +128,14 @@ export function MatchSetupWizard({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center"
       role="presentation"
+      style={{
+        padding: 'max(env(safe-area-inset-top), 1rem)',
+        paddingInlineStart: 'max(env(safe-area-inset-left), 1rem)',
+        paddingInlineEnd: 'max(env(safe-area-inset-right), 1rem)',
+        paddingBlockEnd: 'max(env(safe-area-inset-bottom), 1rem)',
+      }}
     >
       <div
         className="absolute inset-0 bg-black/55"
@@ -142,8 +148,12 @@ export function MatchSetupWizard({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative z-10 flex w-full max-w-lg flex-col gap-5 rounded-2xl p-6 shadow-2xl outline-none"
-        style={{ background: 'var(--surface)', color: 'var(--text)' }}
+        className="relative z-10 flex max-h-full w-full max-w-lg flex-col gap-5 overflow-y-auto rounded-2xl shadow-2xl outline-none md:max-w-2xl"
+        style={{
+          background: 'var(--surface)',
+          color: 'var(--text)',
+          padding: 'clamp(1rem, 3.2vw, 1.75rem)',
+        }}
       >
         <header className="flex items-start justify-between gap-4">
           <div>
@@ -153,7 +163,11 @@ export function MatchSetupWizard({
             >
               {t('wizard.stepLabel', { n: step })}
             </p>
-            <h2 id={titleId} className="text-xl font-bold">
+            <h2
+              id={titleId}
+              className="font-bold"
+              style={{ fontSize: 'clamp(1.125rem, 3.2vw, 1.5rem)' }}
+            >
               {step === 1 && t('wizard.typeTitle')}
               {step === 2 && t('wizard.rulesTitle')}
               {step === 3 && t('wizard.playersTitle')}
@@ -163,7 +177,7 @@ export function MatchSetupWizard({
             type="button"
             onClick={onCancel}
             aria-label={t('wizard.closeLabel')}
-            className="rounded-md px-2 py-1 text-xl leading-none hover:bg-black/5"
+            className="flex touch-target items-center justify-center rounded-md text-xl leading-none hover:bg-black/5"
             style={{ color: 'var(--muted)' }}
           >
             ×
@@ -201,7 +215,7 @@ export function MatchSetupWizard({
             <button
               type="button"
               onClick={() => setStep(s => (s - 1) as 1 | 2 | 3)}
-              className="rounded-xl px-5 py-2 text-sm font-semibold"
+              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold"
               style={{
                 background: 'var(--surface-highlight)',
                 border: '1px solid var(--border)',
@@ -219,7 +233,7 @@ export function MatchSetupWizard({
               type="button"
               onClick={() => setStep(s => (s + 1) as 1 | 2 | 3)}
               disabled={step === 1 && !canNextStep1}
-              className="rounded-xl px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: 'var(--primary)' }}
             >
               {t('wizard.next')}
@@ -228,7 +242,7 @@ export function MatchSetupWizard({
             <button
               type="button"
               onClick={finish}
-              className="rounded-xl px-5 py-2 text-sm font-semibold text-white"
+              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-white"
               style={{ background: 'var(--primary)' }}
             >
               {t('wizard.start')}
@@ -264,7 +278,7 @@ interface Step1Props {
 function Step1({ value, onChange }: Step1Props) {
   const { t } = useI18n();
   return (
-    <fieldset className="grid grid-cols-2 gap-3">
+    <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <legend className="sr-only">{t('wizard.typeTitle')}</legend>
       <OptionCard
         selected={value === 'singles'}
@@ -518,7 +532,7 @@ function PillGroup<T extends string | number>({
               role="radio"
               aria-checked={isSelected}
               onClick={() => onChange(opt.value)}
-              className="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+              className="inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
               style={{
                 borderColor: isSelected ? 'var(--primary)' : 'var(--border)',
                 background: isSelected ? 'var(--primary)' : 'transparent',
@@ -559,7 +573,7 @@ function PlayerField({
       maxLength={40}
       list={listId}
       autoComplete="off"
-      className="rounded-xl border px-3 py-2 outline-none focus:ring-2"
+      className="min-h-11 rounded-xl border px-3 py-2 outline-none focus:ring-2"
       style={{
         background: 'var(--surface-input)',
         borderColor: 'var(--border)',

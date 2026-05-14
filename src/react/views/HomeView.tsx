@@ -637,8 +637,8 @@ export function HomeView() {
       <PwaInstallPrompt />
       <section
         aria-label={t('home.scoreboardLabel')}
-        className="relative w-full overflow-hidden shadow-2xl"
-        style={{ aspectRatio: '16 / 10', boxShadow: 'var(--shadow)' }}
+        className="mb-scoreboard relative w-full overflow-hidden shadow-2xl"
+        style={{ boxShadow: 'var(--shadow)' }}
       >
         <div className="absolute inset-0 grid grid-cols-2">
           <ScorePanel
@@ -791,18 +791,28 @@ export function HomeView() {
           <span aria-hidden>⇄</span>
         </button>
 
-        <footer className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between bg-black/55 px-4 py-2 text-white backdrop-blur-sm">
-          <span className="flex items-center gap-2 text-sm font-medium">
+        <footer
+          className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-2 bg-black/55 px-4 text-white backdrop-blur-sm"
+          style={{
+            paddingBlock: 'clamp(0.4rem, 1.2vw, 0.7rem)',
+            paddingInlineStart:
+              'max(env(safe-area-inset-left), 1rem)',
+            paddingInlineEnd: 'max(env(safe-area-inset-right), 1rem)',
+            paddingBottom:
+              'calc(env(safe-area-inset-bottom, 0px) + clamp(0.4rem, 1.2vw, 0.7rem))',
+          }}
+        >
+          <span className="flex min-w-0 items-center gap-2 truncate text-sm font-medium">
             <span aria-hidden>🏸</span>
-            {t('scoreboard.title')}
+            <span className="truncate">{t('scoreboard.title')}</span>
             <MatchDuration startedAt={startedAt} endedAt={endedAt} />
           </span>
-          <div className="flex items-center gap-3 text-base">
+          <div className="flex items-center gap-1 text-base">
             <button
               type="button"
               onClick={() => setWizardOpen(true)}
               aria-label={t('scoreboard.edit')}
-              className="rounded-md px-2 py-1 hover:bg-white/10"
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10"
             >
               <span aria-hidden>✎</span>
             </button>
@@ -811,7 +821,7 @@ export function HomeView() {
               onClick={handleUndo}
               disabled={game.history.length === 0}
               aria-label={t('scoreboard.undo')}
-              className="rounded-md px-2 py-1 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <span aria-hidden>↶</span>
             </button>
@@ -819,7 +829,7 @@ export function HomeView() {
               type="button"
               onClick={handleReset}
               aria-label={t('scoreboard.reset')}
-              className="rounded-md px-2 py-1 hover:bg-white/10"
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10"
             >
               <span aria-hidden>↺</span>
             </button>
@@ -1110,14 +1120,19 @@ function MatchOverOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={t('matchOver.label')}
-      className="absolute inset-0 z-30 flex items-center justify-center bg-black/65 px-6 backdrop-blur-sm"
+      className="absolute inset-0 z-30 flex items-center justify-center bg-black/65 backdrop-blur-sm"
+      style={{
+        paddingInline: 'clamp(1rem, 4vw, 1.5rem)',
+        paddingBlock: 'clamp(1rem, 4vw, 1.5rem)',
+      }}
     >
       <div
-        className="flex max-w-md flex-col items-center gap-3 rounded-2xl border p-6 text-center shadow-2xl"
+        className="flex max-h-full max-w-md flex-col items-center gap-3 overflow-y-auto rounded-2xl border text-center shadow-2xl"
         style={{
           background: 'var(--surface)',
           borderColor: 'var(--border)',
           color: 'var(--text)',
+          padding: 'clamp(1rem, 3.2vw, 1.75rem)',
         }}
       >
         <p
@@ -1126,7 +1141,13 @@ function MatchOverOverlay({
         >
           {t('matchOver.label')}
         </p>
-        <h2 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>
+        <h2
+          className="font-bold break-words"
+          style={{
+            color: 'var(--primary)',
+            fontSize: 'clamp(1.25rem, 4.5vw, 1.75rem)',
+          }}
+        >
           🏆 {t('matchOver.winnerText', { name: winnerLabel })}
         </h2>
         <p className="text-sm" style={{ color: 'var(--muted)' }}>
@@ -1141,7 +1162,7 @@ function MatchOverOverlay({
           <button
             type="button"
             onClick={onNewMatch}
-            className="rounded-xl px-5 py-2 text-sm font-semibold text-white"
+            className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-white"
             style={{ background: 'var(--primary)' }}
           >
             {t('matchOver.newMatch')}
@@ -1150,7 +1171,7 @@ function MatchOverOverlay({
             <button
               type="button"
               onClick={onShare}
-              className="rounded-xl px-5 py-2 text-sm font-semibold"
+              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold"
               style={{
                 background: 'var(--surface-highlight)',
                 border: '1px solid var(--border)',

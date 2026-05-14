@@ -15,6 +15,7 @@ import {
   setTeamColor,
 } from '../../team-colors';
 import { forceAppUpdate } from '../../register-sw';
+import { PageContainer } from '../components/layout/PageContainer';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 
@@ -54,8 +55,14 @@ export function SettingsView() {
   };
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 px-4 py-16">
-      <h1 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>
+    <PageContainer width="lg">
+      <h1
+        className="font-bold"
+        style={{
+          color: 'var(--primary)',
+          fontSize: 'clamp(1.5rem, 4.5vw, 2.25rem)',
+        }}
+      >
         {t('nav.settings')}
       </h1>
 
@@ -99,7 +106,7 @@ export function SettingsView() {
             <button
               type="button"
               onClick={resetTeamColors}
-              className="rounded-lg border px-3 py-1.5 text-xs font-semibold"
+              className="inline-flex min-h-9 items-center rounded-lg border px-3 py-1.5 text-xs font-semibold"
               style={{
                 borderColor: 'var(--border)',
                 color: 'var(--muted)',
@@ -142,7 +149,7 @@ export function SettingsView() {
           type="button"
           onClick={handleForceUpdate}
           disabled={updating}
-          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           style={{ background: 'var(--primary)' }}
         >
           <span aria-hidden>{updating ? '⟳' : '⤓'}</span>
@@ -159,7 +166,7 @@ export function SettingsView() {
           <li>{t('shortcuts.swap')}</li>
         </ul>
       </Section>
-    </div>
+    </PageContainer>
   );
 }
 
@@ -174,10 +181,11 @@ function Section({
 }) {
   return (
     <section
-      className="space-y-3 rounded-2xl border p-4"
+      className="space-y-3 rounded-2xl border"
       style={{
         background: 'var(--surface)',
         borderColor: 'var(--border)',
+        padding: 'clamp(0.75rem, 2.4vw, 1.25rem)',
       }}
     >
       <h2
@@ -224,7 +232,7 @@ function Pills<T extends string>({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(opt.value)}
-            className="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+            className="inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
             style={{
               borderColor: selected ? 'var(--primary)' : 'var(--border)',
               background: selected ? 'var(--primary)' : 'transparent',
@@ -261,7 +269,7 @@ function Toggle({
       aria-checked={value}
       aria-label={ariaLabel}
       onClick={() => onChange(!value)}
-      className="inline-flex items-center gap-3 rounded-full border px-3 py-1.5"
+      className="inline-flex min-h-11 items-center gap-3 rounded-full border px-3 py-1.5"
       style={{
         borderColor: value ? 'var(--primary)' : 'var(--border)',
         background: value ? 'var(--primary)' : 'transparent',

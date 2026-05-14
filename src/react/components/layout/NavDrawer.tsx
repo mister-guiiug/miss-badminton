@@ -44,7 +44,7 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
         aria-modal="true"
         aria-label={t('nav.menuLabel')}
         tabIndex={-1}
-        className="relative z-10 flex h-full w-80 max-w-[85vw] flex-col gap-4 p-5 shadow-2xl outline-none"
+        className="relative z-10 flex h-full w-80 max-w-[85vw] flex-col gap-4 p-5 pt-safe pb-safe pl-safe shadow-2xl outline-none"
         style={{ background: 'var(--surface)', color: 'var(--text)' }}
       >
         <header className="flex items-center justify-between">
@@ -58,7 +58,7 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
             type="button"
             onClick={onClose}
             aria-label={t('nav.closeMenu')}
-            className="rounded-md px-2 py-1 text-xl leading-none hover:bg-black/5"
+            className="flex touch-target items-center justify-center rounded-md text-xl leading-none hover:bg-black/5"
             style={{ color: 'var(--muted)' }}
           >
             ×
@@ -73,7 +73,7 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
               end={route.end}
               onClick={onClose}
               className={({ isActive }) =>
-                `rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                `flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive ? '' : 'hover:bg-black/5'
                 }`
               }
@@ -106,7 +106,7 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
                   type="button"
                   onClick={() => setLocale(l)}
                   aria-pressed={selected}
-                  className="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                  className="inline-flex min-h-9 items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
                   style={{
                     borderColor: selected ? 'var(--primary)' : 'var(--border)',
                     background: selected ? 'var(--primary)' : 'transparent',
