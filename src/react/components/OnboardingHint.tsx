@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useI18n } from '../../i18n/useI18n';
+import { Logo } from './Logo';
 
 const STORAGE_KEY = 'mb_onboarded_v1';
 
@@ -70,13 +71,14 @@ export function OnboardingHint() {
       >
         <h2
           id={titleId}
-          className="font-bold"
+          className="inline-flex items-center gap-2 font-bold"
           style={{
             color: 'var(--primary)',
             fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
           }}
         >
-          {t('onboarding.title')}
+          <Logo size={36} />
+          {t('onboarding.title').replace(/\s*🏸\s*/, '').trim()}
         </h2>
         <ul
           className="space-y-2 text-sm leading-snug"

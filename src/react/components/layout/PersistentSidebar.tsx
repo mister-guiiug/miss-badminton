@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '../../../i18n/useI18n';
+import { Logo } from '../Logo';
 
 const ROUTES = [
   { to: '/', end: true, key: 'nav.home' as const, icon: '🏠' },
@@ -27,10 +28,11 @@ export function PersistentSidebar() {
       }}
     >
       <div
-        className="mb-2 px-3 text-lg font-bold"
+        className="mb-2 inline-flex items-center gap-2 px-3 text-lg font-bold"
         style={{ color: 'var(--primary)' }}
       >
-        🏸 {t('appName')}
+        <Logo size={32} />
+        {t('appName')}
       </div>
       <nav className="flex flex-col gap-1">
         {ROUTES.map(route => (

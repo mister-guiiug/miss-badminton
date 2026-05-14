@@ -1,0 +1,27 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  role="img"
+  aria-label="Miss Badminton"
+>
+  <defs>
+    <linearGradient id="fav-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="16" fill="url(#fav-bg)" />
+
+  <!-- Version simplifiée pour petites tailles (favicons 16/32 px) -->
+  <g transform="rotate(-22 32 34)">
+    <g fill="#ffffff" stroke="#e2e8f0" stroke-width="0.6">
+      <path d="M 32 40 L 18 16 L 23 14 Z" />
+      <path d="M 32 40 L 25 12 L 30 11 Z" />
+      <path d="M 32 40 L 30 10 L 34 10 Z" />
+      <path d="M 32 40 L 34 11 L 39 12 Z" />
+      <path d="M 32 40 L 41 14 L 46 16 Z" />
+    </g>
+    <ellipse cx="32" cy="46" rx="7" ry="6" fill="#fde68a" stroke="#b45309" stroke-width="1.4" />
+  </g>
+</svg>
