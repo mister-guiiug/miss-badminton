@@ -8,6 +8,13 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   es: 'Español',
 };
 
+/** Drapeaux affichés à la place du nom de langue dans les sélecteurs. */
+export const LOCALE_FLAGS: Record<Locale, string> = {
+  fr: '🇫🇷',
+  en: '🇬🇧',
+  es: '🇪🇸',
+};
+
 export interface Messages {
   appName: string;
   nav: {
