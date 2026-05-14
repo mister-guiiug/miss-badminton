@@ -29,6 +29,8 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
 import {
+  ArrowLeftRightIcon,
+  ArrowUpDownIcon,
   FlameIcon,
   HomeIcon,
   PauseIcon,
@@ -491,6 +493,7 @@ export function HomeView() {
   const [team1Inverted, setTeam1Inverted] = useState(false);
   const [team2Inverted, setTeam2Inverted] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [resetChronoConfirmOpen, setResetChronoConfirmOpen] = useState(false);
   const [toast, setToast] = useState<{
     key: number;
     message: string;
@@ -596,7 +599,10 @@ export function HomeView() {
     fallbacks: [string, string]
   ): { top: string; bottom: string } {
     if (!team || !team.partner) {
-      return { top: '', bottom: team?.primary || fallbacks[0] };
+      // Doubles avec partner manquant : on ne montre PAS de fallback —
+      // seule la pastille du bas reste visible (avec son icône ↕), sans
+      // texte tant que rien n'est saisi.
+      return { top: '', bottom: team?.primary ?? '' };
     }
     const primary = team.primary || fallbacks[0];
     const partner = team.partner || fallbacks[1];
@@ -710,7 +716,12 @@ export function HomeView() {
   }, [game.pausedAt]);
 
   const handleResetChrono = useCallback(() => {
+    setResetChronoConfirmOpen(true);
+  }, []);
+
+  const confirmResetChrono = useCallback(() => {
     dispatch({ type: 'resetChrono', now: Date.now() });
+    setResetChronoConfirmOpen(false);
   }, []);
 
   useKeyboardShortcuts(
@@ -945,14 +956,16 @@ export function HomeView() {
 
         {isDoubles ? (
           <>
-            <LabelDisplay
-              side="left"
-              position="top"
-              label={team1Pair.top}
-              background={colors.team1}
-              onSwap={() => setTeam1Inverted(s => !s)}
-              swapLabel={t('scoreboard.invertPlayers')}
-            />
+            {team1Pair.top && (
+              <LabelDisplay
+                side="left"
+                position="top"
+                label={team1Pair.top}
+                background={colors.team1}
+                onSwap={() => setTeam1Inverted(s => !s)}
+                swapLabel={t('scoreboard.invertPlayers')}
+              />
+            )}
             <LabelDisplay
               side="left"
               position="bottom"
@@ -961,14 +974,16 @@ export function HomeView() {
               onSwap={() => setTeam1Inverted(s => !s)}
               swapLabel={t('scoreboard.invertPlayers')}
             />
-            <LabelDisplay
-              side="right"
-              position="top"
-              label={team2Pair.top}
-              background={colors.team2}
-              onSwap={() => setTeam2Inverted(s => !s)}
-              swapLabel={t('scoreboard.invertPlayers')}
-            />
+            {team2Pair.top && (
+              <LabelDisplay
+                side="right"
+                position="top"
+                label={team2Pair.top}
+                background={colors.team2}
+                onSwap={() => setTeam2Inverted(s => !s)}
+                swapLabel={t('scoreboard.invertPlayers')}
+              />
+            )}
             <LabelDisplay
               side="right"
               position="bottom"
@@ -1016,10 +1031,10 @@ export function HomeView() {
           type="button"
           onClick={handleSwap}
           aria-label={t('scoreboard.swap')}
-          className="absolute left-1/2 top-1/2 z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xl font-bold shadow-lg ring-2 ring-black/10 transition-transform hover:scale-105 active:scale-95 sm:h-14 sm:w-14 sm:text-2xl"
+          className="absolute left-1/2 top-1/2 z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-lg ring-2 ring-black/10 transition-transform hover:scale-105 active:scale-95 sm:h-14 sm:w-14"
           style={{ background: '#ffffff', color: '#1f2937' }}
         >
-          <span aria-hidden>⇄</span>
+          <ArrowLeftRightIcon size={24} strokeWidth={2.4} />
         </button>
 
         {pendingSideChange && !matchWinner && (
@@ -1121,6 +1136,14 @@ export function HomeView() {
           danger
           onConfirm={confirmReset}
           onCancel={() => setResetConfirmOpen(false)}
+        />
+      )}
+      {resetChronoConfirmOpen && (
+        <ConfirmDialog
+          message={t('scoreboard.confirmResetChrono')}
+          danger
+          onConfirm={confirmResetChrono}
+          onCancel={() => setResetChronoConfirmOpen(false)}
         />
       )}
     </>
@@ -1322,9 +1345,9 @@ function LabelDisplay({
         className="absolute z-[6] flex max-w-[42%] cursor-pointer select-none items-center gap-1 truncate font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-white/70"
         style={styling}
       >
-        <span className="truncate">{label}</span>
-        <span aria-hidden className="opacity-80" style={{ fontSize: '0.6em' }}>
-          ↕
+        {label && <span className="truncate">{label}</span>}
+        <span aria-hidden className="opacity-80">
+          <ArrowUpDownIcon size={16} />
         </span>
       </button>
     );
@@ -1523,6 +1546,10 @@ function MatchDuration({
 
   useEffect(() => {
     if (!isRunning) return;
+    // Rafraîchit `now` immédiatement (sinon, à la reprise après pause,
+    // la valeur reste périmée pendant max 1 s et l'écoulement affiché
+    // est faussé jusqu'au prochain tick).
+    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [isRunning]);
