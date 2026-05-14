@@ -59,6 +59,9 @@ export interface Messages {
     invertPlayers: string;
     streak: string;
     duration: string;
+    pauseChrono: string;
+    resumeChrono: string;
+    resetChrono: string;
   };
   sideChange: {
     title: string;
@@ -257,6 +260,9 @@ const fr: Messages = {
     invertPlayers: 'Intervertir haut et bas',
     streak: '{n} d’affilée',
     duration: 'Durée',
+    pauseChrono: 'Mettre le chrono en pause',
+    resumeChrono: 'Reprendre le chrono',
+    resetChrono: 'Remettre le chrono à zéro',
   },
   sideChange: {
     title: 'Changement de côté',
@@ -457,6 +463,9 @@ const en: Messages = {
     invertPlayers: 'Swap top and bottom',
     streak: '{n} in a row',
     duration: 'Duration',
+    pauseChrono: 'Pause the timer',
+    resumeChrono: 'Resume the timer',
+    resetChrono: 'Reset the timer to zero',
   },
   sideChange: {
     title: 'Change ends',
@@ -655,6 +664,9 @@ const es: Messages = {
     invertPlayers: 'Intercambiar arriba y abajo',
     streak: '{n} seguidos',
     duration: 'Duración',
+    pauseChrono: 'Pausar el cronómetro',
+    resumeChrono: 'Reanudar el cronómetro',
+    resetChrono: 'Reiniciar el cronómetro',
   },
   sideChange: {
     title: 'Cambio de lado',

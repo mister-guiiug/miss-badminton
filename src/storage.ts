@@ -23,6 +23,8 @@ export interface PersistedGameState {
   mid11Triggered: boolean;
   startedAt: number | null;
   endedAt: number | null;
+  pausedAt?: number | null;
+  totalPausedMs?: number;
   streak1: number;
   streak2: number;
   maxStreak1: number;
