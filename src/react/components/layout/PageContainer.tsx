@@ -32,8 +32,10 @@ export function PageContainer({
       style={{
         paddingInlineStart: 'max(env(safe-area-inset-left), 1rem)',
         paddingInlineEnd: 'max(env(safe-area-inset-right), 1rem)',
+        // Min 4.5rem (72 px) sur mobile : le bouton menu burger fait 12 + 44
+        // = 56 px de haut, on garde 16 px de marge sous lui.
         paddingBlockStart:
-          'calc(env(safe-area-inset-top, 0px) + clamp(3rem, 8vw, 4rem))',
+          'calc(env(safe-area-inset-top, 0px) + clamp(4.5rem, 10vw, 5rem))',
         paddingBlockEnd:
           'calc(env(safe-area-inset-bottom, 0px) + clamp(2rem, 6vw, 3rem))',
       }}

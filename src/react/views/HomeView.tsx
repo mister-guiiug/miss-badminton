@@ -27,12 +27,17 @@ import { useTapOrLongPress } from '../hooks/useTapOrLongPress';
 import { ScoreToast } from '../components/ScoreToast';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { OnboardingHint } from '../components/OnboardingHint';
+import { Logo } from '../components/Logo';
 import {
+  FlameIcon,
   HomeIcon,
+  PauseIcon,
   PencilIcon,
+  PlayIcon,
   RotateCcwIcon,
   RotateCwIcon,
   Share2Icon,
+  TimerResetIcon,
   TrophyIcon,
   Undo2Icon,
 } from '../components/icons';
@@ -101,6 +106,10 @@ interface GameState {
   lastSetSummary: { winner: ServiceSide; a: number; b: number } | null;
   startedAt: number | null;
   endedAt: number | null;
+  /** Timestamp où le chrono est mis en pause (null = actif). */
+  pausedAt: number | null;
+  /** Cumul de temps passé en pause depuis startedAt (ms). */
+  totalPausedMs: number;
   streak1: number;
   streak2: number;
   maxStreak1: number;
@@ -120,6 +129,8 @@ interface HistoryEntry {
   mid11Triggered: boolean;
   startedAt: number | null;
   endedAt: number | null;
+  pausedAt: number | null;
+  totalPausedMs: number;
   streak1: number;
   streak2: number;
   maxStreak1: number;
@@ -140,6 +151,8 @@ const INITIAL_GAME_STATE: GameState = {
   lastSetSummary: null,
   startedAt: null,
   endedAt: null,
+  pausedAt: null,
+  totalPausedMs: 0,
   streak1: 0,
   streak2: 0,
   maxStreak1: 0,
@@ -165,6 +178,9 @@ type GameAction =
   | { type: 'dismissSideChange' }
   | { type: 'clearFeedback' }
   | { type: 'clearSetSummary' }
+  | { type: 'pauseChrono'; now: number }
+  | { type: 'resumeChrono'; now: number }
+  | { type: 'resetChrono'; now: number }
   | { type: 'hydrate'; state: PersistedGameState };
 
 function flipSide(side: ServiceSide | null): ServiceSide | null {
@@ -196,6 +212,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         mid11Triggered: state.mid11Triggered,
         startedAt: state.startedAt,
         endedAt: state.endedAt,
+        pausedAt: state.pausedAt,
+        totalPausedMs: state.totalPausedMs,
         streak1: state.streak1,
         streak2: state.streak2,
         maxStreak1: state.maxStreak1,
@@ -249,6 +267,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           },
           startedAt,
           endedAt: matchEnded ? action.now : null,
+          pausedAt: state.pausedAt,
+          totalPausedMs: state.totalPausedMs,
           streak1: 0,
           streak2: 0,
           maxStreak1: nextMaxStreak1,
@@ -303,6 +323,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         mid11Triggered: state.mid11Triggered,
         startedAt: state.startedAt,
         endedAt: state.endedAt,
+        pausedAt: state.pausedAt,
+        totalPausedMs: state.totalPausedMs,
         streak1: state.streak1,
         streak2: state.streak2,
         maxStreak1: state.maxStreak1,
@@ -338,6 +360,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         lastSetSummary: null,
         startedAt: last.startedAt,
         endedAt: last.endedAt,
+        pausedAt: last.pausedAt,
+        totalPausedMs: last.totalPausedMs,
         streak1: last.streak1,
         streak2: last.streak2,
         maxStreak1: last.maxStreak1,
@@ -368,6 +392,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           : null,
         startedAt: state.startedAt,
         endedAt: state.endedAt,
+        pausedAt: state.pausedAt,
+        totalPausedMs: state.totalPausedMs,
         streak1: state.streak2,
         streak2: state.streak1,
         maxStreak1: state.maxStreak2,
@@ -385,6 +411,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, pendingFeedback: null };
     case 'clearSetSummary':
       return { ...state, lastSetSummary: null };
+    case 'pauseChrono': {
+      if (state.pausedAt !== null) return state; // déjà en pause
+      if (state.startedAt === null) return state; // chrono pas démarré
+      if (state.endedAt !== null) return state; // match terminé
+      return { ...state, pausedAt: action.now };
+    }
+    case 'resumeChrono': {
+      if (state.pausedAt === null) return state;
+      const pausedDuration = action.now - state.pausedAt;
+      return {
+        ...state,
+        pausedAt: null,
+        totalPausedMs: state.totalPausedMs + Math.max(0, pausedDuration),
+      };
+    }
+    case 'resetChrono': {
+      // Remet le chrono à 0 (en gardant l'état du match).
+      // Si pause active, on garde la pause (chrono à 0 et en pause).
+      return {
+        ...state,
+        startedAt: state.startedAt === null ? null : action.now,
+        totalPausedMs: 0,
+        pausedAt: state.pausedAt === null ? null : action.now,
+      };
+    }
     case 'hydrate':
       return {
         ...INITIAL_GAME_STATE,
@@ -481,6 +532,8 @@ export function HomeView() {
         mid11Triggered: game.mid11Triggered,
         startedAt,
         endedAt,
+        pausedAt: game.pausedAt,
+        totalPausedMs: game.totalPausedMs,
         streak1,
         streak2,
         maxStreak1,
@@ -502,6 +555,8 @@ export function HomeView() {
     game.mid11Triggered,
     startedAt,
     endedAt,
+    game.pausedAt,
+    game.totalPausedMs,
     streak1,
     streak2,
     maxStreak1,
@@ -646,6 +701,18 @@ export function HomeView() {
     savedMatchIdRef.current = null;
   }, []);
 
+  const handleToggleChrono = useCallback(() => {
+    if (game.pausedAt !== null) {
+      dispatch({ type: 'resumeChrono', now: Date.now() });
+    } else {
+      dispatch({ type: 'pauseChrono', now: Date.now() });
+    }
+  }, [game.pausedAt]);
+
+  const handleResetChrono = useCallback(() => {
+    dispatch({ type: 'resetChrono', now: Date.now() });
+  }, []);
+
   useKeyboardShortcuts(
     useMemo(
       () => ({
@@ -747,6 +814,7 @@ export function HomeView() {
       <FullscreenPrompt />
       <PwaInstallPrompt />
       <OnboardingHint />
+      <div className="mb-scoreboard-wrap relative w-full">
       <section
         aria-label={t('home.scoreboardLabel')}
         className="mb-scoreboard relative w-full overflow-hidden shadow-2xl"
@@ -954,51 +1022,6 @@ export function HomeView() {
           <span aria-hidden>⇄</span>
         </button>
 
-        <footer
-          className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-2 bg-black/55 px-4 text-white backdrop-blur-sm"
-          style={{
-            paddingBlock: 'clamp(0.4rem, 1.2vw, 0.7rem)',
-            paddingInlineStart:
-              'max(env(safe-area-inset-left), 1rem)',
-            paddingInlineEnd: 'max(env(safe-area-inset-right), 1rem)',
-            paddingBottom:
-              'calc(env(safe-area-inset-bottom, 0px) + clamp(0.4rem, 1.2vw, 0.7rem))',
-          }}
-        >
-          <span className="flex min-w-0 items-center gap-2 truncate text-sm font-medium">
-            <span aria-hidden>🏸</span>
-            <span className="truncate">{t('scoreboard.title')}</span>
-            <MatchDuration startedAt={startedAt} endedAt={endedAt} />
-          </span>
-          <div className="flex items-center gap-1 text-base">
-            <button
-              type="button"
-              onClick={() => setWizardOpen(true)}
-              aria-label={t('scoreboard.edit')}
-              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10"
-            >
-              <PencilIcon size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={handleUndo}
-              disabled={game.history.length === 0}
-              aria-label={t('scoreboard.undo')}
-              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Undo2Icon size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              aria-label={t('scoreboard.reset')}
-              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10"
-            >
-              <RotateCcwIcon size={18} />
-            </button>
-          </div>
-        </footer>
-
         {pendingSideChange && !matchWinner && (
           <SideChangeBanner
             onSwap={() => {
@@ -1036,6 +1059,54 @@ export function HomeView() {
           />
         )}
       </section>
+
+        <footer className="mb-scoreboard-footer flex items-center justify-between gap-2 bg-black/55 px-4 text-white backdrop-blur-sm">
+          <span className="flex min-w-0 items-center gap-2 truncate text-sm font-medium">
+            <Logo size={18} />
+            <span className="hidden truncate sm:inline">
+              {t('scoreboard.title')}
+            </span>
+            <MatchDuration
+              startedAt={startedAt}
+              endedAt={endedAt}
+              pausedAt={game.pausedAt}
+              totalPausedMs={game.totalPausedMs}
+              onToggle={handleToggleChrono}
+              onReset={handleResetChrono}
+              pauseLabel={t('scoreboard.pauseChrono')}
+              resumeLabel={t('scoreboard.resumeChrono')}
+              resetLabel={t('scoreboard.resetChrono')}
+            />
+          </span>
+          <div className="flex items-center gap-1 text-base">
+            <button
+              type="button"
+              onClick={() => setWizardOpen(true)}
+              aria-label={t('scoreboard.edit')}
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10"
+            >
+              <PencilIcon size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={game.history.length === 0}
+              aria-label={t('scoreboard.undo')}
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Undo2Icon size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              aria-label={t('scoreboard.reset')}
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10"
+            >
+              <RotateCcwIcon size={18} />
+            </button>
+          </div>
+        </footer>
+      </div>
 
       {wizardOpen && (
         <MatchSetupWizard
@@ -1415,6 +1486,13 @@ function MatchOverOverlay({
 interface MatchDurationProps {
   startedAt: number | null;
   endedAt: number | null;
+  pausedAt: number | null;
+  totalPausedMs: number;
+  onToggle: () => void;
+  onReset: () => void;
+  pauseLabel: string;
+  resumeLabel: string;
+  resetLabel: string;
 }
 
 function formatDuration(ms: number): string {
@@ -1427,24 +1505,62 @@ function formatDuration(ms: number): string {
   return `${m}:${pad(s)}`;
 }
 
-function MatchDuration({ startedAt, endedAt }: MatchDurationProps) {
+function MatchDuration({
+  startedAt,
+  endedAt,
+  pausedAt,
+  totalPausedMs,
+  onToggle,
+  onReset,
+  pauseLabel,
+  resumeLabel,
+  resetLabel,
+}: MatchDurationProps) {
   const [now, setNow] = useState(() => Date.now());
+  const isPaused = pausedAt !== null;
+  const isFinished = endedAt !== null;
+  const isRunning = !!startedAt && !isPaused && !isFinished;
 
   useEffect(() => {
-    if (!startedAt || endedAt) return;
+    if (!isRunning) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, [startedAt, endedAt]);
+  }, [isRunning]);
 
   if (!startedAt) return null;
-  const elapsed = (endedAt ?? now) - startedAt;
+  const cursor = isFinished ? endedAt! : isPaused ? pausedAt! : now;
+  const elapsed = cursor - startedAt - totalPausedMs;
   return (
-    <span
-      aria-hidden
-      className="ml-2 inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium tabular-nums opacity-90"
-    >
-      <span aria-hidden>⏱</span>
-      {formatDuration(elapsed)}
+    <span className="ml-2 inline-flex items-center gap-1">
+      <span
+        aria-live="off"
+        className={`inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium tabular-nums ${isPaused ? 'opacity-60' : 'opacity-90'}`}
+      >
+        <span aria-hidden>⏱</span>
+        {formatDuration(elapsed)}
+      </span>
+      {!isFinished && (
+        <>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={isPaused ? resumeLabel : pauseLabel}
+            title={isPaused ? resumeLabel : pauseLabel}
+            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
+          >
+            {isPaused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            aria-label={resetLabel}
+            title={resetLabel}
+            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
+          >
+            <TimerResetIcon size={14} />
+          </button>
+        </>
+      )}
     </span>
   );
 }
@@ -1458,15 +1574,18 @@ function StreakBadge({ side, label }: StreakBadgeProps) {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute z-[5] flex select-none items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md sm:text-sm"
+      className="pointer-events-none absolute z-[6] flex select-none items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md sm:text-sm"
       style={{
-        top: '78%',
+        // Placé au-dessus des deux positions possibles du rond de service
+        // (cy=55 ≈ 27% et cy=145 ≈ 64-72% selon le letterbox du court SVG),
+        // juste sous le compteur de sets (top:18%).
+        top: '25%',
         [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
         transform: `translateX(${side === 'left' ? '-50%' : '50%'})`,
         background: 'rgba(0,0,0,0.55)',
       }}
     >
-      <span aria-hidden>🔥</span>
+      <FlameIcon size={14} />
       {label}
     </span>
   );

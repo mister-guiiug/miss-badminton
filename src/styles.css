@@ -143,6 +143,33 @@ body {
   aspect-ratio: 16 / 10;
 }
 
+/* Footer du scoreboard
+   - Mobile (< 768px) : overlay absolu en bas du terrain
+   - Tablette/desktop (≥ 768px) : sous le terrain (flux normal) */
+.mb-scoreboard-footer {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 10;
+  padding-block: clamp(0.4rem, 1.2vw, 0.7rem);
+  padding-inline-start: max(env(safe-area-inset-left), 1rem);
+  padding-inline-end: max(env(safe-area-inset-right), 1rem);
+  padding-bottom: calc(
+    env(safe-area-inset-bottom, 0px) + clamp(0.4rem, 1.2vw, 0.7rem)
+  );
+}
+
+@media (min-width: 768px) {
+  .mb-scoreboard-footer {
+    position: static;
+    border-bottom-left-radius: 0.75rem;
+    border-bottom-right-radius: 0.75rem;
+  }
+  .mb-scoreboard-wrap {
+    margin-inline: auto;
+  }
+}
+
 /* Téléphones en portrait : on troque l'aspect 16/10 contre un format
    plus carré et on remplit l'espace vertical disponible. */
 @media (orientation: portrait) {
@@ -152,13 +179,14 @@ body {
   }
 }
 
-/* Tablette et plus en paysage : on borne la hauteur pour éviter
-   un scoreboard qui déborde verticalement, et on centre. */
+/* Tablette et plus en paysage : on borne la hauteur du *wrapper* pour
+   conserver le scoreboard + footer dans le viewport, et on centre. */
 @media (orientation: landscape) and (min-width: 768px) {
+  .mb-scoreboard-wrap {
+    max-width: min(100%, calc(1.6 * (100svh - env(safe-area-inset-top, 0px) - 3rem)));
+  }
   .mb-scoreboard {
-    max-height: calc(100svh - env(safe-area-inset-top, 0px));
-    margin-inline: auto;
-    max-width: min(100%, calc(1.6 * (100svh - env(safe-area-inset-top, 0px))));
+    max-height: calc(100svh - env(safe-area-inset-top, 0px) - 3rem);
   }
 }
 
