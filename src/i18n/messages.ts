@@ -195,6 +195,7 @@ export interface Messages {
   };
   matchOverExtra: {
     rematch: string;
+    backHome: string;
   };
   wizardExtra: {
     quickStart: string;
@@ -388,6 +389,7 @@ const fr: Messages = {
   },
   matchOverExtra: {
     rematch: 'Rejouer',
+    backHome: 'Retour à l’accueil',
   },
   wizardExtra: {
     quickStart: 'Match standard',
@@ -579,6 +581,7 @@ const en: Messages = {
   },
   matchOverExtra: {
     rematch: 'Rematch',
+    backHome: 'Back to home',
   },
   wizardExtra: {
     quickStart: 'Standard match',
@@ -772,6 +775,7 @@ const es: Messages = {
   },
   matchOverExtra: {
     rematch: 'Revancha',
+    backHome: 'Volver al inicio',
   },
   wizardExtra: {
     quickStart: 'Partido estándar',

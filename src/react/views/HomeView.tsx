@@ -28,6 +28,15 @@ import { ScoreToast } from '../components/ScoreToast';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { OnboardingHint } from '../components/OnboardingHint';
 import {
+  HomeIcon,
+  PencilIcon,
+  RotateCcwIcon,
+  RotateCwIcon,
+  Share2Icon,
+  TrophyIcon,
+  Undo2Icon,
+} from '../components/icons';
+import {
   storage,
   type PersistedGameState,
   type SavedMatch,
@@ -627,6 +636,19 @@ export function HomeView() {
     savedMatchIdRef.current = null;
   }, [match]);
 
+  /**
+   * "Retour à l'accueil" depuis le MatchOverOverlay : on efface le match en
+   * cours et on réinitialise le scoreboard. L'overlay se ferme automatiquement
+   * (matchWinner devient null après reset).
+   */
+  const handleBackHome = useCallback(() => {
+    setMatch(null);
+    dispatch({ type: 'reset' });
+    setTeam1Inverted(false);
+    setTeam2Inverted(false);
+    savedMatchIdRef.current = null;
+  }, []);
+
   useKeyboardShortcuts(
     useMemo(
       () => ({
@@ -958,7 +980,7 @@ export function HomeView() {
               aria-label={t('scoreboard.edit')}
               className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10"
             >
-              <span aria-hidden>✎</span>
+              <PencilIcon size={18} />
             </button>
             <button
               type="button"
@@ -967,7 +989,7 @@ export function HomeView() {
               aria-label={t('scoreboard.undo')}
               className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <span aria-hidden>↶</span>
+              <Undo2Icon size={18} />
             </button>
             <button
               type="button"
@@ -975,7 +997,7 @@ export function HomeView() {
               aria-label={t('scoreboard.reset')}
               className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-white/10"
             >
-              <span aria-hidden>↺</span>
+              <RotateCcwIcon size={18} />
             </button>
           </div>
         </footer>
@@ -1007,6 +1029,7 @@ export function HomeView() {
             setScores={setScores}
             onNewMatch={() => setWizardOpen(true)}
             onRematch={handleRematch}
+            onBackHome={handleBackHome}
             onShare={handleShare}
             canShare={
               typeof navigator !== 'undefined' &&
@@ -1273,6 +1296,7 @@ interface MatchOverOverlayProps {
   setScores: { team1: number; team2: number }[];
   onNewMatch: () => void;
   onRematch: () => void;
+  onBackHome: () => void;
   onShare: () => void;
   canShare: boolean;
 }
@@ -1283,6 +1307,7 @@ function MatchOverOverlay({
   setScores,
   onNewMatch,
   onRematch,
+  onBackHome,
   onShare,
   canShare,
 }: MatchOverOverlayProps) {
@@ -1316,13 +1341,14 @@ function MatchOverOverlay({
           {t('matchOver.label')}
         </p>
         <h2
-          className="font-bold break-words"
+          className="inline-flex items-center justify-center gap-2 break-words font-bold"
           style={{
             color: 'var(--primary)',
             fontSize: 'clamp(1.25rem, 4.5vw, 1.75rem)',
           }}
         >
-          🏆 {t('matchOver.winnerText', { name: winnerLabel })}
+          <TrophyIcon size={28} aria-hidden />
+          <span>{t('matchOver.winnerText', { name: winnerLabel })}</span>
         </h2>
         <p className="text-sm" style={{ color: 'var(--muted)' }}>
           {t('matchOver.score', { a: setWins.team1, b: setWins.team2 })}
@@ -1336,34 +1362,50 @@ function MatchOverOverlay({
           <button
             type="button"
             onClick={onRematch}
-            className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-white"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white"
             style={{ background: 'var(--primary)' }}
           >
-            🔁 {t('matchOverExtra.rematch')}
+            <RotateCwIcon size={16} />
+            {t('matchOverExtra.rematch')}
           </button>
           <button
             type="button"
             onClick={onNewMatch}
-            className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold"
             style={{
               background: 'var(--surface-highlight)',
               border: '1px solid var(--border)',
               color: 'var(--text)',
             }}
           >
+            <PencilIcon size={16} />
             {t('matchOver.newMatch')}
+          </button>
+          <button
+            type="button"
+            onClick={onBackHome}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold"
+            style={{
+              background: 'var(--surface-highlight)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+            }}
+          >
+            <HomeIcon size={16} />
+            {t('matchOverExtra.backHome')}
           </button>
           {canShare && (
             <button
               type="button"
               onClick={onShare}
-              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold"
               style={{
                 background: 'var(--surface-highlight)',
                 border: '1px solid var(--border)',
                 color: 'var(--text)',
               }}
             >
+              <Share2Icon size={16} />
               {t('matchOver.share')}
             </button>
           )}

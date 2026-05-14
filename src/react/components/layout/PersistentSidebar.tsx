@@ -1,11 +1,22 @@
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '../../../i18n/useI18n';
 import { Logo } from '../Logo';
+import { HistoryIcon, HomeIcon, SettingsIcon } from '../icons';
 
 const ROUTES = [
-  { to: '/', end: true, key: 'nav.home' as const, icon: '🏠' },
-  { to: '/historique', end: false, key: 'nav.history' as const, icon: '🗒' },
-  { to: '/parametres', end: false, key: 'nav.settings' as const, icon: '⚙' },
+  { to: '/', end: true, key: 'nav.home' as const, Icon: HomeIcon },
+  {
+    to: '/historique',
+    end: false,
+    key: 'nav.history' as const,
+    Icon: HistoryIcon,
+  },
+  {
+    to: '/parametres',
+    end: false,
+    key: 'nav.settings' as const,
+    Icon: SettingsIcon,
+  },
 ];
 
 /**
@@ -35,25 +46,28 @@ export function PersistentSidebar() {
         {t('appName')}
       </div>
       <nav className="flex flex-col gap-1">
-        {ROUTES.map(route => (
-          <NavLink
-            key={route.to}
-            to={route.to}
-            end={route.end}
-            className={({ isActive }) =>
-              `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                isActive ? '' : 'hover:bg-black/5'
-              }`
-            }
-            style={({ isActive }) => ({
-              background: isActive ? 'var(--primary)' : 'transparent',
-              color: isActive ? '#fff' : 'var(--text)',
-            })}
-          >
-            <span aria-hidden>{route.icon}</span>
-            <span>{t(route.key)}</span>
-          </NavLink>
-        ))}
+        {ROUTES.map(route => {
+          const RouteIcon = route.Icon;
+          return (
+            <NavLink
+              key={route.to}
+              to={route.to}
+              end={route.end}
+              className={({ isActive }) =>
+                `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive ? '' : 'hover:bg-black/5'
+                }`
+              }
+              style={({ isActive }) => ({
+                background: isActive ? 'var(--primary)' : 'transparent',
+                color: isActive ? '#fff' : 'var(--text)',
+              })}
+            >
+              <RouteIcon size={18} />
+              <span>{t(route.key)}</span>
+            </NavLink>
+          );
+        })}
       </nav>
     </aside>
   );
