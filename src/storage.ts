@@ -111,4 +111,26 @@ export const storage = {
   },
   saveBoolPref: (key: 'sound' | 'haptic', value: boolean): void =>
     safeWrite(LS[key], value),
+
+  /**
+   * "Replay" temporaire : un MatchConfig à pré-remplir au prochain rendu
+   * de HomeView. Stocké en sessionStorage (durée de l'onglet).
+   */
+  setPendingReplay: (config: MatchConfig): void => {
+    try {
+      sessionStorage.setItem('mb_pending_replay', JSON.stringify(config));
+    } catch {
+      /* ignore */
+    }
+  },
+  consumePendingReplay: (): MatchConfig | null => {
+    try {
+      const raw = sessionStorage.getItem('mb_pending_replay');
+      if (!raw) return null;
+      sessionStorage.removeItem('mb_pending_replay');
+      return JSON.parse(raw) as MatchConfig;
+    } catch {
+      return null;
+    }
+  },
 };

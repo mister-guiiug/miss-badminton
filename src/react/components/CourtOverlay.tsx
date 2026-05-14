@@ -4,6 +4,8 @@ interface CourtOverlayProps {
   server?: ServiceSide | null;
   serverScore?: number;
   ariaLabel?: string;
+  team1Color?: string;
+  team2Color?: string;
 }
 
 // SVG viewBox is 320x200 — half = 160 wide.
@@ -48,8 +50,16 @@ export function CourtOverlay({
   server,
   serverScore = 0,
   ariaLabel,
+  team1Color,
+  team2Color,
 }: CourtOverlayProps) {
   const dot = server ? getServiceDot(server, serverScore) : null;
+  const dotStroke =
+    server === 'team1'
+      ? (team1Color ?? 'rgba(0,0,0,0.35)')
+      : server === 'team2'
+        ? (team2Color ?? 'rgba(0,0,0,0.35)')
+        : 'rgba(0,0,0,0.35)';
   return (
     <svg
       className="pointer-events-none absolute inset-0 h-full w-full"
@@ -125,14 +135,14 @@ export function CourtOverlay({
           <circle
             cx={dot.cx}
             cy={dot.cy}
-            r={8}
+            r={9}
             fill="rgba(255,255,255,0.95)"
-            stroke="rgba(0,0,0,0.25)"
-            strokeWidth={1.5}
+            stroke={dotStroke}
+            strokeWidth={3}
           >
             <animate
               attributeName="r"
-              values="8;10;8"
+              values="9;11;9"
               dur="1.4s"
               repeatCount="indefinite"
             />

@@ -16,6 +16,7 @@ import {
 } from '../../team-colors';
 import { forceAppUpdate } from '../../register-sw';
 import { PageContainer } from '../components/layout/PageContainer';
+import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 
@@ -30,6 +31,8 @@ export function SettingsView() {
   const colorsAreDefault =
     colors.team1.toLowerCase() === DEFAULT_TEAM1_COLOR &&
     colors.team2.toLowerCase() === DEFAULT_TEAM2_COLOR;
+  const colorsTooClose =
+    colorDistance(colors.team1, colors.team2) < COLOR_CLOSE_THRESHOLD;
 
   const [updating, setUpdating] = useState(false);
   const handleForceUpdate = async () => {
@@ -116,6 +119,20 @@ export function SettingsView() {
             </button>
           )}
         </div>
+        {colorsTooClose && (
+          <p
+            role="alert"
+            className="flex items-start gap-2 rounded-lg px-3 py-2 text-xs"
+            style={{
+              background: 'rgba(220,38,38,0.08)',
+              border: '1px solid var(--danger)',
+              color: 'var(--danger)',
+            }}
+          >
+            <span aria-hidden>⚠</span>
+            <span>{t('settingsExtra.contrastWarning')}</span>
+          </p>
+        )}
       </Section>
 
       <Section title={t('settings.soundLabel')} help={t('settings.soundHelp')}>

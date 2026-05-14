@@ -205,11 +205,62 @@ body {
   }
 }
 
+@keyframes mb-toast-pop {
+  0% {
+    transform: translateX(-50%) translateY(8px) scale(0.85);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-50%) translateY(0) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes mb-match-celebration {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes mb-match-point-glow {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 4px rgba(255, 242, 0, 0.0),
+      0 0 24px rgba(255, 242, 0, 0);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 4px rgba(255, 242, 0, 0.7),
+      0 0 24px rgba(255, 242, 0, 0.5);
+  }
+}
+
+.mb-match-point-aura {
+  animation: mb-match-point-glow 1.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [style*='mb-shuttle-float'],
   [style*='mb-score-pop'],
   [style*='mb-set-pop'],
-  [style*='mb-point-pulse'] {
+  [style*='mb-point-pulse'],
+  [style*='mb-toast-pop'],
+  [style*='mb-match-celebration'],
+  .mb-match-point-aura {
     animation: none !important;
   }
 }

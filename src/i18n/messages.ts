@@ -156,6 +156,46 @@ export interface Messages {
     reset: string;
     swap: string;
   };
+  onboarding: {
+    title: string;
+    tap: string;
+    hold: string;
+    swap: string;
+    undo: string;
+    gotIt: string;
+  };
+  toast: {
+    pointAdded: string;
+    pointRemoved: string;
+  };
+  liveScore: string;
+  scoreSubtract: string;
+  confirm: {
+    title: string;
+    confirm: string;
+    cancel: string;
+  };
+  offline: {
+    banner: string;
+  };
+  historyExtra: {
+    replay: string;
+    statsTitle: string;
+    statsTotal: string;
+    statsWinRate: string;
+    statsTopPlayer: string;
+    statsNone: string;
+  };
+  matchOverExtra: {
+    rematch: string;
+  };
+  wizardExtra: {
+    quickStart: string;
+    quickStartHint: string;
+  };
+  settingsExtra: {
+    contrastWarning: string;
+  };
 }
 
 const fr: Messages = {
@@ -309,6 +349,47 @@ const fr: Messages = {
     reset: 'R — remettre à zéro',
     swap: 'S — permuter les équipes',
   },
+  onboarding: {
+    title: 'Bienvenue 🏸',
+    tap: 'Tape la moitié d’une équipe pour ajouter un point.',
+    hold: 'Maintiens 0,4 s pour retirer un point.',
+    swap: 'Bouton ⇄ central : change de côté.',
+    undo: 'Bouton ↶ en bas : annule le dernier point.',
+    gotIt: 'C’est compris',
+  },
+  toast: {
+    pointAdded: '+1 {name}',
+    pointRemoved: '−1 {name}',
+  },
+  liveScore: 'Score : {a} contre {b}',
+  scoreSubtract: 'Retirer un point à {name}',
+  confirm: {
+    title: 'Confirmer',
+    confirm: 'Confirmer',
+    cancel: 'Annuler',
+  },
+  offline: {
+    banner: 'Hors ligne — les scores restent enregistrés localement.',
+  },
+  historyExtra: {
+    replay: 'Rejouer ce match',
+    statsTitle: 'Statistiques',
+    statsTotal: '{n} match{s, plural, one {} other {s}}',
+    statsWinRate: 'Joueur le plus victorieux',
+    statsTopPlayer: '{name} — {wins}/{total}',
+    statsNone: 'Pas encore de stats.',
+  },
+  matchOverExtra: {
+    rematch: 'Rejouer',
+  },
+  wizardExtra: {
+    quickStart: 'Match standard',
+    quickStartHint: 'Simple · 3 sets · 21 pts · plafond 30',
+  },
+  settingsExtra: {
+    contrastWarning:
+      'Les deux couleurs choisies sont très proches : difficile de distinguer les équipes.',
+  },
 };
 
 const en: Messages = {
@@ -458,6 +539,47 @@ const en: Messages = {
     undo: 'U — undo last point',
     reset: 'R — reset scores',
     swap: 'S — swap teams',
+  },
+  onboarding: {
+    title: 'Welcome 🏸',
+    tap: 'Tap a team’s half to add a point.',
+    hold: 'Hold 0.4 s to subtract a point.',
+    swap: 'Central ⇄ button: swap sides.',
+    undo: 'Bottom ↶ button: undo the last point.',
+    gotIt: 'Got it',
+  },
+  toast: {
+    pointAdded: '+1 {name}',
+    pointRemoved: '−1 {name}',
+  },
+  liveScore: 'Score: {a} versus {b}',
+  scoreSubtract: 'Subtract a point from {name}',
+  confirm: {
+    title: 'Confirm',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+  },
+  offline: {
+    banner: 'Offline — scores are still saved locally.',
+  },
+  historyExtra: {
+    replay: 'Replay this match',
+    statsTitle: 'Stats',
+    statsTotal: '{n} match{s, plural, one {} other {es}}',
+    statsWinRate: 'Top player',
+    statsTopPlayer: '{name} — {wins}/{total}',
+    statsNone: 'No stats yet.',
+  },
+  matchOverExtra: {
+    rematch: 'Rematch',
+  },
+  wizardExtra: {
+    quickStart: 'Standard match',
+    quickStartHint: 'Singles · 3 sets · 21 pts · cap 30',
+  },
+  settingsExtra: {
+    contrastWarning:
+      'The two chosen colours are very close: it will be hard to tell the teams apart.',
   },
 };
 
@@ -610,6 +732,47 @@ const es: Messages = {
     undo: 'U — deshacer el último punto',
     reset: 'R — reiniciar el marcador',
     swap: 'S — intercambiar equipos',
+  },
+  onboarding: {
+    title: 'Bienvenido 🏸',
+    tap: 'Toca la mitad de un equipo para sumar un punto.',
+    hold: 'Mantén 0,4 s para restar un punto.',
+    swap: 'Botón ⇄ central: cambia de lado.',
+    undo: 'Botón ↶ inferior: deshace el último punto.',
+    gotIt: 'Entendido',
+  },
+  toast: {
+    pointAdded: '+1 {name}',
+    pointRemoved: '−1 {name}',
+  },
+  liveScore: 'Marcador: {a} contra {b}',
+  scoreSubtract: 'Restar un punto a {name}',
+  confirm: {
+    title: 'Confirmar',
+    confirm: 'Confirmar',
+    cancel: 'Cancelar',
+  },
+  offline: {
+    banner: 'Sin conexión — los marcadores siguen guardándose localmente.',
+  },
+  historyExtra: {
+    replay: 'Repetir este partido',
+    statsTitle: 'Estadísticas',
+    statsTotal: '{n} partido{s, plural, one {} other {s}}',
+    statsWinRate: 'Mejor jugador',
+    statsTopPlayer: '{name} — {wins}/{total}',
+    statsNone: 'Aún no hay estadísticas.',
+  },
+  matchOverExtra: {
+    rematch: 'Revancha',
+  },
+  wizardExtra: {
+    quickStart: 'Partido estándar',
+    quickStartHint: 'Individual · 3 sets · 21 pts · tope 30',
+  },
+  settingsExtra: {
+    contrastWarning:
+      'Los dos colores elegidos son muy parecidos: será difícil distinguir los equipos.',
   },
 };
 
