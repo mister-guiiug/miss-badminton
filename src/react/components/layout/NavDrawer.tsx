@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '../../../i18n/useI18n';
-import { LOCALES, LOCALE_LABELS } from '../../../i18n/messages';
+import {
+  LOCALES,
+  LOCALE_FLAGS,
+  LOCALE_LABELS,
+} from '../../../i18n/messages';
 import { Logo } from '../Logo';
 
 interface NavDrawerProps {
@@ -108,14 +112,16 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
                   type="button"
                   onClick={() => setLocale(l)}
                   aria-pressed={selected}
-                  className="inline-flex min-h-9 items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                  aria-label={LOCALE_LABELS[l]}
+                  title={LOCALE_LABELS[l]}
+                  className="inline-flex min-h-9 min-w-11 items-center justify-center rounded-full border px-3 py-1 text-lg leading-none transition-colors"
                   style={{
                     borderColor: selected ? 'var(--primary)' : 'var(--border)',
                     background: selected ? 'var(--primary)' : 'transparent',
                     color: selected ? '#fff' : 'var(--text)',
                   }}
                 >
-                  {LOCALE_LABELS[l]}
+                  <span aria-hidden>{LOCALE_FLAGS[l]}</span>
                 </button>
               );
             })}

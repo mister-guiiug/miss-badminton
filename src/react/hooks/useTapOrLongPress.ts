@@ -67,7 +67,10 @@ export function useTapOrLongPress(
   const handlers: Handlers = {
     onPointerDown: event => {
       if (event.button !== undefined && event.button !== 0) return;
-      event.currentTarget.setPointerCapture?.(event.pointerId);
+      // Pas de `setPointerCapture` : si le doigt glisse hors du bouton (vers
+      // le bouton ⇄ central par exemple), `pointerleave` doit pouvoir annuler
+      // proprement le tap. Le timer 380 ms tolère déjà les petits frémissements
+      // tant que le pointeur reste dans la zone large d'un demi-scoreboard.
       start();
     },
     onPointerUp: () => release(),

@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '../../i18n/useI18n';
-import { LOCALES, LOCALE_LABELS, type Locale } from '../../i18n/messages';
+import {
+  LOCALES,
+  LOCALE_FLAGS,
+  LOCALE_LABELS,
+  type Locale,
+} from '../../i18n/messages';
 import {
   getStoredThemePreference,
   setThemePreference,
@@ -76,7 +81,15 @@ export function SettingsView() {
         <Pills
           ariaLabel={t('settings.languageLabel')}
           value={locale}
-          options={LOCALES.map(l => ({ value: l, label: LOCALE_LABELS[l] }))}
+          options={LOCALES.map(l => ({
+            value: l,
+            label: (
+              <span className="text-xl leading-none" aria-hidden>
+                {LOCALE_FLAGS[l]}
+              </span>
+            ),
+            srLabel: LOCALE_LABELS[l],
+          }))}
           onChange={v => setLocale(v as Locale)}
         />
       </Section>
@@ -221,10 +234,17 @@ function Section({
   );
 }
 
+interface PillOption<T extends string> {
+  value: T;
+  label: React.ReactNode;
+  /** Étiquette accessible (utile quand `label` est un drapeau). */
+  srLabel?: string;
+}
+
 interface PillsProps<T extends string> {
   ariaLabel: string;
   value: T;
-  options: { value: T; label: string }[];
+  options: PillOption<T>[];
   onChange: (v: T) => void;
 }
 
@@ -248,8 +268,10 @@ function Pills<T extends string>({
             type="button"
             role="radio"
             aria-checked={selected}
+            aria-label={opt.srLabel}
+            title={opt.srLabel}
             onClick={() => onChange(opt.value)}
-            className="inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
             style={{
               borderColor: selected ? 'var(--primary)' : 'var(--border)',
               background: selected ? 'var(--primary)' : 'transparent',

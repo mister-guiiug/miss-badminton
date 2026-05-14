@@ -12,6 +12,14 @@ export type PointsCap = 30 | null;
 export interface Team {
   primary: string;
   partner?: string;
+  /**
+   * Identifiant d'origine de l'équipe ('A' = équipe créée à gauche du wizard,
+   * 'B' = équipe créée à droite). Sert de fallback stable pour l'affichage :
+   * quand l'utilisateur permute les côtés, l'id suit l'équipe et permet aux
+   * libellés par défaut ("Joueur A" / "Joueur B") de changer visiblement
+   * même si l'utilisateur n'a pas saisi de nom.
+   */
+  id?: 'A' | 'B';
 }
 
 export interface MatchConfig {
@@ -109,6 +117,10 @@ export function MatchSetupWizard({
       remember(draft.team1.partner);
       remember(draft.team2.partner);
     }
+    // Conserve les id si on édite un match existant (pour ne pas casser le
+    // sens "A/B" déjà associé aux équipes après un éventuel swap).
+    const team1Id = initial?.team1.id ?? 'A';
+    const team2Id = initial?.team2.id ?? 'B';
     onComplete({
       type: draft.type,
       sets: draft.sets,
@@ -118,10 +130,12 @@ export function MatchSetupWizard({
       team1: {
         primary: draft.team1.primary.trim(),
         partner: isDoubles ? draft.team1.partner.trim() : undefined,
+        id: team1Id,
       },
       team2: {
         primary: draft.team2.primary.trim(),
         partner: isDoubles ? draft.team2.partner.trim() : undefined,
+        id: team2Id,
       },
     });
   };

@@ -507,17 +507,21 @@ export function HomeView() {
     }
   }, [pendingFeedback, feedback]);
 
+  // Fallbacks suivent l'id stable de l'équipe : après une permutation, on
+  // voit visuellement le changement même si aucun nom n'a été saisi.
+  const team1Fallbacks: [string, string] =
+    match?.team1.id === 'B'
+      ? [t('players.player2'), t('players.partner2')]
+      : [t('players.player1'), t('players.partner1')];
+  const team2Fallbacks: [string, string] =
+    match?.team2.id === 'A'
+      ? [t('players.player1'), t('players.partner1')]
+      : [t('players.player2'), t('players.partner2')];
   const player1Label = match
-    ? resolveTeamLabel(match.team1, [
-        t('players.player1'),
-        t('players.partner1'),
-      ])
+    ? resolveTeamLabel(match.team1, team1Fallbacks)
     : t('players.player1');
   const player2Label = match
-    ? resolveTeamLabel(match.team2, [
-        t('players.player2'),
-        t('players.partner2'),
-      ])
+    ? resolveTeamLabel(match.team2, team2Fallbacks)
     : t('players.player2');
 
   const isDoubles = match?.type === 'doubles';
@@ -537,14 +541,8 @@ export function HomeView() {
       : { top: partner, bottom: primary };
   }
 
-  const team1Pair = teamPair(match?.team1, team1Inverted, [
-    t('players.player1'),
-    t('players.partner1'),
-  ]);
-  const team2Pair = teamPair(match?.team2, team2Inverted, [
-    t('players.player2'),
-    t('players.partner2'),
-  ]);
+  const team1Pair = teamPair(match?.team1, team1Inverted, team1Fallbacks);
+  const team2Pair = teamPair(match?.team2, team2Inverted, team2Fallbacks);
 
   const showToast = useCallback((message: string, color: string) => {
     toastKeyRef.current += 1;
@@ -593,16 +591,23 @@ export function HomeView() {
   };
 
   const handleSwap = useCallback(() => {
-    if (!match) {
-      setWizardOpen(true);
-      return;
-    }
-    setMatch({ ...match, team1: match.team2, team2: match.team1 });
-    const prevT1 = team1Inverted;
-    setTeam1Inverted(team2Inverted);
-    setTeam2Inverted(prevT1);
+    setMatch(curr => {
+      if (!curr) {
+        setWizardOpen(true);
+        return curr;
+      }
+      return { ...curr, team1: curr.team2, team2: curr.team1 };
+    });
+    setTeam1Inverted(prev => {
+      // Swap des deux drapeaux d'inversion : on inverse l'inversion pour
+      // chaque équipe en croisant. On utilise une astuce setState : on
+      // ne peut pas lire l'autre state ici, donc on capture via la closure.
+      // (Voir aussi setTeam2Inverted ci-dessous.)
+      return team2Inverted;
+    });
+    setTeam2Inverted(team1Inverted);
     dispatch({ type: 'swap' });
-  }, [match, team1Inverted, team2Inverted]);
+  }, [team1Inverted, team2Inverted]);
 
   const handleReset = useCallback(() => {
     setResetConfirmOpen(true);
@@ -1204,8 +1209,9 @@ function LabelDisplay({
     '0 2px 8px rgba(0,0,0,0.3)',
   ].join(', ');
 
+  // Bottom plus haut que top : laisse passer la safe-area iOS + le footer.
   const positioning = {
-    [position === 'top' ? 'top' : 'bottom']: '11%',
+    [position === 'top' ? 'top' : 'bottom']: position === 'top' ? '11%' : '16%',
     [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
     transform: `translateX(${side === 'left' ? '-50%' : '50%'})`,
   };
