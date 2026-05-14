@@ -607,13 +607,10 @@ export function HomeView() {
       }
       return { ...curr, team1: curr.team2, team2: curr.team1 };
     });
-    setTeam1Inverted(prev => {
-      // Swap des deux drapeaux d'inversion : on inverse l'inversion pour
-      // chaque équipe en croisant. On utilise une astuce setState : on
-      // ne peut pas lire l'autre state ici, donc on capture via la closure.
-      // (Voir aussi setTeam2Inverted ci-dessous.)
-      return team2Inverted;
-    });
+    // On croise les drapeaux d'inversion via leurs valeurs capturées dans la
+    // closure (suffisant : `team1Inverted` et `team2Inverted` sont dans les
+    // deps du useCallback, donc toujours à jour à l'appel).
+    setTeam1Inverted(team2Inverted);
     setTeam2Inverted(team1Inverted);
     dispatch({ type: 'swap' });
   }, [team1Inverted, team2Inverted]);
