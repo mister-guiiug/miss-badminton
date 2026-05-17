@@ -7,10 +7,22 @@ const LS = {
   players: 'mb_player_names',
   sound: 'mb_sound_enabled',
   haptic: 'mb_haptic_enabled',
+  dataVersion: 'mb_data_version',
 } as const;
 
 const MAX_PLAYERS = 24;
 const MAX_HISTORY = 50;
+
+/**
+ * Bump when the shape/sémantique des données persistées change de façon
+ * non rétrocompatible. La migration efface les stores impactés au prochain
+ * chargement.
+ *
+ * v2 (2026-05): `MatchConfig.sets` représente désormais le nombre de sets
+ * gagnants nécessaires (et non plus le total à jouer). Les valeurs stockées
+ * avant cette version seraient interprétées à l'envers, donc on wipe.
+ */
+const CURRENT_DATA_VERSION = '2';
 
 export interface PersistedGameState {
   score1: number;
@@ -67,6 +79,21 @@ function safeRemove(key: string): void {
     /* ignore */
   }
 }
+
+function runMigrations(): void {
+  try {
+    const stored = localStorage.getItem(LS.dataVersion);
+    if (stored === CURRENT_DATA_VERSION) return;
+    safeRemove(LS.match);
+    safeRemove(LS.game);
+    safeRemove(LS.history);
+    localStorage.setItem(LS.dataVersion, CURRENT_DATA_VERSION);
+  } catch {
+    /* localStorage unavailable — pas de migration nécessaire */
+  }
+}
+
+runMigrations();
 
 export const storage = {
   loadActiveMatch: (): MatchConfig | null => safeRead<MatchConfig>(LS.match),
