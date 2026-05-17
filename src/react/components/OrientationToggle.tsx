@@ -4,7 +4,11 @@ import { ScreenLandscapeIcon, ScreenPortraitIcon } from './icons';
 
 interface OrientationLock {
   lock?: (
-    orientation: 'landscape' | 'portrait' | 'landscape-primary' | 'portrait-primary'
+    orientation:
+      | 'landscape'
+      | 'portrait'
+      | 'landscape-primary'
+      | 'portrait-primary'
   ) => Promise<void>;
 }
 
@@ -17,10 +21,11 @@ function isOrientationLockSupported(): boolean {
 }
 
 /**
- * Bouton flottant en haut à droite — bascule entre orientation paysage et
- * portrait via Screen Orientation API (nécessite le plein écran sur la
- * plupart des navigateurs). Sur desktop ou si l'API n'est pas dispo, le
- * bouton est masqué.
+ * Bouton flottant — bascule entre orientation paysage et portrait via
+ * Screen Orientation API (nécessite le plein écran sur la plupart des
+ * navigateurs ; utiliser le bouton plein écran d'abord). Masqué sur
+ * desktop ou si l'API n'est pas disponible. Positionné juste à gauche
+ * du bouton plein écran.
  */
 export function OrientationToggle() {
   const { t } = useI18n();
@@ -41,14 +46,13 @@ export function OrientationToggle() {
 
   if (!supported) return null;
 
-  const target: 'landscape' | 'portrait' = isPortrait ? 'landscape' : 'portrait';
+  const target: 'landscape' | 'portrait' = isPortrait
+    ? 'landscape'
+    : 'portrait';
   const label = isPortrait ? t('nav.forceLandscape') : t('nav.forcePortrait');
 
   const handleClick = async () => {
     try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen().catch(() => undefined);
-      }
       const orientation = screen.orientation as ScreenOrientation &
         OrientationLock;
       if (orientation?.lock) {
@@ -65,8 +69,13 @@ export function OrientationToggle() {
       onClick={handleClick}
       aria-label={label}
       title={label}
-      className="fixed right-safe-3 top-safe-3 z-30 flex touch-target items-center justify-center rounded-full text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105 active:scale-95 lg:hidden"
-      style={{ background: 'rgba(0,0,0,0.55)' }}
+      className="fixed top-safe-3 z-30 flex touch-target items-center justify-center rounded-full text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105 active:scale-95 lg:hidden"
+      style={{
+        background: 'rgba(0,0,0,0.55)',
+        // Décalé à gauche du bouton plein écran : safe-inset + 0.75rem (right-safe-3)
+        // + 2.75rem (largeur touch-target) + 0.5rem (gap) = inset + 4rem.
+        right: 'calc(max(env(safe-area-inset-right, 0px), 0px) + 4rem)',
+      }}
     >
       {isPortrait ? (
         <ScreenLandscapeIcon size={22} />
