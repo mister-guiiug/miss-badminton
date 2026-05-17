@@ -27,6 +27,8 @@ export interface Messages {
     menuLabel: string;
     forceLandscape: string;
     forcePortrait: string;
+    enterFullscreen: string;
+    exitFullscreen: string;
   };
   documentTitle: {
     home: string;
@@ -230,6 +232,8 @@ const fr: Messages = {
     menuLabel: 'Menu de navigation',
     forceLandscape: 'Forcer le mode paysage',
     forcePortrait: 'Forcer le mode portrait',
+    enterFullscreen: 'Passer en plein écran',
+    exitFullscreen: 'Quitter le plein écran',
   },
   documentTitle: {
     home: 'Miss Badminton',
@@ -437,6 +441,8 @@ const en: Messages = {
     menuLabel: 'Navigation menu',
     forceLandscape: 'Force landscape mode',
     forcePortrait: 'Force portrait mode',
+    enterFullscreen: 'Enter fullscreen',
+    exitFullscreen: 'Exit fullscreen',
   },
   documentTitle: {
     home: 'Miss Badminton',
@@ -641,6 +647,8 @@ const es: Messages = {
     menuLabel: 'Menú de navegación',
     forceLandscape: 'Forzar modo paisaje',
     forcePortrait: 'Forzar modo retrato',
+    enterFullscreen: 'Pantalla completa',
+    exitFullscreen: 'Salir de pantalla completa',
   },
   documentTitle: {
     home: 'Miss Badminton',
