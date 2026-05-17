@@ -1239,7 +1239,7 @@ function ScoreDisplay({
         [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
         transform: baseTransform,
         fontVariantNumeric: 'tabular-nums',
-        fontSize: 'clamp(5rem, 22vw, 18rem)',
+        fontSize: 'clamp(6rem, 27vw, 22rem)',
         letterSpacing: '-0.04em',
         textShadow: aura,
         borderRadius: '12%',
