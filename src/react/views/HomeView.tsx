@@ -1220,10 +1220,7 @@ function ScoreDisplay({
     '0 6px 22px rgba(0,0,0,0.32)',
   ].join(', ');
 
-  // Small downward nudge so the digit's optical centre sits on the horizontal
-  // court line (font ascenders push the bounding-box centre above the visual
-  // centre of numerals).
-  const baseTransform = `translate(${side === 'left' ? '-50%' : '50%'}, calc(-50% + 0.06em))`;
+  const baseTransform = `translate(${side === 'left' ? '-50%' : '50%'}, -50%)`;
   const label = atMatchPoint
     ? matchPointLabel
     : atSetPoint
