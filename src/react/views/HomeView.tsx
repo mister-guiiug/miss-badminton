@@ -49,9 +49,21 @@ import {
   type SavedMatch,
 } from '../../storage';
 
-const RIVE_SRC = `${import.meta.env.BASE_URL}rive/shuttle.riv`;
+// Détecte à la compilation les .riv présents sous src/assets/rive/. Évite
+// ainsi tout fetch (et donc tout 404) quand le fichier n'a pas été déposé.
+const riveAssets = import.meta.glob<{ default: string }>(
+  '../../assets/rive/*.riv',
+  { eager: true, query: '?url' }
+);
+const RIVE_BY_NAME: Record<string, string> = {};
+for (const [path, mod] of Object.entries(riveAssets)) {
+  const name = path.split('/').pop();
+  if (name) RIVE_BY_NAME[name] = mod.default;
+}
+
+const RIVE_SRC: string | null = RIVE_BY_NAME['shuttle.riv'] ?? null;
 const SCORE_INSET_PCT = 20.5;
-const SET_OFFSET_PCT = 7.34;
+const SET_OFFSET_PCT = 12;
 
 interface SetWins {
   team1: number;
@@ -1023,12 +1035,16 @@ export function HomeView() {
               aspectRatio: '1 / 1',
             }}
           >
-            <RiveScene
-              src={RIVE_SRC}
-              ariaLabel={t('home.scoreboardLabel')}
-              className="h-full w-full"
-              fallback={<ShuttleFallback />}
-            />
+            {RIVE_SRC ? (
+              <RiveScene
+                src={RIVE_SRC}
+                ariaLabel={t('home.scoreboardLabel')}
+                className="h-full w-full"
+                fallback={<ShuttleFallback />}
+              />
+            ) : (
+              <ShuttleFallback />
+            )}
           </div>
 
           <button
@@ -1239,7 +1255,7 @@ function ScoreDisplay({
         [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
         transform: baseTransform,
         fontVariantNumeric: 'tabular-nums',
-        fontSize: 'clamp(6rem, 27vw, 22rem)',
+        fontSize: 'clamp(5rem, 23vw, 22rem)',
         letterSpacing: '-0.04em',
         textShadow: aura,
         borderRadius: '12%',
@@ -1291,7 +1307,7 @@ function SetScoreDisplay({ side, count, background }: SetScoreDisplayProps) {
         left: `${leftPct}%`,
         transform: 'translate(-50%, -50%)',
         fontVariantNumeric: 'tabular-nums',
-        fontSize: 'clamp(2.5rem, 7.5vw, 6rem)',
+        fontSize: 'clamp(3.25rem, 11vw, 8rem)',
         textShadow: aura,
       }}
     >
