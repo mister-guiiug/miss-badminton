@@ -4,6 +4,13 @@ import { useI18n } from '../../i18n/useI18n';
 import { storage } from '../../storage';
 
 export type MatchType = 'singles' | 'doubles';
+/**
+ * Nombre de sets gagnants nécessaires pour remporter le match.
+ * - 1 = best of 1
+ * - 2 = best of 3 (format standard badminton)
+ * - 3 = best of 5
+ * - 5 = best of 9
+ */
 export type SetCount = 1 | 2 | 3 | 5;
 export type PointsTarget = 15 | 21 | 30 | 31;
 export type SideChange = 'decisive' | 'each-set' | 'mid-match';
@@ -44,7 +51,7 @@ interface WizardDraft {
 
 const DEFAULT_DRAFT: WizardDraft = {
   type: null,
-  sets: 3,
+  sets: 2,
   points: 21,
   cap: null,
   sideChange: 'each-set',
@@ -208,7 +215,7 @@ export function MatchSetupWizard({
                 setDraft(d => ({
                   ...d,
                   type: 'singles',
-                  sets: 3,
+                  sets: 2,
                   points: 21,
                   cap: 30,
                   sideChange: 'each-set',
@@ -377,11 +384,10 @@ function Step2({ sets, points, cap, sideChange, onChange }: Step2Props) {
     label: c === null ? t('wizard.capNone') : t('wizard.capValue', { n: c }),
   }));
   const capKey = cap === null ? 'none' : String(cap);
-  const setsNeeded = Math.floor(sets / 2) + 1;
   const capLabel =
     cap === null ? t('wizard.capNone') : t('wizard.capValue', { n: cap });
   const summaryItems = [
-    t('wizard.setsWinning', { wins: setsNeeded }),
+    t('wizard.setsWinning', { wins: sets }),
     `${points} pts`,
     capLabel,
     sideChangeLabels[sideChange],
@@ -424,7 +430,7 @@ function Step2({ sets, points, cap, sideChange, onChange }: Step2Props) {
 
       <PillGroup
         label={t('wizard.sets')}
-        help={t('wizard.setsHelp', { wins: setsNeeded })}
+        help={t('wizard.setsHelp', { wins: sets })}
         value={sets}
         options={SET_OPTIONS.map(v => ({ value: v, label: `${v}` }))}
         onChange={v => onChange({ sets: v })}
@@ -647,14 +653,12 @@ function PillGroup<T extends string | number>({
       <div
         role="radiogroup"
         aria-label={label}
-        className={
-          equalWidth
-            ? 'grid gap-2'
-            : 'flex flex-wrap gap-2'
-        }
+        className={equalWidth ? 'grid gap-2' : 'flex flex-wrap gap-2'}
         style={
           equalWidth
-            ? { gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }
+            ? {
+                gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`,
+              }
             : undefined
         }
       >

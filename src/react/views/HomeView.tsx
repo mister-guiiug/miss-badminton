@@ -71,8 +71,13 @@ function resolveTeamLabel(team: Team, fallbacks: [string, string?]): string {
   return primary;
 }
 
-function setsNeededToWin(totalSets: number): number {
-  return Math.floor(totalSets / 2) + 1;
+/**
+ * Nombre maximum de sets pouvant être joués dans un match donné.
+ * `setsToWin` est le nombre de sets gagnants requis ; au pire l'adversaire
+ * en gagne `setsToWin - 1` avant le dernier set décisif.
+ */
+function maxTotalSets(setsToWin: number): number {
+  return 2 * setsToWin - 1;
 }
 
 function isSetWon(
@@ -510,7 +515,6 @@ export function HomeView() {
       dispatch({ type: 'restart' });
       setWizardOpen(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist match config and game state across reloads.
@@ -630,9 +634,9 @@ export function HomeView() {
         team: which,
         target: match.points,
         cap: match.cap,
-        setsToWin: setsNeededToWin(match.sets),
+        setsToWin: match.sets,
         sideChange: match.sideChange,
-        totalSets: match.sets,
+        totalSets: maxTotalSets(match.sets),
         now: Date.now(),
       });
     },
@@ -746,7 +750,7 @@ export function HomeView() {
         : '';
 
   const setNumber = setScores.length + 1;
-  const totalSets = match?.sets ?? 0;
+  const totalSets = match ? maxTotalSets(match.sets) : 0;
   const pointsTarget = match?.points;
 
   const team1AtSetPoint =
@@ -757,7 +761,7 @@ export function HomeView() {
     !!match &&
     !matchWinner &&
     isSetPoint(score2, score1, match.points, match.cap);
-  const setsToWin = match ? setsNeededToWin(match.sets) : 0;
+  const setsToWin = match?.sets ?? 0;
   const team1AtMatchPoint = team1AtSetPoint && setWins.team1 + 1 >= setsToWin;
   const team2AtMatchPoint = team2AtSetPoint && setWins.team2 + 1 >= setsToWin;
 
@@ -826,254 +830,254 @@ export function HomeView() {
       <PwaInstallPrompt />
       <OnboardingHint />
       <div className="mb-scoreboard-wrap relative w-full">
-      <section
-        aria-label={t('home.scoreboardLabel')}
-        className="mb-scoreboard relative w-full overflow-hidden shadow-2xl"
-        style={{ boxShadow: 'var(--shadow)' }}
-      >
-        <div className="absolute inset-0 grid grid-cols-2">
-          <ScorePanel
-            background={colors.team1}
-            textColor="#ffffff"
-            onScore={() => {
-              handleScore('team1');
-              showToast(
-                t('toast.pointAdded', { name: player1Label }),
-                colors.team1
-              );
-            }}
-            onSubtract={() => {
-              if (score1 > 0) {
-                handleSubtract('team1');
+        <section
+          aria-label={t('home.scoreboardLabel')}
+          className="mb-scoreboard relative w-full overflow-hidden shadow-2xl"
+          style={{ boxShadow: 'var(--shadow)' }}
+        >
+          <div className="absolute inset-0 grid grid-cols-2">
+            <ScorePanel
+              background={colors.team1}
+              textColor="#ffffff"
+              onScore={() => {
+                handleScore('team1');
                 showToast(
-                  t('toast.pointRemoved', { name: player1Label }),
+                  t('toast.pointAdded', { name: player1Label }),
                   colors.team1
                 );
-              }
-            }}
-            ariaLabel={t('scoreboard.addPoint', { name: player1Label })}
-            subtractLabel={t('scoreSubtract', { name: player1Label })}
-          />
-          <ScorePanel
-            background={colors.team2}
-            textColor="#ffffff"
-            onScore={() => {
-              handleScore('team2');
-              showToast(
-                t('toast.pointAdded', { name: player2Label }),
-                colors.team2
-              );
-            }}
-            onSubtract={() => {
-              if (score2 > 0) {
-                handleSubtract('team2');
+              }}
+              onSubtract={() => {
+                if (score1 > 0) {
+                  handleSubtract('team1');
+                  showToast(
+                    t('toast.pointRemoved', { name: player1Label }),
+                    colors.team1
+                  );
+                }
+              }}
+              ariaLabel={t('scoreboard.addPoint', { name: player1Label })}
+              subtractLabel={t('scoreSubtract', { name: player1Label })}
+            />
+            <ScorePanel
+              background={colors.team2}
+              textColor="#ffffff"
+              onScore={() => {
+                handleScore('team2');
                 showToast(
-                  t('toast.pointRemoved', { name: player2Label }),
+                  t('toast.pointAdded', { name: player2Label }),
                   colors.team2
                 );
-              }
-            }}
-            ariaLabel={t('scoreboard.addPoint', { name: player2Label })}
-            subtractLabel={t('scoreSubtract', { name: player2Label })}
+              }}
+              onSubtract={() => {
+                if (score2 > 0) {
+                  handleSubtract('team2');
+                  showToast(
+                    t('toast.pointRemoved', { name: player2Label }),
+                    colors.team2
+                  );
+                }
+              }}
+              ariaLabel={t('scoreboard.addPoint', { name: player2Label })}
+              subtractLabel={t('scoreSubtract', { name: player2Label })}
+            />
+          </div>
+
+          <CourtOverlay
+            server={server}
+            serverScore={serverScore}
+            team1Color={colors.team1}
+            team2Color={colors.team2}
           />
-        </div>
 
-        <CourtOverlay
-          server={server}
-          serverScore={serverScore}
-          team1Color={colors.team1}
-          team2Color={colors.team2}
-        />
+          {/* Annonce vocale du score pour les lecteurs d'écran */}
+          <span className="sr-only" role="status" aria-live="polite">
+            {t('liveScore', { a: score1, b: score2 })}
+          </span>
 
-        {/* Annonce vocale du score pour les lecteurs d'écran */}
-        <span className="sr-only" role="status" aria-live="polite">
-          {t('liveScore', { a: score1, b: score2 })}
-        </span>
+          {toast && (
+            <ScoreToast
+              key={toast.key}
+              triggerKey={toast.key}
+              message={toast.message}
+              background={toast.color}
+            />
+          )}
 
-        {toast && (
-          <ScoreToast
-            key={toast.key}
-            triggerKey={toast.key}
-            message={toast.message}
-            background={toast.color}
-          />
-        )}
+          {match && pointsTarget && (
+            <SetHeader
+              label={t('scoreboard.setHeader', {
+                n: setNumber,
+                total: totalSets,
+                points: pointsTarget,
+              })}
+            />
+          )}
 
-        {match && pointsTarget && (
-          <SetHeader
-            label={t('scoreboard.setHeader', {
-              n: setNumber,
-              total: totalSets,
-              points: pointsTarget,
-            })}
-          />
-        )}
-
-        <ScoreDisplay
-          side="left"
-          score={score1}
-          background={colors.team1}
-          locale={locale}
-          atSetPoint={team1AtSetPoint}
-          atMatchPoint={team1AtMatchPoint}
-          setPointLabel={t('scoreboard.setPoint')}
-          matchPointLabel={t('scoreboard.matchPoint')}
-        />
-        <ScoreDisplay
-          side="right"
-          score={score2}
-          background={colors.team2}
-          locale={locale}
-          atSetPoint={team2AtSetPoint}
-          atMatchPoint={team2AtMatchPoint}
-          setPointLabel={t('scoreboard.setPoint')}
-          matchPointLabel={t('scoreboard.matchPoint')}
-        />
-
-        {streak1 >= 2 && (
-          <StreakBadge
+          <ScoreDisplay
             side="left"
-            label={t('scoreboard.streak', { n: streak1 })}
+            score={score1}
+            background={colors.team1}
+            locale={locale}
+            atSetPoint={team1AtSetPoint}
+            atMatchPoint={team1AtMatchPoint}
+            setPointLabel={t('scoreboard.setPoint')}
+            matchPointLabel={t('scoreboard.matchPoint')}
           />
-        )}
-        {streak2 >= 2 && (
-          <StreakBadge
+          <ScoreDisplay
             side="right"
-            label={t('scoreboard.streak', { n: streak2 })}
+            score={score2}
+            background={colors.team2}
+            locale={locale}
+            atSetPoint={team2AtSetPoint}
+            atMatchPoint={team2AtMatchPoint}
+            setPointLabel={t('scoreboard.setPoint')}
+            matchPointLabel={t('scoreboard.matchPoint')}
           />
-        )}
 
-        <SetScoreDisplay
-          side="left"
-          count={setWins.team1}
-          background={colors.team1}
-        />
-        <SetScoreDisplay
-          side="right"
-          count={setWins.team2}
-          background={colors.team2}
-        />
+          {streak1 >= 2 && (
+            <StreakBadge
+              side="left"
+              label={t('scoreboard.streak', { n: streak1 })}
+            />
+          )}
+          {streak2 >= 2 && (
+            <StreakBadge
+              side="right"
+              label={t('scoreboard.streak', { n: streak2 })}
+            />
+          )}
 
-        {isDoubles ? (
-          <>
-            {team1Pair.top && (
+          <SetScoreDisplay
+            side="left"
+            count={setWins.team1}
+            background={colors.team1}
+          />
+          <SetScoreDisplay
+            side="right"
+            count={setWins.team2}
+            background={colors.team2}
+          />
+
+          {isDoubles ? (
+            <>
+              {team1Pair.top && (
+                <LabelDisplay
+                  side="left"
+                  position="top"
+                  label={team1Pair.top}
+                  background={colors.team1}
+                  onSwap={() => setTeam1Inverted(s => !s)}
+                  swapLabel={t('scoreboard.invertPlayers')}
+                />
+              )}
               <LabelDisplay
                 side="left"
-                position="top"
-                label={team1Pair.top}
+                position="bottom"
+                label={team1Pair.bottom}
                 background={colors.team1}
                 onSwap={() => setTeam1Inverted(s => !s)}
                 swapLabel={t('scoreboard.invertPlayers')}
               />
-            )}
-            <LabelDisplay
-              side="left"
-              position="bottom"
-              label={team1Pair.bottom}
-              background={colors.team1}
-              onSwap={() => setTeam1Inverted(s => !s)}
-              swapLabel={t('scoreboard.invertPlayers')}
-            />
-            {team2Pair.top && (
+              {team2Pair.top && (
+                <LabelDisplay
+                  side="right"
+                  position="top"
+                  label={team2Pair.top}
+                  background={colors.team2}
+                  onSwap={() => setTeam2Inverted(s => !s)}
+                  swapLabel={t('scoreboard.invertPlayers')}
+                />
+              )}
               <LabelDisplay
                 side="right"
-                position="top"
-                label={team2Pair.top}
+                position="bottom"
+                label={team2Pair.bottom}
                 background={colors.team2}
                 onSwap={() => setTeam2Inverted(s => !s)}
                 swapLabel={t('scoreboard.invertPlayers')}
               />
-            )}
-            <LabelDisplay
-              side="right"
-              position="bottom"
-              label={team2Pair.bottom}
-              background={colors.team2}
-              onSwap={() => setTeam2Inverted(s => !s)}
-              swapLabel={t('scoreboard.invertPlayers')}
-            />
-          </>
-        ) : (
-          <>
-            <LabelDisplay
-              side="left"
-              position="bottom"
-              label={player1Label}
-              background={colors.team1}
-            />
-            <LabelDisplay
-              side="right"
-              position="bottom"
-              label={player2Label}
-              background={colors.team2}
-            />
-          </>
-        )}
+            </>
+          ) : (
+            <>
+              <LabelDisplay
+                side="left"
+                position="bottom"
+                label={player1Label}
+                background={colors.team1}
+              />
+              <LabelDisplay
+                side="right"
+                position="bottom"
+                label={player2Label}
+                background={colors.team2}
+              />
+            </>
+          )}
 
-        <div
-          className="pointer-events-none absolute left-1/2 z-10"
-          style={{
-            top: '18%',
-            transform: 'translate(-50%, -50%)',
-            width: 'min(14%, 92px)',
-            aspectRatio: '1 / 1',
-          }}
-        >
-          <RiveScene
-            src={RIVE_SRC}
-            ariaLabel={t('home.scoreboardLabel')}
-            className="h-full w-full"
-            fallback={<ShuttleFallback />}
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={handleSwap}
-          aria-label={t('scoreboard.swap')}
-          className="absolute left-1/2 top-1/2 z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-lg ring-2 ring-black/10 transition-transform hover:scale-105 active:scale-95 sm:h-14 sm:w-14"
-          style={{ background: '#ffffff', color: '#1f2937' }}
-        >
-          <ArrowLeftRightIcon size={24} strokeWidth={2.4} />
-        </button>
-
-        {pendingSideChange && !matchWinner && (
-          <SideChangeBanner
-            onSwap={() => {
-              handleSwap();
+          <div
+            className="pointer-events-none absolute left-1/2 z-10"
+            style={{
+              top: '18%',
+              transform: 'translate(-50%, -50%)',
+              width: 'min(14%, 92px)',
+              aspectRatio: '1 / 1',
             }}
-            onDismiss={() => dispatch({ type: 'dismissSideChange' })}
-          />
-        )}
+          >
+            <RiveScene
+              src={RIVE_SRC}
+              ariaLabel={t('home.scoreboardLabel')}
+              className="h-full w-full"
+              fallback={<ShuttleFallback />}
+            />
+          </div>
 
-        {lastSetSummary && !matchWinner && (
-          <SetTransitionBanner
-            winnerName={
-              lastSetSummary.winner === 'team1' ? player1Label : player2Label
-            }
-            scoreA={lastSetSummary.a}
-            scoreB={lastSetSummary.b}
-            onClose={() => dispatch({ type: 'clearSetSummary' })}
-          />
-        )}
+          <button
+            type="button"
+            onClick={handleSwap}
+            aria-label={t('scoreboard.swap')}
+            className="absolute left-1/2 top-1/2 z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-lg ring-2 ring-black/10 transition-transform hover:scale-105 active:scale-95 sm:h-14 sm:w-14"
+            style={{ background: '#ffffff', color: '#1f2937' }}
+          >
+            <ArrowLeftRightIcon size={24} strokeWidth={2.4} />
+          </button>
 
-        {matchWinner && (
-          <MatchOverOverlay
-            winnerLabel={winnerLabel}
-            setWins={setWins}
-            setScores={setScores}
-            onNewMatch={() => setWizardOpen(true)}
-            onRematch={handleRematch}
-            onBackHome={handleBackHome}
-            onShare={handleShare}
-            canShare={
-              typeof navigator !== 'undefined' &&
-              (typeof navigator.share === 'function' ||
-                typeof navigator.clipboard?.writeText === 'function')
-            }
-          />
-        )}
-      </section>
+          {pendingSideChange && !matchWinner && (
+            <SideChangeBanner
+              onSwap={() => {
+                handleSwap();
+              }}
+              onDismiss={() => dispatch({ type: 'dismissSideChange' })}
+            />
+          )}
+
+          {lastSetSummary && !matchWinner && (
+            <SetTransitionBanner
+              winnerName={
+                lastSetSummary.winner === 'team1' ? player1Label : player2Label
+              }
+              scoreA={lastSetSummary.a}
+              scoreB={lastSetSummary.b}
+              onClose={() => dispatch({ type: 'clearSetSummary' })}
+            />
+          )}
+
+          {matchWinner && (
+            <MatchOverOverlay
+              winnerLabel={winnerLabel}
+              setWins={setWins}
+              setScores={setScores}
+              onNewMatch={() => setWizardOpen(true)}
+              onRematch={handleRematch}
+              onBackHome={handleBackHome}
+              onShare={handleShare}
+              canShare={
+                typeof navigator !== 'undefined' &&
+                (typeof navigator.share === 'function' ||
+                  typeof navigator.clipboard?.writeText === 'function')
+              }
+            />
+          )}
+        </section>
 
         <footer className="mb-scoreboard-footer flex items-center justify-between gap-2 bg-black/55 px-4 text-white backdrop-blur-sm">
           <span className="flex min-w-0 items-center gap-2 truncate text-sm font-medium">
