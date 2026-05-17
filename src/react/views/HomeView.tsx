@@ -63,7 +63,7 @@ for (const [path, mod] of Object.entries(riveAssets)) {
 
 const RIVE_SRC: string | null = RIVE_BY_NAME['shuttle.riv'] ?? null;
 const SCORE_INSET_PCT = 20.5;
-const SET_OFFSET_PCT = 12;
+const SET_OFFSET_PCT = 9;
 
 interface SetWins {
   team1: number;
@@ -1255,7 +1255,7 @@ function ScoreDisplay({
         [side === 'left' ? 'left' : 'right']: `${SCORE_INSET_PCT}%`,
         transform: baseTransform,
         fontVariantNumeric: 'tabular-nums',
-        fontSize: 'clamp(5rem, 23vw, 22rem)',
+        fontSize: 'clamp(4.5rem, 20vw, 18rem)',
         letterSpacing: '-0.04em',
         textShadow: aura,
         borderRadius: '12%',
