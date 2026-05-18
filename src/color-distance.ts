@@ -46,15 +46,7 @@ function pivot(n: number): number {
   return n > 0.008856 ? Math.cbrt(n) : 7.787 * n + 16 / 116;
 }
 
-function xyzToLab({
-  x,
-  y,
-  z,
-}: {
-  x: number;
-  y: number;
-  z: number;
-}): Lab {
+function xyzToLab({ x, y, z }: { x: number; y: number; z: number }): Lab {
   // D65 reference white
   const fx = pivot(x / 0.95047);
   const fy = pivot(y / 1.0);

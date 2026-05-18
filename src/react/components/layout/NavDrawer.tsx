@@ -1,18 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '../../../i18n/useI18n';
-import {
-  LOCALES,
-  LOCALE_FLAGS,
-  LOCALE_LABELS,
-} from '../../../i18n/messages';
+import { LOCALES, LOCALE_FLAGS, LOCALE_LABELS } from '../../../i18n/messages';
 import { Logo } from '../Logo';
-import {
-  HistoryIcon,
-  HomeIcon,
-  SettingsIcon,
-  XIcon,
-} from '../icons';
+import { HistoryIcon, HomeIcon, SettingsIcon, XIcon } from '../icons';
 
 interface NavDrawerProps {
   onClose: () => void;

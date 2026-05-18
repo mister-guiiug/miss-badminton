@@ -25,13 +25,7 @@ export function Logo({ size = 32, ariaLabel, className }: LogoProps) {
       className={className}
     >
       <defs>
-        <linearGradient
-          id={`mb-logo-bg-${size}`}
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="1"
-        >
+        <linearGradient id={`mb-logo-bg-${size}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#4f46e5" />
           <stop offset="100%" stopColor="#7c3aed" />
         </linearGradient>
@@ -45,22 +39,12 @@ export function Logo({ size = 32, ariaLabel, className }: LogoProps) {
           <stop offset="0%" stopColor="#ffffff" />
           <stop offset="100%" stopColor="#e2e8f0" />
         </linearGradient>
-        <radialGradient
-          id={`mb-logo-cork-${size}`}
-          cx="0.4"
-          cy="0.35"
-          r="0.7"
-        >
+        <radialGradient id={`mb-logo-cork-${size}`} cx="0.4" cy="0.35" r="0.7">
           <stop offset="0%" stopColor="#fef3c7" />
           <stop offset="100%" stopColor="#f59e0b" />
         </radialGradient>
       </defs>
-      <rect
-        width="64"
-        height="64"
-        rx="14"
-        fill={`url(#mb-logo-bg-${size})`}
-      />
+      <rect width="64" height="64" rx="14" fill={`url(#mb-logo-bg-${size})`} />
       <path
         d="M 6 52 Q 24 12 58 10"
         stroke="rgba(255,255,255,0.18)"

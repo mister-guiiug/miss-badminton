@@ -78,7 +78,9 @@ export function OnboardingHint() {
           }}
         >
           <Logo size={36} />
-          {t('onboarding.title').replace(/\s*🏸\s*/, '').trim()}
+          {t('onboarding.title')
+            .replace(/\s*🏸\s*/, '')
+            .trim()}
         </h2>
         <ul
           className="space-y-2 text-sm leading-snug"
@@ -104,13 +106,7 @@ export function OnboardingHint() {
   );
 }
 
-function Item({
-  icon,
-  children,
-}: {
-  icon: string;
-  children: React.ReactNode;
-}) {
+function Item({ icon, children }: { icon: string; children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-3">
       <span
