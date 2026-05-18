@@ -106,6 +106,16 @@ export const PersistedGameStateSchema = z.object({
 /** Liste de noms de joueurs mémorisée pour l'autocomplete. */
 export const PlayerNamesSchema = z.array(z.string());
 
+/** Modèle de match favori : un MatchConfig nommé, rappelable depuis la home. */
+export const MatchTemplateSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1),
+  createdAt: z.number().int().positive(),
+  config: MatchConfigSchema,
+});
+export const MatchTemplateArraySchema = z.array(MatchTemplateSchema);
+export type MatchTemplate = z.infer<typeof MatchTemplateSchema>;
+
 /** Format du blob d'export complet (Settings → Export). */
 export const ExportBundleSchema = z.object({
   version: z.string().optional(),
