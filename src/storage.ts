@@ -7,6 +7,7 @@ import {
   SavedMatchSchema,
 } from './schemas';
 import type { z } from 'zod';
+import { idbGet, idbSet } from './idb';
 
 const LS = {
   match: 'mb_active_match',
@@ -149,19 +150,62 @@ export const storage = {
     safeWrite(LS.players, names.slice(0, MAX_PLAYERS));
   },
 
+  /**
+   * Lecture synchrone — renvoie la copie cache en localStorage (plafonnée
+   * à `MAX_HISTORY`). `loadHistoryAsync` complète plus tard avec la version
+   * complète depuis IndexedDB.
+   */
   loadHistory: (): SavedMatch[] =>
     safeReadValidated(LS.history, SavedMatchArraySchema, []) ?? [],
+  /**
+   * Lecture async depuis IndexedDB (source de vérité, non plafonnée).
+   * Effectue une migration one-shot localStorage → IDB si IDB est vide.
+   */
+  loadHistoryAsync: async (): Promise<SavedMatch[]> => {
+    const raw = await idbGet<unknown>('history');
+    if (raw !== undefined) {
+      const result = SavedMatchArraySchema.safeParse(raw);
+      if (result.success) return result.data;
+    }
+    // IDB vide : seed depuis localStorage si présent (migration douce).
+    const fromLs = storage.loadHistory();
+    if (fromLs.length > 0) {
+      await idbSet('history', fromLs);
+    }
+    return fromLs;
+  },
   saveMatchToHistory: (m: SavedMatch): void => {
     const current = storage.loadHistory();
     if (current.some(x => x.id === m.id)) return;
-    const next = [m, ...current].slice(0, MAX_HISTORY);
-    safeWrite(LS.history, next);
+    const next = [m, ...current];
+    // localStorage : cache plafonné pour la lecture synchrone d'init.
+    safeWrite(LS.history, next.slice(0, MAX_HISTORY));
+    // IDB : source de vérité non plafonnée. On lit l'état IDB, on insère
+    // en tête, et on ré-écrit. Le `void` est volontaire — l'UI ne doit pas
+    // attendre l'IDB pour répondre.
+    void idbGet<unknown>('history').then(raw => {
+      const parsed = SavedMatchArraySchema.safeParse(raw ?? []);
+      const base: SavedMatch[] = parsed.success ? parsed.data : [];
+      if (base.some(x => x.id === m.id)) return;
+      void idbSet('history', [m, ...base]);
+    });
   },
   removeMatchFromHistory: (id: string): void => {
     const next = storage.loadHistory().filter(m => m.id !== id);
     safeWrite(LS.history, next);
+    void idbGet<unknown>('history').then(raw => {
+      const parsed = SavedMatchArraySchema.safeParse(raw ?? []);
+      if (!parsed.success) return;
+      void idbSet(
+        'history',
+        parsed.data.filter(m => m.id !== id)
+      );
+    });
   },
-  clearHistory: (): void => safeRemove(LS.history),
+  clearHistory: (): void => {
+    safeRemove(LS.history);
+    void idbSet('history', []);
+  },
   /**
    * Remplace tout l'historique (utilisé par l'import) en passant par la
    * validation. Retourne `false` si la donnée fournie n'est pas valide.
@@ -170,6 +214,7 @@ export const storage = {
     const result = SavedMatchArraySchema.safeParse(matches);
     if (!result.success) return false;
     safeWrite(LS.history, result.data.slice(0, MAX_HISTORY));
+    void idbSet('history', result.data);
     return true;
   },
 

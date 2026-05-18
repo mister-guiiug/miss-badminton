@@ -67,6 +67,7 @@ export interface Messages {
     resumeChrono: string;
     resetChrono: string;
     confirmResetChrono: string;
+    tieBreakBanner: string;
   };
   sideChange: {
     title: string;
@@ -303,6 +304,7 @@ const fr: Messages = {
     resumeChrono: 'Reprendre le chrono',
     resetChrono: 'Remettre le chrono à zéro',
     confirmResetChrono: 'Remettre le chrono à 0 ?',
+    tieBreakBanner: 'Mort subite — prochain point gagne le set',
   },
   sideChange: {
     title: 'Changement de côté',
@@ -543,6 +545,7 @@ const en: Messages = {
     resumeChrono: 'Resume the timer',
     resetChrono: 'Reset the timer to zero',
     confirmResetChrono: 'Reset the timer to 0?',
+    tieBreakBanner: 'Sudden death — next point wins the set',
   },
   sideChange: {
     title: 'Change ends',
@@ -779,6 +782,7 @@ const es: Messages = {
     resumeChrono: 'Reanudar el cronómetro',
     resetChrono: 'Reiniciar el cronómetro',
     confirmResetChrono: '¿Reiniciar el cronómetro a 0?',
+    tieBreakBanner: 'Muerte súbita — el próximo punto gana el set',
   },
   sideChange: {
     title: 'Cambio de lado',
