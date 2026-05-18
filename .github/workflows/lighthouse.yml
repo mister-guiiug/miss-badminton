@@ -28,6 +28,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
+        env:
+          # LHCI sert dist/ à la racine ; pas de préfixe `/miss-badminton/`.
+          VITE_BASE_PATH: /
         run: npm run build
 
       - name: Lighthouse CI
