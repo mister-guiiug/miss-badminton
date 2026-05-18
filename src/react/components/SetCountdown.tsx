@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface SetCountdownProps {
   /** Timestamp du premier point du set (ms). `null` = set non démarré. */
@@ -21,10 +21,15 @@ function format(ms: number): string {
 }
 
 /**
- * Badge décompte pour les sets à durée limitée. Quand le timer atteint 0,
- * appelle `onElapsed` exactement une fois. Le calcul du temps restant ne
- * tient pas compte des pauses fines — on retire seulement `pausedAccumulatedMs`,
- * cohérent avec `MatchDuration`.
+ * Badge décompte pour les sets à durée limitée.
+ *
+ * Garanties :
+ *  - `onElapsed` est appelé AU PLUS UNE FOIS par cycle (entre deux remises à
+ *    zéro du `setStartedAt`). Une `firedRef` interne empêche le re-fire lors
+ *    d'un re-render ou si l'identité de `onElapsed` change.
+ *  - Le ref se relâche quand `setStartedAt` repasse à `null` (nouveau set).
+ *  - L'effet écoute `onElapsed` via une ref pour ne pas se re-déclencher si
+ *    son identité change (corrige l'ancien `// eslint-disable exhaustive-deps`).
  */
 export function SetCountdown({
   setStartedAt,
@@ -35,6 +40,21 @@ export function SetCountdown({
 }: SetCountdownProps) {
   const [now, setNow] = useState(() => Date.now());
   const active = setStartedAt !== null && timeLimitMin !== null && !paused;
+
+  // `onElapsed` est susceptible de changer d'identité entre les renders.
+  // On le lit toujours via ref pour ne pas re-déclencher l'effet de fire.
+  const onElapsedRef = useRef(onElapsed);
+  useEffect(() => {
+    onElapsedRef.current = onElapsed;
+  }, [onElapsed]);
+
+  // Garde-fou : un seul fire par cycle de set (clé = setStartedAt).
+  const firedRef = useRef<number | null>(null);
+  useEffect(() => {
+    // Au changement de set (nouveau timestamp de départ, ou retour à null),
+    // on relâche la garde.
+    firedRef.current = null;
+  }, [setStartedAt]);
 
   // Tick à 2 Hz tant que le décompte est actif.
   useEffect(() => {
@@ -53,12 +73,14 @@ export function SetCountdown({
   const finished =
     timeLimitMin !== null && setStartedAt !== null && remaining === 0;
 
-  // Déclenchement unique à la fin du décompte. Le hook est appelé
-  // inconditionnellement (rules of hooks) ; le corps est gardé par `finished`.
+  // Déclenchement unique. Le hook est toujours appelé (rules of hooks) ;
+  // la garde `firedRef` protège du double fire.
   useEffect(() => {
-    if (finished) onElapsed();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finished]);
+    if (!finished) return;
+    if (firedRef.current === setStartedAt) return;
+    firedRef.current = setStartedAt;
+    onElapsedRef.current();
+  }, [finished, setStartedAt]);
 
   if (timeLimitMin === null || setStartedAt === null) return null;
 

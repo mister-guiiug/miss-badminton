@@ -104,6 +104,12 @@ interface MatchState {
 
   // History
   matchHistory: SavedMatch[];
+  /**
+   * Faux jusqu'à ce que l'hydratation IndexedDB ait fini (généralement
+   * < 100 ms après le mount). Utile pour afficher un indicateur "Sync…"
+   * dans HistoryView quand le cache localStorage est tronqué.
+   */
+  historyHydrated: boolean;
   saveToHistory: (match: SavedMatch) => void;
   editSetScore: (setIndex: number, team1: number, team2: number) => boolean;
   /**
@@ -182,6 +188,7 @@ export const useMatchStore = create<MatchState>()(
       pendingFeedback: null,
       lastSetSummary: null,
       matchHistory: storage.loadHistory(),
+      historyHydrated: false,
 
       setMatch: config => set({ match: config, history: [] }),
 
@@ -484,9 +491,20 @@ export const useMatchStore = create<MatchState>()(
       closeCurrentSet: () => {
         const state = get();
         if (!state.match || state.matchWinner) return 'no-match';
+        // Idempotence : si le set a déjà été clôturé (par le score normal,
+        // par un appel précédent à closeCurrentSet, ou parce que le set
+        // n'a même pas démarré), on ne fait rien.
+        if (
+          state.currentSetStartedAt === null &&
+          state.score1 === 0 &&
+          state.score2 === 0
+        ) {
+          return 'no-match';
+        }
         if (state.score1 === state.score2) {
           if (state.match.tieBreak === 'sudden-death') {
-            set({ pendingTieBreak: true });
+            // Pas d'effet si déjà armé.
+            if (!state.pendingTieBreak) set({ pendingTieBreak: true });
             return 'tie-break-required';
           }
           return 'draw';
@@ -681,7 +699,9 @@ if (typeof window !== 'undefined') {
       history.length !== current.length ||
       history.some((m, i) => m.id !== current[i]?.id)
     ) {
-      useMatchStore.setState({ matchHistory: history });
+      useMatchStore.setState({ matchHistory: history, historyHydrated: true });
+    } else {
+      useMatchStore.setState({ historyHydrated: true });
     }
   });
 }
