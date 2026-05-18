@@ -37,7 +37,7 @@ import {
   Undo2Icon,
 } from '../components/icons';
 import { type SavedMatch } from '../../storage';
-import { useMatchStore, type ServiceSide } from '../../store/useMatchStore';
+import { useMatchStore } from '../../store/useMatchStore';
 
 // Détecte à la compilation les .riv présents sous src/assets/rive/. Évite
 // ainsi tout fetch (et donc tout 404) quand le fichier n'a pas été déposé.
