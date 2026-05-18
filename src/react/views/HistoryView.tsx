@@ -56,14 +56,20 @@ function computeStats(matches: SavedMatch[]): {
   topPlayer: PlayerStat | null;
   totalDurationMs: number;
 } {
-  if (matches.length === 0) return { total: 0, topPlayer: null, totalDurationMs: 0 };
+  if (matches.length === 0)
+    return { total: 0, topPlayer: null, totalDurationMs: 0 };
   const stats = new Map<string, PlayerStat>();
   let totalDurationMs = 0;
 
   const bump = (name: string, won: boolean) => {
     const key = name.trim().toLowerCase();
     if (!key) return;
-    const existing = stats.get(key) ?? { name: name.trim(), wins: 0, total: 0, winRate: 0 };
+    const existing = stats.get(key) ?? {
+      name: name.trim(),
+      wins: 0,
+      total: 0,
+      winRate: 0,
+    };
     existing.total += 1;
     if (won) existing.wins += 1;
     existing.winRate = (existing.wins / existing.total) * 100;
@@ -101,7 +107,12 @@ export function HistoryView() {
   const { t, locale } = useI18n();
   const navigate = useNavigate();
   const colors = useTeamColors();
-  const { matchHistory: matches, removeFromHistory, clearHistory, setMatch } = useMatchStore();
+  const {
+    matchHistory: matches,
+    removeFromHistory,
+    clearHistory,
+    setMatch,
+  } = useMatchStore();
   const [clearOpen, setClearOpen] = useState(false);
 
   const handleClear = () => {
@@ -179,10 +190,7 @@ export function HistoryView() {
             >
               {t('settings.playTime')}
             </p>
-            <p
-              className="text-3xl font-black"
-              style={{ color: 'var(--text)' }}
-            >
+            <p className="text-3xl font-black" style={{ color: 'var(--text)' }}>
               {formatDuration(stats.totalDurationMs)}
             </p>
           </div>
@@ -196,15 +204,21 @@ export function HistoryView() {
             </p>
             {stats.topPlayer ? (
               <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-black" style={{ color: 'var(--primary)' }}>
+                <p
+                  className="text-2xl font-black"
+                  style={{ color: 'var(--primary)' }}
+                >
                   {stats.topPlayer.name}
                 </p>
                 <p className="text-sm font-bold opacity-60">
-                  {stats.topPlayer.wins}/{stats.topPlayer.total} ({stats.topPlayer.winRate.toFixed(0)}%)
+                  {stats.topPlayer.wins}/{stats.topPlayer.total} (
+                  {stats.topPlayer.winRate.toFixed(0)}%)
                 </p>
               </div>
             ) : (
-              <p className="text-lg font-bold opacity-40">{t('historyExtra.statsNone')}</p>
+              <p className="text-lg font-bold opacity-40">
+                {t('historyExtra.statsNone')}
+              </p>
             )}
           </div>
         </section>
@@ -268,21 +282,36 @@ export function HistoryView() {
 
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0 flex-1">
-                    <p className={`truncate text-lg font-black ${match.winner === 'team1' ? '' : 'opacity-40'}`}
-                       style={{ color: match.winner === 'team1' ? colors.team1 : undefined }}>
+                    <p
+                      className={`truncate text-lg font-black ${match.winner === 'team1' ? '' : 'opacity-40'}`}
+                      style={{
+                        color:
+                          match.winner === 'team1' ? colors.team1 : undefined,
+                      }}
+                    >
                       {t1}
                     </p>
-                    <p className={`truncate text-lg font-black ${match.winner === 'team2' ? '' : 'opacity-40'}`}
-                       style={{ color: match.winner === 'team2' ? colors.team2 : undefined }}>
+                    <p
+                      className={`truncate text-lg font-black ${match.winner === 'team2' ? '' : 'opacity-40'}`}
+                      style={{
+                        color:
+                          match.winner === 'team2' ? colors.team2 : undefined,
+                      }}
+                    >
                       {t2}
                     </p>
                   </div>
                   <div className="text-right text-3xl font-black tabular-nums tracking-tighter">
-                    {match.finalSetWins.team1} <span className="opacity-20">–</span> {match.finalSetWins.team2}
+                    {match.finalSetWins.team1}{' '}
+                    <span className="opacity-20">–</span>{' '}
+                    {match.finalSetWins.team2}
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                <div
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3"
+                  style={{ borderColor: 'var(--border)' }}
+                >
                   <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-60">
                     <TrophyIcon size={14} />
                     {winnerName}

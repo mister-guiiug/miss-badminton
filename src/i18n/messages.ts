@@ -390,7 +390,8 @@ const fr: Messages = {
     exportButton: 'Exporter (JSON)',
     importButton: 'Importer (JSON)',
     playersLabel: 'Joueurs enregistrés',
-    playersHelp: 'Gérez la liste des noms suggérés lors de la création d’un match.',
+    playersHelp:
+      'Gérez la liste des noms suggérés lors de la création d’un match.',
     totalMatches: 'Total Matchs',
     playTime: 'Temps de jeu',
     importError: 'Erreur lors de l’importation du fichier.',
