@@ -3,9 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type {
   MatchConfig,
   PointsCap,
-  SideChange,
 } from '../react/components/MatchSetupWizard';
-import { storage, type PersistedGameState, type SavedMatch } from '../storage';
+import { storage, type SavedMatch } from '../storage';
 
 export type ServiceSide = 'team1' | 'team2';
 
