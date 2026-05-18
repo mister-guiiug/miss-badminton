@@ -120,6 +120,11 @@ export const storage = {
     );
     safeWrite(LS.players, next);
   },
+  removePlayerName: (name: string): void => {
+    const current = storage.loadPlayerNames();
+    const next = current.filter(n => n !== name);
+    safeWrite(LS.players, next);
+  },
 
   loadHistory: (): SavedMatch[] => safeRead<SavedMatch[]>(LS.history) ?? [],
   saveMatchToHistory: (m: SavedMatch): void => {
