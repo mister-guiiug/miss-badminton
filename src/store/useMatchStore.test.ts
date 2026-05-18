@@ -87,8 +87,16 @@ describe('useMatchStore', () => {
   describe('cap', () => {
     it('clôt un set au plafond même sans écart de 2', () => {
       useMatchStore.getState().setMatch(standardConfig({ cap: 30 }));
-      scoreN('team1', 29);
-      scoreN('team2', 29);
+      // On amène d'abord à 20-20 sinon team1 ferme le set à 21-0.
+      scoreN('team1', 20);
+      scoreN('team2', 20);
+      // Puis on monte en deuce jusqu'à 29-29 en alternant.
+      for (let i = 0; i < 9; i++) {
+        useMatchStore.getState().score('team1');
+        useMatchStore.getState().score('team2');
+      }
+      expect(useMatchStore.getState().score1).toBe(29);
+      expect(useMatchStore.getState().score2).toBe(29);
       scoreN('team1', 1);
       // 30-29 : avec cap=30, team1 gagne dès qu'il atteint 30 en menant.
       expect(useMatchStore.getState().setScores).toEqual([
