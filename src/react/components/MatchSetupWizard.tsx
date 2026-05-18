@@ -12,9 +12,19 @@ export type MatchType = 'singles' | 'doubles';
  * - 5 = best of 9
  */
 export type SetCount = 1 | 2 | 3 | 5;
-export type PointsTarget = 15 | 21 | 30 | 31;
+export type PointsTarget = 5 | 11 | 15 | 21 | 30 | 31;
 export type SideChange = 'decisive' | 'each-set' | 'mid-match';
-export type PointsCap = 30 | null;
+/** Plafond de score d'un set, indépendamment de la règle des 2 points. */
+export type PointsCap = number | null;
+/** Limite de temps en minutes (par set ou par match selon le contexte). */
+export type TimeLimitMin = number | null;
+/**
+ * Comportement quand un set atteint la limite de temps OU le plafond
+ * sans qu'aucune équipe ne soit en tête de 2 :
+ * - 'none' : on s'arrête, victoire à qui mène ; égalité = pas de gagnant
+ * - 'sudden-death' : un point supplémentaire départage
+ */
+export type TieBreak = 'none' | 'sudden-death';
 
 export interface Team {
   primary: string;
@@ -37,6 +47,13 @@ export interface MatchConfig {
   sideChange: SideChange;
   team1: Team;
   team2: Team;
+  /**
+   * Optionnel : durée maximale d'un set en minutes. À l'épuisement, le set
+   * est attribué selon `tieBreak`. Compatible avec l'ancien format (absent).
+   */
+  timeLimitMin?: TimeLimitMin;
+  /** Optionnel : comportement de départage. Défaut implicite : 'none'. */
+  tieBreak?: TieBreak;
 }
 
 interface WizardDraft {
@@ -45,6 +62,8 @@ interface WizardDraft {
   points: PointsTarget;
   cap: PointsCap;
   sideChange: SideChange;
+  timeLimitMin: TimeLimitMin;
+  tieBreak: TieBreak;
   team1: { primary: string; partner: string };
   team2: { primary: string; partner: string };
 }
@@ -55,6 +74,8 @@ const DEFAULT_DRAFT: WizardDraft = {
   points: 21,
   cap: null,
   sideChange: 'each-set',
+  timeLimitMin: null,
+  tieBreak: 'none',
   team1: { primary: '', partner: '' },
   team2: { primary: '', partner: '' },
 };
@@ -66,6 +87,8 @@ function draftFromConfig(config: MatchConfig): WizardDraft {
     points: config.points,
     cap: config.cap ?? null,
     sideChange: config.sideChange,
+    timeLimitMin: config.timeLimitMin ?? null,
+    tieBreak: config.tieBreak ?? 'none',
     team1: {
       primary: config.team1.primary,
       partner: config.team1.partner ?? '',
@@ -134,6 +157,8 @@ export function MatchSetupWizard({
       points: draft.points,
       cap: draft.cap,
       sideChange: draft.sideChange,
+      timeLimitMin: draft.timeLimitMin,
+      tieBreak: draft.tieBreak,
       team1: {
         primary: draft.team1.primary.trim(),
         partner: isDoubles ? draft.team1.partner.trim() : undefined,
@@ -255,6 +280,8 @@ export function MatchSetupWizard({
             points={draft.points}
             cap={draft.cap}
             sideChange={draft.sideChange}
+            timeLimitMin={draft.timeLimitMin}
+            tieBreak={draft.tieBreak}
             onChange={patch => setDraft(d => ({ ...d, ...patch }))}
           />
         )}
@@ -358,16 +385,33 @@ interface Step2Props {
   points: PointsTarget;
   cap: PointsCap;
   sideChange: SideChange;
+  timeLimitMin: TimeLimitMin;
+  tieBreak: TieBreak;
   onChange: (
-    patch: Partial<Pick<WizardDraft, 'sets' | 'points' | 'cap' | 'sideChange'>>
+    patch: Partial<
+      Pick<
+        WizardDraft,
+        'sets' | 'points' | 'cap' | 'sideChange' | 'timeLimitMin' | 'tieBreak'
+      >
+    >
   ) => void;
 }
 
 const SET_OPTIONS: SetCount[] = [1, 2, 3, 5];
-const POINT_OPTIONS: PointsTarget[] = [15, 21, 30, 31];
+const POINT_OPTIONS: PointsTarget[] = [5, 11, 15, 21, 30, 31];
 const CAP_OPTIONS: PointsCap[] = [null, 30];
+/** Options de durée de set en minutes ; `null` = pas de limite de temps. */
+const TIME_LIMIT_OPTIONS: TimeLimitMin[] = [null, 5, 10, 15, 20];
 
-function Step2({ sets, points, cap, sideChange, onChange }: Step2Props) {
+function Step2({
+  sets,
+  points,
+  cap,
+  sideChange,
+  timeLimitMin,
+  tieBreak,
+  onChange,
+}: Step2Props) {
   const { t } = useI18n();
   const sideChangeLabels: Record<SideChange, string> = {
     decisive: t('wizard.sideChangeDecisive'),
@@ -386,11 +430,27 @@ function Step2({ sets, points, cap, sideChange, onChange }: Step2Props) {
   const capKey = cap === null ? 'none' : String(cap);
   const capLabel =
     cap === null ? t('wizard.capNone') : t('wizard.capValue', { n: cap });
+  const timeOptions: { value: string; label: string }[] =
+    TIME_LIMIT_OPTIONS.map(v => ({
+      value: v === null ? 'none' : String(v),
+      label:
+        v === null ? t('wizard.timeLimitNone') : t('wizard.timeLimitMin', { n: v }),
+    }));
+  const timeKey = timeLimitMin === null ? 'none' : String(timeLimitMin);
+  const timeLabel =
+    timeLimitMin === null
+      ? t('wizard.timeLimitNone')
+      : t('wizard.timeLimitMin', { n: timeLimitMin });
+  const tieBreakOptions: { value: TieBreak; label: string }[] = [
+    { value: 'none', label: t('wizard.tieBreakNone') },
+    { value: 'sudden-death', label: t('wizard.tieBreakSudden') },
+  ];
   const summaryItems = [
     t('wizard.setsWinning', { wins: sets }),
     `${points} pts`,
     capLabel,
     sideChangeLabels[sideChange],
+    timeLabel,
   ];
 
   return (
@@ -459,6 +519,24 @@ function Step2({ sets, points, cap, sideChange, onChange }: Step2Props) {
         options={sideChangeOptions}
         onChange={v => onChange({ sideChange: v })}
       />
+      <PillGroup
+        label={t('wizard.timeLimit')}
+        help={t('wizard.timeLimitHelp')}
+        value={timeKey}
+        options={timeOptions}
+        onChange={v => onChange({ timeLimitMin: v === 'none' ? null : Number(v) })}
+        equalWidth
+      />
+      {timeLimitMin !== null && (
+        <PillGroup
+          label={t('wizard.tieBreak')}
+          help={t('wizard.tieBreakHelp')}
+          value={tieBreak}
+          options={tieBreakOptions}
+          onChange={v => onChange({ tieBreak: v })}
+          equalWidth
+        />
+      )}
     </div>
   );
 }

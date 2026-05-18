@@ -102,6 +102,14 @@ export interface Messages {
     sideChangeDecisive: string;
     sideChangeEachSet: string;
     sideChangeMidMatch: string;
+    timeLimit: string;
+    timeLimitHelp: string;
+    timeLimitNone: string;
+    timeLimitMin: string;
+    tieBreak: string;
+    tieBreakHelp: string;
+    tieBreakNone: string;
+    tieBreakSudden: string;
     redTeam: string;
     blueTeam: string;
     back: string;
@@ -199,6 +207,7 @@ export interface Messages {
     pointRemoved: string;
   };
   liveScore: string;
+  liveMatchOver: string;
   scoreSubtract: string;
   confirm: {
     title: string;
@@ -215,6 +224,18 @@ export interface Messages {
     statsWinRate: string;
     statsTopPlayer: string;
     statsNone: string;
+    leaderboardTitle: string;
+    h2hTitle: string;
+    periodLabel: string;
+    periodAll: string;
+    period30d: string;
+    period7d: string;
+    periodEmpty: string;
+    setsLabel: string;
+    editSetAria: string;
+    editSetTitle: string;
+    editSetCancel: string;
+    editSetSave: string;
   };
   matchOverExtra: {
     rematch: string;
@@ -317,6 +338,14 @@ const fr: Messages = {
     sideChangeDecisive: 'Set décisif uniquement',
     sideChangeEachSet: 'Chaque set',
     sideChangeMidMatch: 'Mi-match (à 11)',
+    timeLimit: 'Durée du set',
+    timeLimitHelp: 'Limite max. par set ; au temps, le score en tête l’emporte.',
+    timeLimitNone: 'Pas de limite',
+    timeLimitMin: '{n} min',
+    tieBreak: 'Départage',
+    tieBreakHelp: 'À la fin du temps imparti, en cas d’égalité.',
+    tieBreakNone: 'Match nul',
+    tieBreakSudden: 'Mort subite',
     redTeam: 'Équipe rouge',
     blueTeam: 'Équipe bleue',
     back: 'Retour',
@@ -417,6 +446,7 @@ const fr: Messages = {
     pointRemoved: '−1 {name}',
   },
   liveScore: 'Score : {a} contre {b}',
+  liveMatchOver: 'Match terminé. {winner} gagne.',
   scoreSubtract: 'Retirer un point à {name}',
   confirm: {
     title: 'Confirmer',
@@ -433,6 +463,18 @@ const fr: Messages = {
     statsWinRate: 'Joueur le plus victorieux',
     statsTopPlayer: '{name} — {wins}/{total}',
     statsNone: 'Pas encore de stats.',
+    leaderboardTitle: 'Classement',
+    h2hTitle: 'Face-à-face',
+    periodLabel: 'Période',
+    periodAll: 'Tout',
+    period30d: '30 jours',
+    period7d: '7 jours',
+    periodEmpty: 'Aucun match sur cette période.',
+    setsLabel: 'Détail des sets',
+    editSetAria: 'Modifier le set {n}',
+    editSetTitle: 'Modifier le set {n}',
+    editSetCancel: 'Annuler',
+    editSetSave: 'Enregistrer',
   },
   matchOverExtra: {
     rematch: 'Rejouer',
@@ -535,6 +577,14 @@ const en: Messages = {
     sideChangeDecisive: 'Decisive set only',
     sideChangeEachSet: 'Each set',
     sideChangeMidMatch: 'Mid-match (at 11)',
+    timeLimit: 'Set duration',
+    timeLimitHelp: 'Cap per set; at time-up, the leader wins the set.',
+    timeLimitNone: 'No limit',
+    timeLimitMin: '{n} min',
+    tieBreak: 'Tie-break',
+    tieBreakHelp: 'At time-up, when scores are tied.',
+    tieBreakNone: 'Draw',
+    tieBreakSudden: 'Sudden death',
     redTeam: 'Red team',
     blueTeam: 'Blue team',
     back: 'Back',
@@ -632,6 +682,7 @@ const en: Messages = {
     pointRemoved: '−1 {name}',
   },
   liveScore: 'Score: {a} versus {b}',
+  liveMatchOver: 'Match over. {winner} wins.',
   scoreSubtract: 'Subtract a point from {name}',
   confirm: {
     title: 'Confirm',
@@ -648,6 +699,18 @@ const en: Messages = {
     statsWinRate: 'Top player',
     statsTopPlayer: '{name} — {wins}/{total}',
     statsNone: 'No stats yet.',
+    leaderboardTitle: 'Leaderboard',
+    h2hTitle: 'Head-to-head',
+    periodLabel: 'Period',
+    periodAll: 'All',
+    period30d: '30 days',
+    period7d: '7 days',
+    periodEmpty: 'No match in this period.',
+    setsLabel: 'Set scores',
+    editSetAria: 'Edit set {n}',
+    editSetTitle: 'Edit set {n}',
+    editSetCancel: 'Cancel',
+    editSetSave: 'Save',
   },
   matchOverExtra: {
     rematch: 'Rematch',
@@ -750,6 +813,14 @@ const es: Messages = {
     sideChangeDecisive: 'Solo set decisivo',
     sideChangeEachSet: 'Cada set',
     sideChangeMidMatch: 'A mitad de partido (a 11)',
+    timeLimit: 'Duración del set',
+    timeLimitHelp: 'Tope por set; al tiempo, gana quien lidera.',
+    timeLimitNone: 'Sin límite',
+    timeLimitMin: '{n} min',
+    tieBreak: 'Desempate',
+    tieBreakHelp: 'Al cumplirse el tiempo, en caso de empate.',
+    tieBreakNone: 'Empate',
+    tieBreakSudden: 'Muerte súbita',
     redTeam: 'Equipo rojo',
     blueTeam: 'Equipo azul',
     back: 'Atrás',
@@ -849,6 +920,7 @@ const es: Messages = {
     pointRemoved: '−1 {name}',
   },
   liveScore: 'Marcador: {a} contra {b}',
+  liveMatchOver: 'Partido terminado. Gana {winner}.',
   scoreSubtract: 'Restar un punto a {name}',
   confirm: {
     title: 'Confirmar',
@@ -865,6 +937,18 @@ const es: Messages = {
     statsWinRate: 'Mejor jugador',
     statsTopPlayer: '{name} — {wins}/{total}',
     statsNone: 'Aún no hay estadísticas.',
+    leaderboardTitle: 'Clasificación',
+    h2hTitle: 'Cara a cara',
+    periodLabel: 'Periodo',
+    periodAll: 'Todo',
+    period30d: '30 días',
+    period7d: '7 días',
+    periodEmpty: 'Ningún partido en este periodo.',
+    setsLabel: 'Resultados por set',
+    editSetAria: 'Editar el set {n}',
+    editSetTitle: 'Editar el set {n}',
+    editSetCancel: 'Cancelar',
+    editSetSave: 'Guardar',
   },
   matchOverExtra: {
     rematch: 'Revancha',

@@ -5,6 +5,7 @@ import type {
   PointsCap,
 } from '../react/components/MatchSetupWizard';
 import { storage, type SavedMatch } from '../storage';
+import { ExportBundleSchema } from '../schemas';
 
 export type ServiceSide = 'team1' | 'team2';
 
@@ -76,8 +77,39 @@ interface MatchState {
   // History
   matchHistory: SavedMatch[];
   saveToHistory: (match: SavedMatch) => void;
+  editSetScore: (
+    setIndex: number,
+    team1: number,
+    team2: number
+  ) => boolean;
+  /**
+   * Édite le score d'un set d'un match déjà terminé et persisté.
+   * Recalcule `finalSetWins` et `winner` selon les sets résultants.
+   * Renvoie `false` si le match est introuvable ou l'index hors borne.
+   */
+  editHistorySetScore: (
+    matchId: string,
+    setIndex: number,
+    team1: number,
+    team2: number
+  ) => boolean;
   removeFromHistory: (id: string) => void;
   clearHistory: () => void;
+
+  /**
+   * Importe un blob d'export (Settings) validé via zod. Renvoie le détail
+   * de ce qui a été appliqué ou un message d'erreur si la donnée est
+   * structurellement invalide.
+   */
+  importBundle: (raw: unknown) => {
+    ok: boolean;
+    error?: string;
+    applied?: {
+      history: number;
+      players: number;
+      settings: boolean;
+    };
+  };
 }
 
 function isSetWon(
@@ -422,20 +454,116 @@ export const useMatchStore = create<MatchState>()(
       saveToHistory: match => {
         const history = get().matchHistory;
         if (history.some(m => m.id === match.id)) return;
-        const next = [match, ...history].slice(0, 50);
-        set({ matchHistory: next });
+        // `storage.saveMatchToHistory` applique le plafond MAX_HISTORY ;
+        // on re-lit ensuite l'historique pour rester en cohérence avec
+        // ce qui est réellement persisté (source de vérité = localStorage).
         storage.saveMatchToHistory(match);
+        set({ matchHistory: storage.loadHistory() });
+      },
+
+      editSetScore: (setIndex, t1, t2) => {
+        const state = get();
+        if (!state.match) return false;
+        if (setIndex < 0 || setIndex >= state.setScores.length) return false;
+        if (t1 < 0 || t2 < 0) return false;
+        const next = state.setScores.map((s, i) =>
+          i === setIndex ? { team1: t1, team2: t2 } : s
+        );
+        // Recalcule setWins en repassant sur la liste : on suppose qu'à
+        // chaque set, le gagnant est celui qui a le plus grand score (le
+        // wizard valide déjà les seuils ; l'édition se fait après la fin
+        // d'un set donc les scores sont supposés conformes).
+        const setWins = { team1: 0, team2: 0 };
+        for (const s of next) {
+          if (s.team1 > s.team2) setWins.team1 += 1;
+          else if (s.team2 > s.team1) setWins.team2 += 1;
+        }
+        const winner =
+          setWins.team1 >= state.match.sets
+            ? ('team1' as const)
+            : setWins.team2 >= state.match.sets
+              ? ('team2' as const)
+              : null;
+        set({ setScores: next, setWins, matchWinner: winner });
+        return true;
+      },
+
+      editHistorySetScore: (matchId, setIndex, t1, t2) => {
+        if (t1 < 0 || t2 < 0) return false;
+        const history = get().matchHistory;
+        const match = history.find(m => m.id === matchId);
+        if (!match) return false;
+        if (setIndex < 0 || setIndex >= match.setScores.length) return false;
+        const nextSetScores = match.setScores.map((s, i) =>
+          i === setIndex ? { team1: t1, team2: t2 } : s
+        );
+        const finalSetWins = { team1: 0, team2: 0 };
+        for (const s of nextSetScores) {
+          if (s.team1 > s.team2) finalSetWins.team1 += 1;
+          else if (s.team2 > s.team1) finalSetWins.team2 += 1;
+        }
+        const winner: 'team1' | 'team2' =
+          finalSetWins.team1 >= finalSetWins.team2 ? 'team1' : 'team2';
+        const updated: SavedMatch = {
+          ...match,
+          setScores: nextSetScores,
+          finalSetWins,
+          winner,
+        };
+        // Remplacement atomique : on rebâtit la liste persistée puis on
+        // re-synchronise l'état Zustand depuis le storage (source de vérité).
+        const nextHistory = history.map(m =>
+          m.id === matchId ? updated : m
+        );
+        storage.replaceHistory(nextHistory);
+        set({ matchHistory: storage.loadHistory() });
+        return true;
       },
 
       removeFromHistory: id => {
-        const next = get().matchHistory.filter(m => m.id !== id);
-        set({ matchHistory: next });
         storage.removeMatchFromHistory(id);
+        set({ matchHistory: storage.loadHistory() });
       },
 
       clearHistory: () => {
-        set({ matchHistory: [] });
         storage.clearHistory();
+        set({ matchHistory: [] });
+      },
+
+      importBundle: raw => {
+        const parsed = ExportBundleSchema.safeParse(raw);
+        if (!parsed.success) {
+          return { ok: false, error: 'invalid_format' };
+        }
+        const data = parsed.data;
+        let historyCount = 0;
+        let playersCount = 0;
+        let settingsApplied = false;
+        if (data.history) {
+          const ok = storage.replaceHistory(data.history);
+          if (ok) {
+            historyCount = data.history.length;
+            set({ matchHistory: storage.loadHistory() });
+          }
+        }
+        if (data.players) {
+          storage.replacePlayerNames(data.players);
+          playersCount = data.players.length;
+        }
+        if (data.settings) {
+          // L'application effective des réglages reste à la charge du caller
+          // (theme, locale, couleurs, sound, haptic) car ils vivent dans des
+          // hooks séparés. Le store se contente de valider le bundle.
+          settingsApplied = true;
+        }
+        return {
+          ok: true,
+          applied: {
+            history: historyCount,
+            players: playersCount,
+            settings: settingsApplied,
+          },
+        };
       },
     }),
     {

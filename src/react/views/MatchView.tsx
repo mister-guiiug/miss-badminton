@@ -21,18 +21,16 @@ import { ScoreToast } from '../components/ScoreToast';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
+import { MatchDuration, formatDuration } from '../components/MatchDuration';
 import {
   ArrowLeftRightIcon,
   ArrowUpDownIcon,
   FlameIcon,
   HomeIcon,
-  PauseIcon,
   PencilIcon,
-  PlayIcon,
   RotateCcwIcon,
   RotateCwIcon,
   Share2Icon,
-  TimerResetIcon,
   TrophyIcon,
   Undo2Icon,
 } from '../components/icons';
@@ -426,9 +424,21 @@ export function MatchView() {
             team2Color={colors.team2}
           />
 
-          {/* Annonce vocale du score pour les lecteurs d'écran */}
+          {/*
+            Annonce vocale du score pour les lecteurs d'écran. On inclut les
+            noms d'équipe (ou fallback) et un bandeau "match point" / "set
+            point" quand pertinent. Si le match est terminé, on annonce
+            l'équipe gagnante.
+           */}
           <span className="sr-only" role="status" aria-live="polite">
-            {t('liveScore', { a: score1, b: score2 })}
+            {matchWinner
+              ? t('liveMatchOver', { winner: winnerLabel })
+              : t('liveScore', { a: score1, b: score2 }) +
+                (team1AtMatchPoint || team2AtMatchPoint
+                  ? ' — ' + t('scoreboard.matchPoint')
+                  : team1AtSetPoint || team2AtSetPoint
+                    ? ' — ' + t('scoreboard.setPoint')
+                    : '')}
           </span>
 
           {toast && (
@@ -1048,91 +1058,9 @@ function MatchOverOverlay({
   );
 }
 
-interface MatchDurationProps {
-  startedAt: number | null;
-  endedAt: number | null;
-  pausedAt: number | null;
-  totalPausedMs: number;
-  onToggle: () => void;
-  onReset: () => void;
-  pauseLabel: string;
-  resumeLabel: string;
-  resetLabel: string;
-}
-
-function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
-  return `${m}:${pad(s)}`;
-}
-
-function MatchDuration({
-  startedAt,
-  endedAt,
-  pausedAt,
-  totalPausedMs,
-  onToggle,
-  onReset,
-  pauseLabel,
-  resumeLabel,
-  resetLabel,
-}: MatchDurationProps) {
-  const [now, setNow] = useState(() => Date.now());
-  const isPaused = pausedAt !== null;
-  const isFinished = endedAt !== null;
-  const isRunning = !!startedAt && !isPaused && !isFinished;
-
-  useEffect(() => {
-    if (!isRunning) return;
-    // Rafraîchit `now` immédiatement (sinon, à la reprise après pause,
-    // la valeur reste périmée pendant max 1 s et l'écoulement affiché
-    // est faussé jusqu'au prochain tick).
-    setNow(Date.now());
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [isRunning]);
-
-  if (!startedAt) return null;
-  const cursor = isFinished ? endedAt! : isPaused ? pausedAt! : now;
-  const elapsed = cursor - startedAt - totalPausedMs;
-  return (
-    <span className="ml-2 inline-flex items-center gap-1">
-      <span
-        aria-live="off"
-        className={`inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium tabular-nums ${isPaused ? 'opacity-60' : 'opacity-90'}`}
-      >
-        <span aria-hidden>⏱</span>
-        {formatDuration(elapsed)}
-      </span>
-      {!isFinished && (
-        <>
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-label={isPaused ? resumeLabel : pauseLabel}
-            title={isPaused ? resumeLabel : pauseLabel}
-            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
-          >
-            {isPaused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
-          </button>
-          <button
-            type="button"
-            onClick={onReset}
-            aria-label={resetLabel}
-            title={resetLabel}
-            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
-          >
-            <TimerResetIcon size={14} />
-          </button>
-        </>
-      )}
-    </span>
-  );
-}
+// MatchDuration extrait vers `../components/MatchDuration.tsx`. On
+// continue à `formatDuration` ailleurs dans ce fichier (résumé final, etc.)
+// via l'import nommé ci-dessus.
 
 interface StreakBadgeProps {
   side: 'left' | 'right';
