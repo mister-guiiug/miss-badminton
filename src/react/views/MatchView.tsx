@@ -21,7 +21,7 @@ import { ScoreToast } from '../components/ScoreToast';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
-import { MatchDuration, formatDuration } from '../components/MatchDuration';
+import { MatchDuration } from '../components/MatchDuration';
 import {
   ArrowLeftRightIcon,
   ArrowUpDownIcon,
