@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -8,10 +8,20 @@ import {
 } from 'react-router-dom';
 import { Shell } from './components/layout/Shell';
 import { HomeView } from './views/HomeView';
-import { MatchView } from './views/MatchView';
-import { HistoryView } from './views/HistoryView';
-import { SettingsView } from './views/SettingsView';
 import { useI18n } from '../i18n/useI18n';
+
+// HomeView reste eager : c'est la page d'atterrissage par défaut. Les
+// autres vues ne sont chargées qu'au premier accès — gain de bundle initial
+// et de temps jusqu'à l'interactivité sur l'accueil.
+const MatchView = lazy(() =>
+  import('./views/MatchView').then(m => ({ default: m.MatchView }))
+);
+const HistoryView = lazy(() =>
+  import('./views/HistoryView').then(m => ({ default: m.HistoryView }))
+);
+const SettingsView = lazy(() =>
+  import('./views/SettingsView').then(m => ({ default: m.SettingsView }))
+);
 
 function DocumentTitle() {
   const location = useLocation();
@@ -32,25 +42,39 @@ function DocumentTitle() {
   return null;
 }
 
+function RouteFallback() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex min-h-[40vh] items-center justify-center text-sm opacity-60"
+    >
+      …
+    </div>
+  );
+}
+
 function AppRoutes() {
   return (
     <Shell>
       <DocumentTitle />
-      <Routes>
-        <Route path="/" element={<HomeView />} />
-        <Route path="/match" element={<MatchView />} />
-        <Route path="/historique" element={<HistoryView />} />
-        <Route
-          path="/history"
-          element={<Navigate to="/historique" replace />}
-        />
-        <Route path="/parametres" element={<SettingsView />} />
-        <Route
-          path="/settings"
-          element={<Navigate to="/parametres" replace />}
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<HomeView />} />
+          <Route path="/match" element={<MatchView />} />
+          <Route path="/historique" element={<HistoryView />} />
+          <Route
+            path="/history"
+            element={<Navigate to="/historique" replace />}
+          />
+          <Route path="/parametres" element={<SettingsView />} />
+          <Route
+            path="/settings"
+            element={<Navigate to="/parametres" replace />}
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </Shell>
   );
 }

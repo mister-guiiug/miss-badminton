@@ -14,10 +14,12 @@ export function ScoreToast({
   background,
   triggerKey,
 }: ScoreToastProps) {
+  // Le parent remonte le composant via `key={triggerKey}`, donc l'état
+  // initial `true` est déjà correct à chaque nouvel événement — pas besoin
+  // de `setVisible(true)` synchrone dans l'effet.
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    setVisible(true);
     const t = window.setTimeout(() => setVisible(false), VISIBLE_MS);
     return () => window.clearTimeout(t);
   }, [triggerKey]);

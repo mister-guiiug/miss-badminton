@@ -64,10 +64,11 @@ export function SettingsView() {
     getStoredThemePreference()
   );
   const hasKeyboard = useLikelyHasKeyboard();
-  const { matchHistory } = useMatchStore();
+  const { matchHistory, importBundle } = useMatchStore();
   const [playerNames, setPlayerNames] = useState<string[]>(() =>
     storage.loadPlayerNames()
   );
+  const [importError, setImportError] = useState<string | null>(null);
 
   const colorsAreDefault =
     colors.team1.toLowerCase() === DEFAULT_TEAM1_COLOR &&
@@ -123,39 +124,44 @@ export function SettingsView() {
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setImportError(null);
     const reader = new FileReader();
     reader.onload = event => {
+      let parsed: unknown;
       try {
-        const data = JSON.parse(event.target?.result as string);
-        if (data.history) {
-          // We might want a more robust way to merge or replace history
-          // For now, let's just alert the user or implement a merge.
-          localStorage.setItem(
-            'mb_match_history',
-            JSON.stringify(data.history)
-          );
-        }
-        if (data.players) {
-          localStorage.setItem('mb_player_names', JSON.stringify(data.players));
-        }
-        if (data.settings) {
-          if (data.settings.theme) setThemePreference(data.settings.theme);
-          if (data.settings.locale)
-            localStorage.setItem(
-              'mb_locale',
-              JSON.stringify(data.settings.locale)
-            );
-          if (data.settings.team1Color)
-            setTeamColor('team1', data.settings.team1Color);
-          if (data.settings.team2Color)
-            setTeamColor('team2', data.settings.team2Color);
-          feedback.setSound(!!data.settings.sound);
-          feedback.setHaptic(!!data.settings.haptic);
-        }
-        window.location.reload();
+        parsed = JSON.parse(event.target?.result as string);
       } catch {
-        alert(t('settings.importError'));
+        setImportError(t('settings.importError'));
+        return;
       }
+      const result = importBundle(parsed);
+      if (!result.ok) {
+        setImportError(t('settings.importError'));
+        return;
+      }
+      // Réglages "satellites" : ils vivent en dehors du store de match
+      // (thème, locale, couleurs équipes, sound, haptic). On les applique
+      // ici uniquement si présents et bien typés ; les autres restent
+      // inchangés.
+      const settings = (parsed as { settings?: unknown }).settings as
+        | {
+            theme?: 'light' | 'dark' | 'system';
+            team1Color?: string;
+            team2Color?: string;
+            sound?: boolean;
+            haptic?: boolean;
+          }
+        | undefined;
+      if (settings?.theme) setThemePreference(settings.theme);
+      if (settings?.team1Color) setTeamColor('team1', settings.team1Color);
+      if (settings?.team2Color) setTeamColor('team2', settings.team2Color);
+      if (typeof settings?.sound === 'boolean')
+        feedback.setSound(settings.sound);
+      if (typeof settings?.haptic === 'boolean')
+        feedback.setHaptic(settings.haptic);
+      // Liste des joueurs : importBundle a déjà mis à jour le storage ;
+      // on rafraîchit l'état local pour refléter le changement sans reload.
+      setPlayerNames(storage.loadPlayerNames());
     };
     reader.readAsText(file);
   };
@@ -342,6 +348,19 @@ export function SettingsView() {
             />
           </label>
         </div>
+        {importError && (
+          <p
+            role="alert"
+            className="mt-2 rounded-lg px-3 py-2 text-xs"
+            style={{
+              background: 'rgba(220,38,38,0.08)',
+              border: '1px solid var(--danger)',
+              color: 'var(--danger)',
+            }}
+          >
+            {importError}
+          </p>
+        )}
       </Section>
 
       <Section
