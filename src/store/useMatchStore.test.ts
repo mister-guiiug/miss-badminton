@@ -16,6 +16,8 @@ function resetStore() {
     setScores: [],
     pendingSideChange: false,
     mid11Triggered: false,
+    pendingTieBreak: false,
+    currentSetStartedAt: null,
     startedAt: null,
     endedAt: null,
     pausedAt: null,
@@ -255,6 +257,84 @@ describe('useMatchStore', () => {
       scoreN('team1', 3);
       scoreN('team2', 3);
       expect(useMatchStore.getState().closeCurrentSet()).toBe('draw');
+    });
+
+    it("après 'tie-break-required', un seul point ferme le set", () => {
+      useMatchStore
+        .getState()
+        .setMatch(
+          standardConfig({ timeLimitMin: 10, tieBreak: 'sudden-death' })
+        );
+      scoreN('team1', 4);
+      scoreN('team2', 4);
+      // closeCurrentSet demande un tie-break ; pendingTieBreak doit être vrai
+      expect(useMatchStore.getState().closeCurrentSet()).toBe(
+        'tie-break-required'
+      );
+      expect(useMatchStore.getState().pendingTieBreak).toBe(true);
+
+      // Le prochain point ferme immédiatement le set (pas besoin d'écart 2,
+      // pas besoin d'atteindre les 21 — c'est la mort subite).
+      useMatchStore.getState().score('team1');
+      const s = useMatchStore.getState();
+      expect(s.setScores).toEqual([{ team1: 5, team2: 4 }]);
+      expect(s.setWins).toEqual({ team1: 1, team2: 0 });
+      // Le flag est consommé.
+      expect(s.pendingTieBreak).toBe(false);
+    });
+
+    it('currentSetStartedAt se positionne au premier point puis se reset à la fin du set', () => {
+      useMatchStore.getState().setMatch(standardConfig({ timeLimitMin: 10 }));
+      expect(useMatchStore.getState().currentSetStartedAt).toBeNull();
+      useMatchStore.getState().score('team1');
+      expect(typeof useMatchStore.getState().currentSetStartedAt).toBe(
+        'number'
+      );
+      // Fin du set : la valeur doit retomber à null pour démarrer un nouveau
+      // décompte au point suivant.
+      scoreN('team1', 20);
+      expect(useMatchStore.getState().setScores).toHaveLength(1);
+      expect(useMatchStore.getState().currentSetStartedAt).toBeNull();
+    });
+  });
+
+  describe('editHistorySetScore', () => {
+    function saveSampleMatch(id: string) {
+      useMatchStore.getState().saveToHistory({
+        id,
+        completedAt: Date.now(),
+        config: standardConfig({ sets: 2 }),
+        setScores: [
+          { team1: 21, team2: 18 },
+          { team1: 19, team2: 21 },
+          { team1: 21, team2: 15 },
+        ],
+        finalSetWins: { team1: 2, team2: 1 },
+        winner: 'team1',
+      });
+    }
+
+    it("met à jour un set d'un match passé et recalcule winner", () => {
+      saveSampleMatch('m1');
+      // Inverser le résultat du set 3 → team2 gagne le match 1-2.
+      const ok = useMatchStore.getState().editHistorySetScore('m1', 2, 15, 21);
+      expect(ok).toBe(true);
+      const match = useMatchStore
+        .getState()
+        .matchHistory.find(m => m.id === 'm1');
+      expect(match?.setScores[2]).toEqual({ team1: 15, team2: 21 });
+      expect(match?.finalSetWins).toEqual({ team1: 1, team2: 2 });
+      expect(match?.winner).toBe('team2');
+    });
+
+    it('refuse un matchId inconnu ou un index hors borne', () => {
+      saveSampleMatch('m2');
+      expect(
+        useMatchStore.getState().editHistorySetScore('inconnu', 0, 0, 0)
+      ).toBe(false);
+      expect(useMatchStore.getState().editHistorySetScore('m2', 99, 0, 0)).toBe(
+        false
+      );
     });
   });
 

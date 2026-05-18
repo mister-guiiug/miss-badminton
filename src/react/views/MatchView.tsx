@@ -22,6 +22,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
 import { MatchDuration } from '../components/MatchDuration';
+import { SetCountdown } from '../components/SetCountdown';
 import {
   ArrowLeftRightIcon,
   ArrowUpDownIcon,
@@ -125,6 +126,8 @@ export function MatchView() {
     pausedAt,
     totalPausedMs,
     history,
+    pendingTieBreak,
+    currentSetStartedAt,
     score: handleScore,
     subtract: handleSubtract,
     undo: handleUndo,
@@ -139,6 +142,7 @@ export function MatchView() {
     resumeChrono,
     resetChrono,
     saveToHistory,
+    closeCurrentSet,
   } = useMatchStore();
 
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -601,6 +605,17 @@ export function MatchView() {
             />
           )}
 
+          {pendingTieBreak && !matchWinner && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="pointer-events-none absolute left-1/2 top-[18%] z-[9] -translate-x-1/2 select-none whitespace-nowrap rounded-full bg-red-600/95 px-4 py-1.5 text-sm font-bold text-white shadow-lg"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}
+            >
+              ⚡ {t('scoreboard.tieBreakBanner')}
+            </div>
+          )}
+
           {lastSetSummary && !matchWinner && (
             <SetTransitionBanner
               winnerName={
@@ -647,6 +662,20 @@ export function MatchView() {
               resumeLabel={t('scoreboard.resumeChrono')}
               resetLabel={t('scoreboard.resetChrono')}
             />
+            {match?.timeLimitMin != null && !matchWinner && (
+              <SetCountdown
+                setStartedAt={currentSetStartedAt}
+                timeLimitMin={match.timeLimitMin}
+                pausedAccumulatedMs={totalPausedMs}
+                paused={pausedAt !== null}
+                onElapsed={() => {
+                  // Évite les rappels répétés une fois fini : closeCurrentSet
+                  // est idempotent quand le set est déjà fermé (currentSetStartedAt
+                  // repasse à null, désactivant le badge).
+                  closeCurrentSet();
+                }}
+              />
+            )}
           </span>
           <div className="flex items-center gap-1 text-base">
             <button

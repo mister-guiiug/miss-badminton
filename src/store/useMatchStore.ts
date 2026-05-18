@@ -45,6 +45,18 @@ interface MatchState {
   setScores: { team1: number; team2: number }[];
   pendingSideChange: boolean;
   mid11Triggered: boolean;
+  /**
+   * Vrai entre l'instant où `closeCurrentSet` a renvoyé `'tie-break-required'`
+   * et la résolution du point décisif. Le prochain `score(team)` ferme alors
+   * le set immédiatement, indépendamment du seuil de points ou du cap.
+   */
+  pendingTieBreak: boolean;
+  /**
+   * Timestamp du premier point du set en cours. Sert à mesurer la durée
+   * écoulée pour la limite de temps (`match.timeLimitMin`). `null` tant
+   * qu'aucun point n'a été marqué dans le set courant.
+   */
+  currentSetStartedAt: number | null;
   startedAt: number | null;
   endedAt: number | null;
   pausedAt: number | null;
@@ -156,6 +168,8 @@ export const useMatchStore = create<MatchState>()(
       setScores: [],
       pendingSideChange: false,
       mid11Triggered: false,
+      pendingTieBreak: false,
+      currentSetStartedAt: null,
       startedAt: null,
       endedAt: null,
       pausedAt: null,
@@ -179,18 +193,15 @@ export const useMatchStore = create<MatchState>()(
         const nextS1 = team === 'team1' ? state.score1 + 1 : state.score1;
         const nextS2 = team === 'team2' ? state.score2 + 1 : state.score2;
 
-        const team1Won = isSetWon(
-          nextS1,
-          nextS2,
-          state.match.points,
-          state.match.cap
-        );
-        const team2Won = isSetWon(
-          nextS2,
-          nextS1,
-          state.match.points,
-          state.match.cap
-        );
+        // Sudden death : un point déclenché par `closeCurrentSet` à l'épuisement
+        // du temps. Ce point ferme le set immédiatement, indépendamment du
+        // seuil de points ou du cap.
+        const team1Won = state.pendingTieBreak
+          ? team === 'team1'
+          : isSetWon(nextS1, nextS2, state.match.points, state.match.cap);
+        const team2Won = state.pendingTieBreak
+          ? team === 'team2'
+          : isSetWon(nextS2, nextS1, state.match.points, state.match.cap);
         const setEnded = team1Won || team2Won;
 
         const baseHistory: HistoryEntry = {
@@ -254,6 +265,8 @@ export const useMatchStore = create<MatchState>()(
             setScores: nextSetScores,
             pendingSideChange,
             mid11Triggered: false,
+            pendingTieBreak: false,
+            currentSetStartedAt: null,
             history: [...state.history, { ...baseHistory, matchEnded }],
             pendingFeedback: matchEnded ? 'matchWon' : 'setWon',
             lastSetSummary: {
@@ -288,6 +301,9 @@ export const useMatchStore = create<MatchState>()(
           server: team,
           pendingSideChange,
           mid11Triggered,
+          // Le set démarre au premier point ; les suivants conservent la
+          // valeur (qui sert de référence pour la limite de temps).
+          currentSetStartedAt: state.currentSetStartedAt ?? now,
           history: [...state.history, baseHistory],
           pendingFeedback: 'point',
           lastSetSummary: null,
@@ -410,6 +426,8 @@ export const useMatchStore = create<MatchState>()(
           setScores: [],
           pendingSideChange: false,
           mid11Triggered: false,
+          pendingTieBreak: false,
+          currentSetStartedAt: null,
           history: [],
           pendingFeedback: null,
           lastSetSummary: null,
@@ -468,6 +486,7 @@ export const useMatchStore = create<MatchState>()(
         if (!state.match || state.matchWinner) return 'no-match';
         if (state.score1 === state.score2) {
           if (state.match.tieBreak === 'sudden-death') {
+            set({ pendingTieBreak: true });
             return 'tie-break-required';
           }
           return 'draw';
@@ -493,6 +512,8 @@ export const useMatchStore = create<MatchState>()(
           setScores: nextSetScores,
           pendingSideChange: false,
           mid11Triggered: false,
+          pendingTieBreak: false,
+          currentSetStartedAt: null,
           history: [],
           pendingFeedback: matchEnded ? 'matchWon' : 'setWon',
           lastSetSummary: {
@@ -621,6 +642,7 @@ export const useMatchStore = create<MatchState>()(
     {
       name: 'mb-match-storage',
       storage: createJSONStorage(() => localStorage),
+      version: 1,
       partialize: state => ({
         match: state.match,
         score1: state.score1,
@@ -631,6 +653,8 @@ export const useMatchStore = create<MatchState>()(
         setScores: state.setScores,
         pendingSideChange: state.pendingSideChange,
         mid11Triggered: state.mid11Triggered,
+        pendingTieBreak: state.pendingTieBreak,
+        currentSetStartedAt: state.currentSetStartedAt,
         startedAt: state.startedAt,
         endedAt: state.endedAt,
         pausedAt: state.pausedAt,
@@ -643,3 +667,21 @@ export const useMatchStore = create<MatchState>()(
     }
   )
 );
+
+// Hydratation asynchrone de l'historique depuis IndexedDB. À l'init, le
+// store contient déjà la copie cache (localStorage, plafonnée). Une fois
+// IDB résolu, on remplace par la version complète non plafonnée. En
+// environnement non-browser (SSR, tests sans jsdom IDB), `loadHistoryAsync`
+// retombe sur le cache localStorage — pas d'effet de bord.
+if (typeof window !== 'undefined') {
+  void storage.loadHistoryAsync().then(history => {
+    const current = useMatchStore.getState().matchHistory;
+    // Évite un setState inutile si rien n'a changé.
+    if (
+      history.length !== current.length ||
+      history.some((m, i) => m.id !== current[i]?.id)
+    ) {
+      useMatchStore.setState({ matchHistory: history });
+    }
+  });
+}
