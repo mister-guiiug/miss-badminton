@@ -168,6 +168,15 @@ export interface Messages {
     updateHelp: string;
     updateButton: string;
     updateChecking: string;
+    dataLabel: string;
+    dataHelp: string;
+    exportButton: string;
+    importButton: string;
+    playersLabel: string;
+    playersHelp: string;
+    totalMatches: string;
+    playTime: string;
+    importError: string;
   };
   shortcuts: {
     title: string;
@@ -376,6 +385,16 @@ const fr: Messages = {
       "Force la recherche d'une nouvelle version et recharge l'application.",
     updateButton: 'Forcer la mise à jour',
     updateChecking: 'Vérification…',
+    dataLabel: 'Gestion des données',
+    dataHelp: 'Exportez ou importez votre historique et vos réglages.',
+    exportButton: 'Exporter (JSON)',
+    importButton: 'Importer (JSON)',
+    playersLabel: 'Joueurs enregistrés',
+    playersHelp:
+      'Gérez la liste des noms suggérés lors de la création d’un match.',
+    totalMatches: 'Total Matchs',
+    playTime: 'Temps de jeu',
+    importError: 'Erreur lors de l’importation du fichier.',
   },
   shortcuts: {
     title: 'Raccourcis clavier',
@@ -582,6 +601,15 @@ const en: Messages = {
     updateHelp: 'Force a check for a new version and reload the app.',
     updateButton: 'Force update',
     updateChecking: 'Checking…',
+    dataLabel: 'Data Management',
+    dataHelp: 'Export or import your history and settings.',
+    exportButton: 'Export (JSON)',
+    importButton: 'Import (JSON)',
+    playersLabel: 'Saved players',
+    playersHelp: 'Manage the list of suggested names during match setup.',
+    totalMatches: 'Total Matches',
+    playTime: 'Play Time',
+    importError: 'Error importing file.',
   },
   shortcuts: {
     title: 'Keyboard shortcuts',
@@ -790,6 +818,15 @@ const es: Messages = {
       'Fuerza la búsqueda de una nueva versión y recarga la aplicación.',
     updateButton: 'Forzar actualización',
     updateChecking: 'Comprobando…',
+    dataLabel: 'Gestión de datos',
+    dataHelp: 'Exporta o importa tu historial y ajustes.',
+    exportButton: 'Exportar (JSON)',
+    importButton: 'Importar (JSON)',
+    playersLabel: 'Jugadores guardados',
+    playersHelp: 'Gestiona la lista de nombres sugeridos.',
+    totalMatches: 'Total Partidos',
+    playTime: 'Tiempo de Juego',
+    importError: 'Error al importar el archivo.',
   },
   shortcuts: {
     title: 'Atajos de teclado',

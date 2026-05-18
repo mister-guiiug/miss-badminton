@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
-import { storage, type SavedMatch } from '../../storage';
+import { type SavedMatch } from '../../storage';
 import type { Locale } from '../../i18n/messages';
 import { useTeamColors } from '../hooks/useTeamColors';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -12,6 +12,7 @@ import {
   Trash2Icon,
   TrophyIcon,
 } from '../components/icons';
+import { useMatchStore } from '../../store/useMatchStore';
 
 function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
   const primary = team.primary || fallback;
@@ -47,23 +48,36 @@ interface PlayerStat {
   name: string;
   wins: number;
   total: number;
+  winRate: number;
 }
 
 function computeStats(matches: SavedMatch[]): {
   total: number;
   topPlayer: PlayerStat | null;
+  totalDurationMs: number;
 } {
-  if (matches.length === 0) return { total: 0, topPlayer: null };
+  if (matches.length === 0)
+    return { total: 0, topPlayer: null, totalDurationMs: 0 };
   const stats = new Map<string, PlayerStat>();
+  let totalDurationMs = 0;
+
   const bump = (name: string, won: boolean) => {
     const key = name.trim().toLowerCase();
     if (!key) return;
-    const existing = stats.get(key) ?? { name: name.trim(), wins: 0, total: 0 };
+    const existing = stats.get(key) ?? {
+      name: name.trim(),
+      wins: 0,
+      total: 0,
+      winRate: 0,
+    };
     existing.total += 1;
     if (won) existing.wins += 1;
+    existing.winRate = (existing.wins / existing.total) * 100;
     stats.set(key, existing);
   };
+
   for (const m of matches) {
+    totalDurationMs += m.durationMs ?? 0;
     const names1 = [m.config.team1.primary, m.config.team1.partner].filter(
       (n): n is string => !!n && n.trim().length > 0
     );
@@ -74,52 +88,45 @@ function computeStats(matches: SavedMatch[]): {
     names1.forEach(n => bump(n, winner1));
     names2.forEach(n => bump(n, !winner1));
   }
+
   let best: PlayerStat | null = null;
   for (const stat of stats.values()) {
-    if (stat.total < 2) continue;
+    if (stat.total < 1) continue;
     if (
       !best ||
-      stat.wins / stat.total > best.wins / best.total ||
-      (stat.wins / stat.total === best.wins / best.total &&
-        stat.total > best.total)
+      stat.winRate > best.winRate ||
+      (stat.winRate === best.winRate && stat.total > best.total)
     ) {
       best = stat;
     }
   }
-  return { total: matches.length, topPlayer: best };
+  return { total: matches.length, topPlayer: best, totalDurationMs };
 }
 
 export function HistoryView() {
   const { t, locale } = useI18n();
   const navigate = useNavigate();
   const colors = useTeamColors();
-  const [matches, setMatches] = useState<SavedMatch[]>(() =>
-    storage.loadHistory()
-  );
+  const {
+    matchHistory: matches,
+    removeFromHistory,
+    clearHistory,
+    setMatch,
+  } = useMatchStore();
   const [clearOpen, setClearOpen] = useState(false);
-
-  const refresh = useCallback(() => {
-    setMatches(storage.loadHistory());
-  }, []);
-
-  const handleDelete = (id: string) => {
-    storage.removeMatchFromHistory(id);
-    refresh();
-  };
 
   const handleClear = () => {
     setClearOpen(true);
   };
 
   const confirmClear = () => {
-    storage.clearHistory();
-    refresh();
+    clearHistory();
     setClearOpen(false);
   };
 
   const handleReplay = (m: SavedMatch) => {
-    storage.setPendingReplay(m.config);
-    navigate('/');
+    setMatch(m.config);
+    navigate('/match');
   };
 
   const stats = useMemo(() => computeStats(matches), [matches]);
@@ -154,70 +161,83 @@ export function HistoryView() {
       {matches.length > 0 && (
         <section
           aria-label={t('historyExtra.statsTitle')}
-          className="grid grid-cols-2 gap-3 rounded-2xl border md:grid-cols-3"
+          className="grid grid-cols-2 gap-4 rounded-3xl border md:grid-cols-3"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
-            padding: 'clamp(0.75rem, 2.4vw, 1.25rem)',
+            padding: '1.5rem',
           }}
         >
-          <div>
+          <div className="flex flex-col gap-1">
             <p
-              className="text-xs font-semibold uppercase tracking-wide"
+              className="text-[0.65rem] font-bold uppercase tracking-widest"
               style={{ color: 'var(--muted)' }}
             >
-              {t('historyExtra.statsTitle')}
+              {t('settings.totalMatches')}
             </p>
             <p
-              className="font-bold"
-              style={{
-                color: 'var(--primary)',
-                fontSize: 'clamp(1.25rem, 4vw, 1.75rem)',
-              }}
+              className="text-3xl font-black"
+              style={{ color: 'var(--primary)' }}
             >
               {stats.total}
             </p>
           </div>
-          <div className="md:col-span-2">
+
+          <div className="flex flex-col gap-1">
             <p
-              className="text-xs font-semibold uppercase tracking-wide"
+              className="text-[0.65rem] font-bold uppercase tracking-widest"
+              style={{ color: 'var(--muted)' }}
+            >
+              {t('settings.playTime')}
+            </p>
+            <p className="text-3xl font-black" style={{ color: 'var(--text)' }}>
+              {formatDuration(stats.totalDurationMs)}
+            </p>
+          </div>
+
+          <div className="col-span-2 flex flex-col gap-1 md:col-span-1">
+            <p
+              className="text-[0.65rem] font-bold uppercase tracking-widest"
               style={{ color: 'var(--muted)' }}
             >
               {t('historyExtra.statsWinRate')}
             </p>
-            <p
-              className="font-semibold"
-              style={{
-                color: 'var(--text)',
-                fontSize: 'clamp(0.95rem, 2.6vw, 1.125rem)',
-              }}
-            >
-              {stats.topPlayer
-                ? t('historyExtra.statsTopPlayer', {
-                    name: stats.topPlayer.name,
-                    wins: stats.topPlayer.wins,
-                    total: stats.topPlayer.total,
-                  })
-                : t('historyExtra.statsNone')}
-            </p>
+            {stats.topPlayer ? (
+              <div className="flex items-baseline gap-2">
+                <p
+                  className="text-2xl font-black"
+                  style={{ color: 'var(--primary)' }}
+                >
+                  {stats.topPlayer.name}
+                </p>
+                <p className="text-sm font-bold opacity-60">
+                  {stats.topPlayer.wins}/{stats.topPlayer.total} (
+                  {stats.topPlayer.winRate.toFixed(0)}%)
+                </p>
+              </div>
+            ) : (
+              <p className="text-lg font-bold opacity-40">
+                {t('historyExtra.statsNone')}
+              </p>
+            )}
           </div>
         </section>
       )}
 
       {matches.length === 0 ? (
-        <p
-          className="rounded-2xl border text-center text-sm"
+        <div
+          className="flex flex-col items-center justify-center rounded-3xl border py-16 text-center"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
             color: 'var(--muted)',
-            padding: 'clamp(1rem, 3.2vw, 1.75rem)',
           }}
         >
-          {t('history.empty')}
-        </p>
+          <HistoryIcon size={48} className="mb-4 opacity-20" />
+          <p className="text-lg font-medium">{t('history.empty')}</p>
+        </div>
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-2">
+        <ul className="grid gap-4 md:grid-cols-2">
           {matches.map(match => {
             const t1 = teamLabel(match.config.team1, t('players.player1'));
             const t2 = teamLabel(match.config.team2, t('players.player2'));
@@ -228,98 +248,90 @@ export function HistoryView() {
             return (
               <li
                 key={match.id}
-                className="flex items-start justify-between gap-3 rounded-2xl border"
+                className="group relative flex flex-col gap-4 rounded-3xl border transition-all hover:shadow-lg"
                 style={{
                   background: 'var(--surface)',
                   borderColor: 'var(--border)',
                   color: 'var(--text)',
-                  padding: 'clamp(0.75rem, 2.4vw, 1.25rem)',
+                  padding: '1.25rem',
                 }}
               >
-                <div className="flex-1 space-y-1">
-                  <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                    {t('history.matchOn', {
-                      date: formatDate(match.completedAt, locale),
-                    })}
-                  </p>
-                  <p
-                    className="font-semibold break-words"
-                    style={{ fontSize: 'clamp(0.95rem, 2.4vw, 1.125rem)' }}
-                  >
-                    <span
+                <div className="flex items-center justify-between">
+                  <span className="text-[0.65rem] font-bold uppercase tracking-widest opacity-40">
+                    {formatDate(match.completedAt, locale)}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleReplay(match)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+                      style={{ color: 'var(--primary)' }}
+                    >
+                      <RotateCwIcon size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeFromHistory(match.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      <Trash2Icon size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`truncate text-lg font-black ${match.winner === 'team1' ? '' : 'opacity-40'}`}
                       style={{
                         color:
                           match.winner === 'team1' ? colors.team1 : undefined,
                       }}
                     >
                       {t1}
-                    </span>
-                    {'  '}
-                    <span
-                      style={{ color: 'var(--muted)' }}
-                      className="font-medium"
-                    >
-                      {match.finalSetWins.team1}–{match.finalSetWins.team2}
-                    </span>
-                    {'  '}
-                    <span
+                    </p>
+                    <p
+                      className={`truncate text-lg font-black ${match.winner === 'team2' ? '' : 'opacity-40'}`}
                       style={{
                         color:
                           match.winner === 'team2' ? colors.team2 : undefined,
                       }}
                     >
                       {t2}
-                    </span>
-                  </p>
-                  <p
-                    className="inline-flex items-center gap-1 text-xs"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    <TrophyIcon size={14} /> {winnerName} · {setsLine}
-                  </p>
-                  <div
-                    className="flex flex-wrap gap-3 pt-1 text-xs"
-                    style={{ color: 'var(--muted)' }}
-                  >
+                    </p>
+                  </div>
+                  <div className="text-right text-3xl font-black tabular-nums tracking-tighter">
+                    {match.finalSetWins.team1}{' '}
+                    <span className="opacity-20">–</span>{' '}
+                    {match.finalSetWins.team2}
+                  </div>
+                </div>
+
+                <div
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-60">
+                    <TrophyIcon size={14} />
+                    {winnerName}
+                  </span>
+                  <span className="text-xs font-medium opacity-40">
+                    {setsLine}
+                  </span>
+                  <div className="ml-auto flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest opacity-40">
                     {typeof match.durationMs === 'number' && (
-                      <span>
-                        ⏱{' '}
-                        {t('history.duration', {
-                          time: formatDuration(match.durationMs),
-                        })}
+                      <span className="flex items-center gap-1">
+                        ⏱ {formatDuration(match.durationMs)}
                       </span>
                     )}
                     {match.maxStreak && (
-                      <span className="inline-flex items-center gap-1">
-                        <FlameIcon size={14} />
-                        {t('history.maxStreak', {
-                          a: match.maxStreak.team1,
-                          b: match.maxStreak.team2,
-                        })}
+                      <span className="flex items-center gap-1">
+                        <FlameIcon size={12} />
+                        {Math.max(match.maxStreak.team1, match.maxStreak.team2)}
                       </span>
                     )}
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleReplay(match)}
-                    aria-label={t('historyExtra.replay')}
-                    title={t('historyExtra.replay')}
-                    className="flex touch-target items-center justify-center rounded-md hover:bg-black/5"
-                    style={{ color: 'var(--primary)' }}
-                  >
-                    <RotateCwIcon size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(match.id)}
-                    aria-label={t('history.delete')}
-                    className="flex touch-target items-center justify-center rounded-md hover:bg-black/5"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    <Trash2Icon size={18} />
-                  </button>
                 </div>
               </li>
             );
