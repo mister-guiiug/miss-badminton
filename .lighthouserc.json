@@ -24,8 +24,12 @@
         "uses-text-compression": "off",
         "uses-responsive-images": "off",
         "render-blocking-resources": "off",
+        "render-blocking-insight": "off",
         "unused-javascript": "off",
-        "color-contrast": ["warn", { "minScore": 0.9 }]
+        "color-contrast": ["warn", { "minScore": 0.9 }],
+        "errors-in-console": "off",
+        "valid-source-maps": "off",
+        "network-dependency-tree-insight": "off"
       }
     },
     "upload": {

@@ -18,8 +18,7 @@ const analyze = process.env.ANALYZE === '1';
 // le défaut historique `/miss-badminton/` au build et `/` en dev.
 export default defineConfig(({ command }) => {
   const envBase = process.env.VITE_BASE_PATH;
-  const basePath =
-    envBase ?? (command === 'build' ? '/miss-badminton/' : '/');
+  const basePath = envBase ?? (command === 'build' ? '/miss-badminton/' : '/');
 
   return {
     base: basePath,
@@ -95,7 +94,9 @@ export default defineConfig(({ command }) => {
           globPatterns: ['**/*.{js,css,html,ico,svg,png,woff2,webmanifest}'],
         },
         manifest: {
-          id: '/miss-badminton/',
+          // Les paths absolus du manifest doivent matcher la base
+          // effective (sinon le navigateur 404 sur l'installation PWA).
+          id: basePath,
           name: 'Miss Badminton',
           short_name: 'Miss Badminton',
           description: 'Suivi simplifié de scores de badminton et plus encore',
@@ -103,8 +104,8 @@ export default defineConfig(({ command }) => {
           background_color: '#f8fafc',
           display: 'standalone',
           orientation: 'portrait-primary',
-          start_url: '/miss-badminton/',
-          scope: '/miss-badminton/',
+          start_url: basePath,
+          scope: basePath,
           lang: 'fr',
           icons: [
             {
