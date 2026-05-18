@@ -3,5 +3,5 @@ Créer une application de score de badminton pour Android. L'application doit pe
 Prendre exemple sur des applications existantes telles que "Badminton Scoreboard" disponible sur le Google Play Store : https://play.google.com/store/apps/details?id=com.xiaoyifei.badmintonscoreboard&hl=fr
 
 Utiliser les technologies suivantes pour le développement de l'application :
-- https://github.com/rive-app pour les graphismes et les animations
 
+- https://github.com/rive-app pour les graphismes et les animations
