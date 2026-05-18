@@ -13,8 +13,13 @@ import { visualizer } from 'rollup-plugin-visualizer';
 const analyze = process.env.ANALYZE === '1';
 
 // GitHub Pages : https://mister-guiiug.github.io/miss-badminton/
+// `VITE_BASE_PATH` permet d'override (ex. Lighthouse CI sert le dist/ à
+// la racine, donc on lui passe `/` au build). Sans la variable, on garde
+// le défaut historique `/miss-badminton/` au build et `/` en dev.
 export default defineConfig(({ command }) => {
-  const basePath = command === 'build' ? '/miss-badminton/' : '/';
+  const envBase = process.env.VITE_BASE_PATH;
+  const basePath =
+    envBase ?? (command === 'build' ? '/miss-badminton/' : '/');
 
   return {
     base: basePath,
