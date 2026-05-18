@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RiveScene } from '../components/RiveScene';
 import {
@@ -42,9 +36,7 @@ import {
   TrophyIcon,
   Undo2Icon,
 } from '../components/icons';
-import {
-  type SavedMatch,
-} from '../../storage';
+import { type SavedMatch } from '../../storage';
 import { useMatchStore, type ServiceSide } from '../../store/useMatchStore';
 
 // Détecte à la compilation les .riv présents sous src/assets/rive/. Évite

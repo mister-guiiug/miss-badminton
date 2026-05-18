@@ -2,9 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import { PageContainer } from '../components/layout/PageContainer';
-import { MatchSetupWizard, type MatchConfig } from '../components/MatchSetupWizard';
+import {
+  MatchSetupWizard,
+  type MatchConfig,
+} from '../components/MatchSetupWizard';
 import { useMatchStore } from '../../store/useMatchStore';
-import { HistoryIcon, PlayIcon, PlusIcon, TrophyIcon } from '../components/icons';
+import {
+  HistoryIcon,
+  PlayIcon,
+  PlusIcon,
+  TrophyIcon,
+} from '../components/icons';
 import { Logo } from '../components/Logo';
 
 export function HomeView() {
@@ -96,11 +104,14 @@ export function HomeView() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {recentMatches.map((m) => (
+              {recentMatches.map(m => (
                 <div
                   key={m.id}
                   className="flex items-center justify-between rounded-2xl border p-4"
-                  style={{ borderColor: 'var(--border)', background: 'var(--surface-highlight)' }}
+                  style={{
+                    borderColor: 'var(--border)',
+                    background: 'var(--surface-highlight)',
+                  }}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">
@@ -110,7 +121,10 @@ export function HomeView() {
                       {new Date(m.completedAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="text-right font-black" style={{ color: 'var(--primary)' }}>
+                  <div
+                    className="text-right font-black"
+                    style={{ color: 'var(--primary)' }}
+                  >
                     {m.finalSetWins.team1} – {m.finalSetWins.team2}
                   </div>
                 </div>

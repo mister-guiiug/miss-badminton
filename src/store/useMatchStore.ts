@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { MatchConfig, PointsCap, SideChange } from '../react/components/MatchSetupWizard';
+import type {
+  MatchConfig,
+  PointsCap,
+  SideChange,
+} from '../react/components/MatchSetupWizard';
 import { storage, type PersistedGameState, type SavedMatch } from '../storage';
 
 export type ServiceSide = 'team1' | 'team2';
@@ -122,9 +126,9 @@ export const useMatchStore = create<MatchState>()(
       lastSetSummary: null,
       matchHistory: storage.loadHistory(),
 
-      setMatch: (config) => set({ match: config, history: [] }),
+      setMatch: config => set({ match: config, history: [] }),
 
-      score: (team) => {
+      score: team => {
         const state = get();
         if (state.matchWinner || !state.match) return;
 
@@ -132,8 +136,18 @@ export const useMatchStore = create<MatchState>()(
         const nextS1 = team === 'team1' ? state.score1 + 1 : state.score1;
         const nextS2 = team === 'team2' ? state.score2 + 1 : state.score2;
 
-        const team1Won = isSetWon(nextS1, nextS2, state.match.points, state.match.cap);
-        const team2Won = isSetWon(nextS2, nextS1, state.match.points, state.match.cap);
+        const team1Won = isSetWon(
+          nextS1,
+          nextS2,
+          state.match.points,
+          state.match.cap
+        );
+        const team2Won = isSetWon(
+          nextS2,
+          nextS1,
+          state.match.points,
+          state.match.cap
+        );
         const setEnded = team1Won || team2Won;
 
         const baseHistory: HistoryEntry = {
@@ -242,7 +256,7 @@ export const useMatchStore = create<MatchState>()(
         });
       },
 
-      subtract: (team) => {
+      subtract: team => {
         const state = get();
         if (state.matchWinner) return;
         const cur = team === 'team1' ? state.score1 : state.score2;
@@ -323,7 +337,7 @@ export const useMatchStore = create<MatchState>()(
           setWins: { team1: state.setWins.team2, team2: state.setWins.team1 },
           matchWinner: flipSide(state.matchWinner),
           server: flipSide(state.server),
-          setScores: state.setScores.map((s) => ({
+          setScores: state.setScores.map(s => ({
             team1: s.team2,
             team2: s.team1,
           })),
@@ -376,7 +390,12 @@ export const useMatchStore = create<MatchState>()(
 
       pauseChrono: () => {
         const state = get();
-        if (state.pausedAt !== null || state.startedAt === null || state.endedAt !== null) return;
+        if (
+          state.pausedAt !== null ||
+          state.startedAt === null ||
+          state.endedAt !== null
+        )
+          return;
         set({ pausedAt: Date.now() });
       },
 
@@ -401,16 +420,16 @@ export const useMatchStore = create<MatchState>()(
         });
       },
 
-      saveToHistory: (match) => {
+      saveToHistory: match => {
         const history = get().matchHistory;
-        if (history.some((m) => m.id === match.id)) return;
+        if (history.some(m => m.id === match.id)) return;
         const next = [match, ...history].slice(0, 50);
         set({ matchHistory: next });
         storage.saveMatchToHistory(match);
       },
 
-      removeFromHistory: (id) => {
-        const next = get().matchHistory.filter((m) => m.id !== id);
+      removeFromHistory: id => {
+        const next = get().matchHistory.filter(m => m.id !== id);
         set({ matchHistory: next });
         storage.removeMatchFromHistory(id);
       },
@@ -423,7 +442,7 @@ export const useMatchStore = create<MatchState>()(
     {
       name: 'mb-match-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      partialize: state => ({
         match: state.match,
         score1: state.score1,
         score2: state.score2,
