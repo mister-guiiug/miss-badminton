@@ -74,6 +74,22 @@ interface MatchState {
   resumeChrono: () => void;
   resetChrono: () => void;
 
+  /**
+   * Ferme le set en cours sans qu'un seuil de score n'ait été atteint —
+   * typiquement appelé par l'UI quand `match.timeLimitMin` est dépassé.
+   * - Si les scores diffèrent : victoire au leader.
+   * - Si égalité et `tieBreak === 'sudden-death'` : on n'écrit rien et on
+   *   renvoie 'tie-break-required' ; l'UI doit demander un point décisif
+   *   (qui passera par `score(team)`).
+   * - Si égalité et tieBreak !== 'sudden-death' : aucun set attribué,
+   *   on renvoie 'draw'.
+   */
+  closeCurrentSet: () =>
+    | 'set-closed'
+    | 'tie-break-required'
+    | 'draw'
+    | 'no-match';
+
   // History
   matchHistory: SavedMatch[];
   saveToHistory: (match: SavedMatch) => void;
@@ -449,6 +465,48 @@ export const useMatchStore = create<MatchState>()(
           totalPausedMs: 0,
           pausedAt: state.pausedAt === null ? null : now,
         });
+      },
+
+      closeCurrentSet: () => {
+        const state = get();
+        if (!state.match || state.matchWinner) return 'no-match';
+        if (state.score1 === state.score2) {
+          if (state.match.tieBreak === 'sudden-death') {
+            return 'tie-break-required';
+          }
+          return 'draw';
+        }
+        const winnerSide: ServiceSide =
+          state.score1 > state.score2 ? 'team1' : 'team2';
+        const nextSetWins = {
+          team1: state.setWins.team1 + (winnerSide === 'team1' ? 1 : 0),
+          team2: state.setWins.team2 + (winnerSide === 'team2' ? 1 : 0),
+        };
+        const matchEnded = nextSetWins[winnerSide] >= state.match.sets;
+        const nextSetScores = [
+          ...state.setScores,
+          { team1: state.score1, team2: state.score2 },
+        ];
+        const now = Date.now();
+        set({
+          score1: 0,
+          score2: 0,
+          server: null,
+          setWins: nextSetWins,
+          matchWinner: matchEnded ? winnerSide : null,
+          setScores: nextSetScores,
+          pendingSideChange: false,
+          mid11Triggered: false,
+          history: [],
+          pendingFeedback: matchEnded ? 'matchWon' : 'setWon',
+          lastSetSummary: {
+            winner: winnerSide,
+            a: state.score1,
+            b: state.score2,
+          },
+          endedAt: matchEnded ? now : null,
+        });
+        return 'set-closed';
       },
 
       saveToHistory: match => {
