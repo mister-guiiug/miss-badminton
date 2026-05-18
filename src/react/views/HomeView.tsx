@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -14,12 +14,38 @@ import {
   TrophyIcon,
 } from '../components/icons';
 import { Logo } from '../components/Logo';
+import { WelcomeTutorial } from '../components/WelcomeTutorial';
+import { readReplayFromUrl } from '../../share';
+import { MatchConfigSchema, type MatchTemplate } from '../../schemas';
+import { storage } from '../../storage';
+import { Trash2Icon } from '../components/icons';
 
 export function HomeView() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { match, setMatch, matchHistory } = useMatchStore();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [replayInitial, setReplayInitial] = useState<MatchConfig | null>(null);
+
+  // Au boot, si l'URL contient `?replay=<base64>`, on ouvre le wizard
+  // pré-rempli avec la config du lien. La query string est consommée pour
+  // éviter de ré-ouvrir le wizard à chaque navigation.
+  useEffect(() => {
+    const raw = readReplayFromUrl();
+    if (!raw) return;
+    const result = MatchConfigSchema.safeParse(raw);
+    if (!result.success) return;
+    setReplayInitial(result.data as MatchConfig);
+    setWizardOpen(true);
+    // Nettoie la query sans recharger.
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('replay');
+      window.history.replaceState(null, '', url.toString());
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const handleStartMatch = (config: MatchConfig) => {
     setMatch(config);
@@ -29,6 +55,18 @@ export function HomeView() {
 
   const hasActiveMatch = !!match;
   const recentMatches = matchHistory.slice(0, 3);
+  const [templates, setTemplates] = useState<MatchTemplate[]>(() =>
+    storage.loadTemplates()
+  );
+
+  const handleUseTemplate = (template: MatchTemplate) => {
+    setMatch(template.config);
+    navigate('/match');
+  };
+  const handleDeleteTemplate = (id: string) => {
+    storage.removeTemplate(id);
+    setTemplates(storage.loadTemplates());
+  };
 
   return (
     <PageContainer width="lg">
@@ -86,6 +124,54 @@ export function HomeView() {
             <HistoryIcon size={32} />
             {t('home.viewHistory')}
           </button>
+
+          {templates.length > 0 && (
+            <div
+              className="flex flex-col gap-2 rounded-3xl border p-4"
+              style={{
+                background: 'var(--surface)',
+                borderColor: 'var(--border)',
+              }}
+              aria-labelledby="templates-title"
+            >
+              <h3
+                id="templates-title"
+                className="text-xs font-bold uppercase tracking-widest opacity-60"
+              >
+                {t('home.templatesTitle')}
+              </h3>
+              <ul className="flex flex-col gap-1">
+                {templates.map(tpl => (
+                  <li key={tpl.id} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleUseTemplate(tpl)}
+                      className="flex flex-1 items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors hover:bg-black/[0.03]"
+                      style={{
+                        borderColor: 'var(--border)',
+                        background: 'var(--surface-highlight)',
+                      }}
+                    >
+                      <span className="truncate">{tpl.name}</span>
+                      <span className="text-xs font-medium opacity-50">
+                        {tpl.config.type === 'doubles' ? '2v2' : '1v1'} ·{' '}
+                        {tpl.config.points} pts
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTemplate(tpl.id)}
+                      aria-label={t('home.templatesDelete')}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-black/5"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      <Trash2Icon size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
 
         <section
@@ -136,10 +222,19 @@ export function HomeView() {
 
       {wizardOpen && (
         <MatchSetupWizard
-          onCancel={() => setWizardOpen(false)}
-          onComplete={handleStartMatch}
+          initial={replayInitial}
+          onCancel={() => {
+            setWizardOpen(false);
+            setReplayInitial(null);
+          }}
+          onComplete={config => {
+            setReplayInitial(null);
+            handleStartMatch(config);
+          }}
         />
       )}
+
+      <WelcomeTutorial />
     </PageContainer>
   );
 }

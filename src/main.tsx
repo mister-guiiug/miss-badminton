@@ -6,7 +6,9 @@ import { applyResolvedTheme, wireSystemThemeListener } from './theme';
 import { registerServiceWorker } from './register-sw';
 import { App } from './react/AppRouter';
 import { I18nProvider } from './i18n/I18nProvider';
+import { installErrorReporter } from './error-reporter';
 
+installErrorReporter();
 applyResolvedTheme();
 wireSystemThemeListener();
 registerServiceWorker();

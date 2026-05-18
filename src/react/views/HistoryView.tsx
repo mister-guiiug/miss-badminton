@@ -10,13 +10,18 @@ import {
   FlameIcon,
   HistoryIcon,
   PencilIcon,
+  PlusIcon,
   RotateCwIcon,
   Share2Icon,
   Trash2Icon,
   TrophyIcon,
 } from '../components/icons';
+import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
 import { buildShareText, shareText } from '../../share';
+import { Modal } from '../components/Modal';
+import { Sparkline } from '../components/Sparkline';
+import { ActivityHeatmap } from '../components/ActivityHeatmap';
 
 function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
   const primary = team.primary || fallback;
@@ -188,6 +193,7 @@ export function HistoryView() {
   const colors = useTeamColors();
   const {
     matchHistory: matches,
+    historyHydrated,
     removeFromHistory,
     clearHistory,
     setMatch,
@@ -221,17 +227,62 @@ export function HistoryView() {
   );
   const stats = useMemo(() => computeStats(filteredMatches), [filteredMatches]);
 
+  /**
+   * Évolution du winrate du top player sur l'ensemble filtré (ordre
+   * chronologique croissant). Donne une courbe "tendance" lisible même
+   * avec peu de matches.
+   */
+  const topPlayerSparkline = useMemo(() => {
+    if (!stats.topPlayer) return null;
+    const targetKey = stats.topPlayer.name.toLowerCase();
+    let wins = 0;
+    let total = 0;
+    const series: number[] = [];
+    // matchHistory est trié anti-chronologiquement → on inverse.
+    for (const m of [...filteredMatches].reverse()) {
+      const names1 = [m.config.team1.primary, m.config.team1.partner]
+        .filter((n): n is string => !!n)
+        .map(n => n.trim().toLowerCase());
+      const names2 = [m.config.team2.primary, m.config.team2.partner]
+        .filter((n): n is string => !!n)
+        .map(n => n.trim().toLowerCase());
+      const inT1 = names1.includes(targetKey);
+      const inT2 = names2.includes(targetKey);
+      if (!inT1 && !inT2) continue;
+      total += 1;
+      const won =
+        (m.winner === 'team1' && inT1) || (m.winner === 'team2' && inT2);
+      if (won) wins += 1;
+      series.push((wins / total) * 100);
+    }
+    return series.length >= 2 ? series : null;
+  }, [filteredMatches, stats.topPlayer]);
+
+  const heatmapTimestamps = useMemo(
+    () => filteredMatches.map(m => m.completedAt),
+    [filteredMatches]
+  );
+
   return (
     <PageContainer width="xl">
       <header className="flex items-center justify-between gap-3">
         <h1
-          className="font-bold"
+          className="flex items-baseline gap-2 font-bold"
           style={{
             color: 'var(--primary)',
             fontSize: 'clamp(1.5rem, 4.5vw, 2.25rem)',
           }}
         >
           {t('history.title')}
+          {!historyHydrated && (
+            <span
+              role="status"
+              aria-live="polite"
+              className="text-xs font-medium opacity-60"
+            >
+              {t('historyExtra.syncing')}
+            </span>
+          )}
         </h1>
         {matches.length > 0 && (
           <button
@@ -340,6 +391,46 @@ export function HistoryView() {
                 {t('historyExtra.statsNone')}
               </p>
             )}
+            {topPlayerSparkline && (
+              <div
+                className="mt-2"
+                style={{ color: 'var(--primary)' }}
+                aria-hidden={false}
+              >
+                <Sparkline
+                  values={topPlayerSparkline}
+                  ariaLabel={t('historyExtra.sparklineAria', {
+                    name: stats.topPlayer?.name ?? '',
+                  })}
+                />
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {heatmapTimestamps.length > 0 && (
+        <section
+          aria-labelledby="heatmap-title"
+          className="rounded-3xl border"
+          style={{
+            background: 'var(--surface)',
+            borderColor: 'var(--border)',
+            padding: '1.25rem 1.5rem',
+          }}
+        >
+          <h2
+            id="heatmap-title"
+            className="mb-3 text-sm font-bold uppercase tracking-wider"
+            style={{ color: 'var(--muted)' }}
+          >
+            {t('historyExtra.heatmapTitle')}
+          </h2>
+          <div className="overflow-x-auto" style={{ color: 'var(--primary)' }}>
+            <ActivityHeatmap
+              timestamps={heatmapTimestamps}
+              ariaLabel={t('historyExtra.heatmapAria')}
+            />
           </div>
         </section>
       )}
@@ -496,6 +587,24 @@ export function HistoryView() {
                       style={{ color: 'var(--muted)' }}
                     >
                       <Share2Icon size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const name = `${t1} vs ${t2}`;
+                        storage.addTemplate({
+                          id: `${match.id}-tpl`,
+                          name,
+                          createdAt: Date.now(),
+                          config: match.config,
+                        });
+                      }}
+                      aria-label={t('historyExtra.saveTemplate')}
+                      title={t('historyExtra.saveTemplate')}
+                      className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      <PlusIcon size={16} />
                     </button>
                     <button
                       type="button"
@@ -656,73 +765,62 @@ function EditSetDialog({
   const invalid = t1 < 0 || t2 < 0 || t1 === t2;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      <div className="absolute inset-0 bg-black/55" onClick={onCancel} />
-      <div
-        className="relative z-10 w-full max-w-sm rounded-2xl p-5 shadow-2xl"
-        style={{ background: 'var(--surface)', color: 'var(--text)' }}
-      >
-        <h3 className="mb-4 text-base font-bold">{title}</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1 text-xs font-semibold">
-            <span className="opacity-60">Team 1</span>
-            <input
-              type="number"
-              min={0}
-              value={t1}
-              onChange={e => setT1(Number(e.target.value))}
-              className="rounded-lg border px-3 py-2 text-base"
-              style={{
-                background: 'var(--surface-highlight)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)',
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs font-semibold">
-            <span className="opacity-60">Team 2</span>
-            <input
-              type="number"
-              min={0}
-              value={t2}
-              onChange={e => setT2(Number(e.target.value))}
-              className="rounded-lg border px-3 py-2 text-base"
-              style={{
-                background: 'var(--surface-highlight)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)',
-              }}
-            />
-          </label>
-        </div>
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
+    <Modal width="sm" ariaLabel={title} onClose={onCancel}>
+      <h3 className="mb-4 text-base font-bold">{title}</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1 text-xs font-semibold">
+          <span className="opacity-60">Team 1</span>
+          <input
+            type="number"
+            min={0}
+            value={t1}
+            onChange={e => setT1(Number(e.target.value))}
+            className="rounded-lg border px-3 py-2 text-base"
             style={{
+              background: 'var(--surface-highlight)',
               borderColor: 'var(--border)',
-              color: 'var(--muted)',
+              color: 'var(--text)',
             }}
-          >
-            {cancelLabel}
-          </button>
-          <button
-            type="button"
-            disabled={invalid}
-            onClick={() => onConfirm({ team1: t1, team2: t2 })}
-            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
-            style={{ background: 'var(--primary)' }}
-          >
-            {confirmLabel}
-          </button>
-        </div>
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold">
+          <span className="opacity-60">Team 2</span>
+          <input
+            type="number"
+            min={0}
+            value={t2}
+            onChange={e => setT2(Number(e.target.value))}
+            className="rounded-lg border px-3 py-2 text-base"
+            style={{
+              background: 'var(--surface-highlight)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)',
+            }}
+          />
+        </label>
       </div>
-    </div>
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
+          style={{
+            borderColor: 'var(--border)',
+            color: 'var(--muted)',
+          }}
+        >
+          {cancelLabel}
+        </button>
+        <button
+          type="button"
+          disabled={invalid}
+          onClick={() => onConfirm({ team1: t1, team2: t2 })}
+          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+          style={{ background: 'var(--primary)' }}
+        >
+          {confirmLabel}
+        </button>
+      </div>
+    </Modal>
   );
 }

@@ -42,6 +42,8 @@ export interface Messages {
     newMatch: string;
     viewHistory: string;
     scoreboardLabel: string;
+    templatesTitle: string;
+    templatesDelete: string;
   };
   scoreboard: {
     title: string;
@@ -186,6 +188,10 @@ export interface Messages {
     totalMatches: string;
     playTime: string;
     importError: string;
+    diagnosticsLabel: string;
+    diagnosticsHelp: string;
+    diagnosticsExport: string;
+    diagnosticsClear: string;
   };
   shortcuts: {
     title: string;
@@ -202,6 +208,19 @@ export interface Messages {
     swap: string;
     undo: string;
     gotIt: string;
+  };
+  welcome: {
+    step1Title: string;
+    step1Body: string;
+    step2Title: string;
+    step2Body: string;
+    step3Title: string;
+    step3Body: string;
+    step4Title: string;
+    step4Body: string;
+    skip: string;
+    next: string;
+    start: string;
   };
   toast: {
     pointAdded: string;
@@ -237,6 +256,11 @@ export interface Messages {
     editSetTitle: string;
     editSetCancel: string;
     editSetSave: string;
+    saveTemplate: string;
+    syncing: string;
+    sparklineAria: string;
+    heatmapTitle: string;
+    heatmapAria: string;
   };
   matchOverExtra: {
     rematch: string;
@@ -279,6 +303,8 @@ const fr: Messages = {
     newMatch: 'Nouveau match',
     viewHistory: "Voir l'historique",
     scoreboardLabel: 'Tableau de score',
+    templatesTitle: 'Modèles favoris',
+    templatesDelete: 'Supprimer ce modèle',
   },
   scoreboard: {
     title: 'Miss Badminton',
@@ -427,6 +453,10 @@ const fr: Messages = {
     totalMatches: 'Total Matchs',
     playTime: 'Temps de jeu',
     importError: 'Erreur lors de l’importation du fichier.',
+    diagnosticsLabel: 'Diagnostics',
+    diagnosticsHelp: '{n} erreurs capturées localement.',
+    diagnosticsExport: 'Exporter le journal',
+    diagnosticsClear: 'Vider',
   },
   shortcuts: {
     title: 'Raccourcis clavier',
@@ -443,6 +473,23 @@ const fr: Messages = {
     swap: 'Bouton ⇄ central : change de côté.',
     undo: 'Bouton ↶ en bas : annule le dernier point.',
     gotIt: 'C’est compris',
+  },
+  welcome: {
+    step1Title: 'Bienvenue sur Miss Badminton',
+    step1Body:
+      'Une PWA pour suivre tes scores et garder un historique précis de tes matches.',
+    step2Title: 'Marquer des points',
+    step2Body:
+      'Tape la pastille d’une équipe pour ajouter un point. Long-press pour en retirer un.',
+    step3Title: 'Annuler & corriger',
+    step3Body:
+      'Le bouton ↶ revient sur le dernier point. Tu peux aussi éditer un set passé depuis l’historique.',
+    step4Title: 'Tout est local',
+    step4Body:
+      'Pas de compte, pas de cloud. Tes matches sont stockés sur ton appareil — exporte-les depuis les réglages.',
+    skip: 'Passer',
+    next: 'Suivant',
+    start: 'C’est parti',
   },
   toast: {
     pointAdded: '+1 {name}',
@@ -478,6 +525,11 @@ const fr: Messages = {
     editSetTitle: 'Modifier le set {n}',
     editSetCancel: 'Annuler',
     editSetSave: 'Enregistrer',
+    saveTemplate: 'Sauvegarder comme modèle',
+    syncing: 'Sync…',
+    sparklineAria: 'Évolution du winrate de {name}',
+    heatmapTitle: 'Activité (12 dernières semaines)',
+    heatmapAria: "Heatmap d'activité par jour",
   },
   matchOverExtra: {
     rematch: 'Rejouer',
@@ -520,6 +572,8 @@ const en: Messages = {
     newMatch: 'New match',
     viewHistory: 'View history',
     scoreboardLabel: 'Scoreboard',
+    templatesTitle: 'Favorite templates',
+    templatesDelete: 'Delete template',
   },
   scoreboard: {
     title: 'Miss Badminton',
@@ -664,6 +718,10 @@ const en: Messages = {
     totalMatches: 'Total Matches',
     playTime: 'Play Time',
     importError: 'Error importing file.',
+    diagnosticsLabel: 'Diagnostics',
+    diagnosticsHelp: '{n} errors captured locally.',
+    diagnosticsExport: 'Export log',
+    diagnosticsClear: 'Clear',
   },
   shortcuts: {
     title: 'Keyboard shortcuts',
@@ -680,6 +738,22 @@ const en: Messages = {
     swap: 'Central ⇄ button: swap sides.',
     undo: 'Bottom ↶ button: undo the last point.',
     gotIt: 'Got it',
+  },
+  welcome: {
+    step1Title: 'Welcome to Miss Badminton',
+    step1Body:
+      'A PWA to track scores and keep an accurate history of your matches.',
+    step2Title: 'Scoring',
+    step2Body: 'Tap a team pill to add a point. Long-press to subtract one.',
+    step3Title: 'Undo & fix',
+    step3Body:
+      'The ↶ button reverts the last point. You can also edit a past set from the history.',
+    step4Title: 'Fully local',
+    step4Body:
+      'No account, no cloud. Your matches live on your device — export them from the settings.',
+    skip: 'Skip',
+    next: 'Next',
+    start: 'Let’s go',
   },
   toast: {
     pointAdded: '+1 {name}',
@@ -715,6 +789,11 @@ const en: Messages = {
     editSetTitle: 'Edit set {n}',
     editSetCancel: 'Cancel',
     editSetSave: 'Save',
+    saveTemplate: 'Save as template',
+    syncing: 'Syncing…',
+    sparklineAria: 'Winrate trend for {name}',
+    heatmapTitle: 'Activity (last 12 weeks)',
+    heatmapAria: 'Daily activity heatmap',
   },
   matchOverExtra: {
     rematch: 'Rematch',
@@ -757,6 +836,8 @@ const es: Messages = {
     newMatch: 'Nuevo partido',
     viewHistory: 'Ver historial',
     scoreboardLabel: 'Marcador',
+    templatesTitle: 'Plantillas favoritas',
+    templatesDelete: 'Eliminar plantilla',
   },
   scoreboard: {
     title: 'Miss Badminton',
@@ -903,6 +984,10 @@ const es: Messages = {
     totalMatches: 'Total Partidos',
     playTime: 'Tiempo de Juego',
     importError: 'Error al importar el archivo.',
+    diagnosticsLabel: 'Diagnósticos',
+    diagnosticsHelp: '{n} errores capturados localmente.',
+    diagnosticsExport: 'Exportar registro',
+    diagnosticsClear: 'Limpiar',
   },
   shortcuts: {
     title: 'Atajos de teclado',
@@ -919,6 +1004,23 @@ const es: Messages = {
     swap: 'Botón ⇄ central: cambia de lado.',
     undo: 'Botón ↶ inferior: deshace el último punto.',
     gotIt: 'Entendido',
+  },
+  welcome: {
+    step1Title: 'Bienvenido a Miss Badminton',
+    step1Body:
+      'Una PWA para seguir los marcadores y mantener un historial preciso de tus partidos.',
+    step2Title: 'Marcar puntos',
+    step2Body:
+      'Toca la zona de un equipo para sumar un punto. Mantén pulsado para restarlo.',
+    step3Title: 'Deshacer & corregir',
+    step3Body:
+      'El botón ↶ deshace el último punto. También puedes editar un set pasado desde el historial.',
+    step4Title: 'Todo local',
+    step4Body:
+      'Sin cuenta, sin nube. Tus partidos viven en tu dispositivo — expórtalos desde los ajustes.',
+    skip: 'Saltar',
+    next: 'Siguiente',
+    start: 'Empezar',
   },
   toast: {
     pointAdded: '+1 {name}',
@@ -954,6 +1056,11 @@ const es: Messages = {
     editSetTitle: 'Editar el set {n}',
     editSetCancel: 'Cancelar',
     editSetSave: 'Guardar',
+    saveTemplate: 'Guardar como plantilla',
+    syncing: 'Sincronizando…',
+    sparklineAria: 'Tendencia de winrate de {name}',
+    heatmapTitle: 'Actividad (últimas 12 semanas)',
+    heatmapAria: 'Mapa de actividad diaria',
   },
   matchOverExtra: {
     rematch: 'Revancha',
