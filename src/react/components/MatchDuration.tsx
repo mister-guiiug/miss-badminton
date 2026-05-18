@@ -57,7 +57,11 @@ export function MatchDuration({
   }, [isRunning]);
 
   if (!startedAt) return null;
-  const cursor = isFinished ? (endedAt as number) : isPaused ? (pausedAt as number) : now;
+  const cursor = isFinished
+    ? (endedAt as number)
+    : isPaused
+      ? (pausedAt as number)
+      : now;
   const elapsed = cursor - startedAt - totalPausedMs;
   return (
     <span className="ml-2 inline-flex items-center gap-1">

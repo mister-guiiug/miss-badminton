@@ -52,7 +52,7 @@ describe('useMatchStore', () => {
   beforeEach(() => resetStore());
 
   describe('score logic — set normal', () => {
-    it('attribue un set à 21-x quand l\'écart est ≥ 2', () => {
+    it("attribue un set à 21-x quand l'écart est ≥ 2", () => {
       useMatchStore.getState().setMatch(standardConfig());
       scoreN('team1', 21);
       scoreN('team2', 5);
@@ -65,7 +65,7 @@ describe('useMatchStore', () => {
       expect(state.score2).toBe(5);
     });
 
-    it('exige 2 points d\'écart (deuce)', () => {
+    it("exige 2 points d'écart (deuce)", () => {
       useMatchStore.getState().setMatch(standardConfig());
       scoreN('team1', 20);
       scoreN('team2', 20);
@@ -137,7 +137,7 @@ describe('useMatchStore', () => {
       }).toEqual(snapshot);
     });
 
-    it('peut annuler la fin d\'un set', () => {
+    it("peut annuler la fin d'un set", () => {
       useMatchStore.getState().setMatch(standardConfig({ sets: 2 }));
       scoreN('team1', 20);
       scoreN('team1', 1); // 21 : ferme le set
@@ -151,7 +151,7 @@ describe('useMatchStore', () => {
   });
 
   describe('swap', () => {
-    it('inverse scores, setWins, streaks et l\'identité des équipes', () => {
+    it("inverse scores, setWins, streaks et l'identité des équipes", () => {
       useMatchStore.getState().setMatch(standardConfig());
       scoreN('team1', 5);
       scoreN('team2', 3);
@@ -177,9 +177,9 @@ describe('useMatchStore', () => {
     });
 
     it("sideChange='mid-match' : déclenché une seule fois quand un score atteint 11", () => {
-      useMatchStore.getState().setMatch(
-        standardConfig({ sideChange: 'mid-match' })
-      );
+      useMatchStore
+        .getState()
+        .setMatch(standardConfig({ sideChange: 'mid-match' }));
       scoreN('team1', 10);
       expect(useMatchStore.getState().pendingSideChange).toBe(false);
       scoreN('team1', 1);
@@ -210,10 +210,12 @@ describe('useMatchStore', () => {
   });
 
   describe('closeCurrentSet (time-based)', () => {
-    it("ferme le set au leader si les scores diffèrent", () => {
-      useMatchStore.getState().setMatch(
-        standardConfig({ timeLimitMin: 10, tieBreak: 'sudden-death' })
-      );
+    it('ferme le set au leader si les scores diffèrent', () => {
+      useMatchStore
+        .getState()
+        .setMatch(
+          standardConfig({ timeLimitMin: 10, tieBreak: 'sudden-death' })
+        );
       scoreN('team1', 8);
       scoreN('team2', 5);
       expect(useMatchStore.getState().closeCurrentSet()).toBe('set-closed');
@@ -224,9 +226,11 @@ describe('useMatchStore', () => {
     });
 
     it("renvoie 'tie-break-required' si égalité et tieBreak='sudden-death'", () => {
-      useMatchStore.getState().setMatch(
-        standardConfig({ timeLimitMin: 10, tieBreak: 'sudden-death' })
-      );
+      useMatchStore
+        .getState()
+        .setMatch(
+          standardConfig({ timeLimitMin: 10, tieBreak: 'sudden-death' })
+        );
       scoreN('team1', 5);
       scoreN('team2', 5);
       expect(useMatchStore.getState().closeCurrentSet()).toBe(
@@ -237,9 +241,9 @@ describe('useMatchStore', () => {
     });
 
     it("renvoie 'draw' si égalité sans tie-break", () => {
-      useMatchStore.getState().setMatch(
-        standardConfig({ timeLimitMin: 10, tieBreak: 'none' })
-      );
+      useMatchStore
+        .getState()
+        .setMatch(standardConfig({ timeLimitMin: 10, tieBreak: 'none' }));
       scoreN('team1', 3);
       scoreN('team2', 3);
       expect(useMatchStore.getState().closeCurrentSet()).toBe('draw');

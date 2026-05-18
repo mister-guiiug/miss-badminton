@@ -19,9 +19,7 @@ export function buildShareText(
     }) => string;
   }
 ): string {
-  const setsText = match.setScores
-    .map(s => `${s.team1}-${s.team2}`)
-    .join(', ');
+  const setsText = match.setScores.map(s => `${s.team1}-${s.team2}`).join(', ');
   return labels.template({
     a: labels.team1,
     sa: match.finalSetWins.team1,
@@ -64,7 +62,8 @@ export function buildReplayUrl(config: SavedMatch['config']): string {
     const base =
       typeof window === 'undefined'
         ? 'https://example.com/'
-        : window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+        : window.location.origin +
+          window.location.pathname.replace(/\/[^/]*$/, '/');
     return `${base}?replay=${encodeURIComponent(utf8Safe)}`;
   } catch {
     return '';

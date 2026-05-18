@@ -434,7 +434,9 @@ function Step2({
     TIME_LIMIT_OPTIONS.map(v => ({
       value: v === null ? 'none' : String(v),
       label:
-        v === null ? t('wizard.timeLimitNone') : t('wizard.timeLimitMin', { n: v }),
+        v === null
+          ? t('wizard.timeLimitNone')
+          : t('wizard.timeLimitMin', { n: v }),
     }));
   const timeKey = timeLimitMin === null ? 'none' : String(timeLimitMin);
   const timeLabel =
@@ -524,7 +526,9 @@ function Step2({
         help={t('wizard.timeLimitHelp')}
         value={timeKey}
         options={timeOptions}
-        onChange={v => onChange({ timeLimitMin: v === 'none' ? null : Number(v) })}
+        onChange={v =>
+          onChange({ timeLimitMin: v === 'none' ? null : Number(v) })
+        }
         equalWidth
       />
       {timeLimitMin !== null && (

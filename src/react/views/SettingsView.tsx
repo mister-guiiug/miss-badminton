@@ -155,7 +155,8 @@ export function SettingsView() {
       if (settings?.theme) setThemePreference(settings.theme);
       if (settings?.team1Color) setTeamColor('team1', settings.team1Color);
       if (settings?.team2Color) setTeamColor('team2', settings.team2Color);
-      if (typeof settings?.sound === 'boolean') feedback.setSound(settings.sound);
+      if (typeof settings?.sound === 'boolean')
+        feedback.setSound(settings.sound);
       if (typeof settings?.haptic === 'boolean')
         feedback.setHaptic(settings.haptic);
       // Liste des joueurs : importBundle a déjà mis à jour le storage ;
