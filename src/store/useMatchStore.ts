@@ -93,11 +93,7 @@ interface MatchState {
   // History
   matchHistory: SavedMatch[];
   saveToHistory: (match: SavedMatch) => void;
-  editSetScore: (
-    setIndex: number,
-    team1: number,
-    team2: number
-  ) => boolean;
+  editSetScore: (setIndex: number, team1: number, team2: number) => boolean;
   /**
    * Édite le score d'un set d'un match déjà terminé et persisté.
    * Recalcule `finalSetWins` et `winner` selon les sets résultants.
@@ -570,9 +566,7 @@ export const useMatchStore = create<MatchState>()(
         };
         // Remplacement atomique : on rebâtit la liste persistée puis on
         // re-synchronise l'état Zustand depuis le storage (source de vérité).
-        const nextHistory = history.map(m =>
-          m.id === matchId ? updated : m
-        );
+        const nextHistory = history.map(m => (m.id === matchId ? updated : m));
         storage.replaceHistory(nextHistory);
         set({ matchHistory: storage.loadHistory() });
         return true;

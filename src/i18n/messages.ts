@@ -339,7 +339,8 @@ const fr: Messages = {
     sideChangeEachSet: 'Chaque set',
     sideChangeMidMatch: 'Mi-match (à 11)',
     timeLimit: 'Durée du set',
-    timeLimitHelp: 'Limite max. par set ; au temps, le score en tête l’emporte.',
+    timeLimitHelp:
+      'Limite max. par set ; au temps, le score en tête l’emporte.',
     timeLimitNone: 'Pas de limite',
     timeLimitMin: '{n} min',
     tieBreak: 'Départage',

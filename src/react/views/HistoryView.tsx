@@ -219,10 +219,7 @@ export function HistoryView() {
     () => filterByPeriod(matches, period),
     [matches, period]
   );
-  const stats = useMemo(
-    () => computeStats(filteredMatches),
-    [filteredMatches]
-  );
+  const stats = useMemo(() => computeStats(filteredMatches), [filteredMatches]);
 
   return (
     <PageContainer width="xl">
@@ -252,7 +249,11 @@ export function HistoryView() {
       </header>
 
       {matches.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('historyExtra.periodLabel')}>
+        <div
+          className="flex flex-wrap items-center gap-2"
+          role="group"
+          aria-label={t('historyExtra.periodLabel')}
+        >
           {(['all', '30d', '7d'] as PeriodFilter[]).map(p => (
             <button
               key={p}
@@ -373,9 +374,7 @@ export function HistoryView() {
                     className="inline-flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-black"
                     style={{
                       background:
-                        i === 0
-                          ? 'var(--primary)'
-                          : 'var(--surface-highlight)',
+                        i === 0 ? 'var(--primary)' : 'var(--surface-highlight)',
                       color: i === 0 ? 'white' : 'var(--muted)',
                     }}
                   >
@@ -387,7 +386,10 @@ export function HistoryView() {
                   <span className="font-medium">
                     {p.wins}/{p.total}
                   </span>
-                  <span className="font-black" style={{ color: 'var(--primary)' }}>
+                  <span
+                    className="font-black"
+                    style={{ color: 'var(--primary)' }}
+                  >
                     {p.winRate.toFixed(0)}%
                   </span>
                   {p.maxStreak > 1 && (
@@ -429,7 +431,10 @@ export function HistoryView() {
                 <span className="truncate text-sm font-medium">
                   {h.a} <span className="opacity-40">vs</span> {h.b}
                 </span>
-                <span className="font-black tabular-nums" style={{ color: 'var(--primary)' }}>
+                <span
+                  className="font-black tabular-nums"
+                  style={{ color: 'var(--primary)' }}
+                >
                   {h.winsA} – {h.winsB}
                 </span>
               </li>
@@ -482,8 +487,7 @@ export function HistoryView() {
                         const text = buildShareText(match, {
                           team1: t1,
                           team2: t2,
-                          template: params =>
-                            t('scoreboard.shareBody', params),
+                          template: params => t('scoreboard.shareBody', params),
                         });
                         void shareText(t('scoreboard.shareTitle'), text);
                       }}
@@ -649,7 +653,7 @@ function EditSetDialog({
 }: EditSetDialogProps) {
   const [t1, setT1] = useState(initial.team1);
   const [t2, setT2] = useState(initial.team2);
-  const invalid = t1 < 0 || t2 < 0 || (t1 === t2);
+  const invalid = t1 < 0 || t2 < 0 || t1 === t2;
 
   return (
     <div
