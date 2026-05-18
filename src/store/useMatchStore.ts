@@ -5,6 +5,7 @@ import type {
   PointsCap,
 } from '../react/components/MatchSetupWizard';
 import { storage, type SavedMatch } from '../storage';
+import { ExportBundleSchema } from '../schemas';
 
 export type ServiceSide = 'team1' | 'team2';
 
@@ -44,6 +45,18 @@ interface MatchState {
   setScores: { team1: number; team2: number }[];
   pendingSideChange: boolean;
   mid11Triggered: boolean;
+  /**
+   * Vrai entre l'instant où `closeCurrentSet` a renvoyé `'tie-break-required'`
+   * et la résolution du point décisif. Le prochain `score(team)` ferme alors
+   * le set immédiatement, indépendamment du seuil de points ou du cap.
+   */
+  pendingTieBreak: boolean;
+  /**
+   * Timestamp du premier point du set en cours. Sert à mesurer la durée
+   * écoulée pour la limite de temps (`match.timeLimitMin`). `null` tant
+   * qu'aucun point n'a été marqué dans le set courant.
+   */
+  currentSetStartedAt: number | null;
   startedAt: number | null;
   endedAt: number | null;
   pausedAt: number | null;
@@ -73,11 +86,54 @@ interface MatchState {
   resumeChrono: () => void;
   resetChrono: () => void;
 
+  /**
+   * Ferme le set en cours sans qu'un seuil de score n'ait été atteint —
+   * typiquement appelé par l'UI quand `match.timeLimitMin` est dépassé.
+   * - Si les scores diffèrent : victoire au leader.
+   * - Si égalité et `tieBreak === 'sudden-death'` : on n'écrit rien et on
+   *   renvoie 'tie-break-required' ; l'UI doit demander un point décisif
+   *   (qui passera par `score(team)`).
+   * - Si égalité et tieBreak !== 'sudden-death' : aucun set attribué,
+   *   on renvoie 'draw'.
+   */
+  closeCurrentSet: () =>
+    | 'set-closed'
+    | 'tie-break-required'
+    | 'draw'
+    | 'no-match';
+
   // History
   matchHistory: SavedMatch[];
   saveToHistory: (match: SavedMatch) => void;
+  editSetScore: (setIndex: number, team1: number, team2: number) => boolean;
+  /**
+   * Édite le score d'un set d'un match déjà terminé et persisté.
+   * Recalcule `finalSetWins` et `winner` selon les sets résultants.
+   * Renvoie `false` si le match est introuvable ou l'index hors borne.
+   */
+  editHistorySetScore: (
+    matchId: string,
+    setIndex: number,
+    team1: number,
+    team2: number
+  ) => boolean;
   removeFromHistory: (id: string) => void;
   clearHistory: () => void;
+
+  /**
+   * Importe un blob d'export (Settings) validé via zod. Renvoie le détail
+   * de ce qui a été appliqué ou un message d'erreur si la donnée est
+   * structurellement invalide.
+   */
+  importBundle: (raw: unknown) => {
+    ok: boolean;
+    error?: string;
+    applied?: {
+      history: number;
+      players: number;
+      settings: boolean;
+    };
+  };
 }
 
 function isSetWon(
@@ -112,6 +168,8 @@ export const useMatchStore = create<MatchState>()(
       setScores: [],
       pendingSideChange: false,
       mid11Triggered: false,
+      pendingTieBreak: false,
+      currentSetStartedAt: null,
       startedAt: null,
       endedAt: null,
       pausedAt: null,
@@ -135,18 +193,15 @@ export const useMatchStore = create<MatchState>()(
         const nextS1 = team === 'team1' ? state.score1 + 1 : state.score1;
         const nextS2 = team === 'team2' ? state.score2 + 1 : state.score2;
 
-        const team1Won = isSetWon(
-          nextS1,
-          nextS2,
-          state.match.points,
-          state.match.cap
-        );
-        const team2Won = isSetWon(
-          nextS2,
-          nextS1,
-          state.match.points,
-          state.match.cap
-        );
+        // Sudden death : un point déclenché par `closeCurrentSet` à l'épuisement
+        // du temps. Ce point ferme le set immédiatement, indépendamment du
+        // seuil de points ou du cap.
+        const team1Won = state.pendingTieBreak
+          ? team === 'team1'
+          : isSetWon(nextS1, nextS2, state.match.points, state.match.cap);
+        const team2Won = state.pendingTieBreak
+          ? team === 'team2'
+          : isSetWon(nextS2, nextS1, state.match.points, state.match.cap);
         const setEnded = team1Won || team2Won;
 
         const baseHistory: HistoryEntry = {
@@ -210,6 +265,8 @@ export const useMatchStore = create<MatchState>()(
             setScores: nextSetScores,
             pendingSideChange,
             mid11Triggered: false,
+            pendingTieBreak: false,
+            currentSetStartedAt: null,
             history: [...state.history, { ...baseHistory, matchEnded }],
             pendingFeedback: matchEnded ? 'matchWon' : 'setWon',
             lastSetSummary: {
@@ -244,6 +301,9 @@ export const useMatchStore = create<MatchState>()(
           server: team,
           pendingSideChange,
           mid11Triggered,
+          // Le set démarre au premier point ; les suivants conservent la
+          // valeur (qui sert de référence pour la limite de temps).
+          currentSetStartedAt: state.currentSetStartedAt ?? now,
           history: [...state.history, baseHistory],
           pendingFeedback: 'point',
           lastSetSummary: null,
@@ -366,6 +426,8 @@ export const useMatchStore = create<MatchState>()(
           setScores: [],
           pendingSideChange: false,
           mid11Triggered: false,
+          pendingTieBreak: false,
+          currentSetStartedAt: null,
           history: [],
           pendingFeedback: null,
           lastSetSummary: null,
@@ -419,28 +481,168 @@ export const useMatchStore = create<MatchState>()(
         });
       },
 
+      closeCurrentSet: () => {
+        const state = get();
+        if (!state.match || state.matchWinner) return 'no-match';
+        if (state.score1 === state.score2) {
+          if (state.match.tieBreak === 'sudden-death') {
+            set({ pendingTieBreak: true });
+            return 'tie-break-required';
+          }
+          return 'draw';
+        }
+        const winnerSide: ServiceSide =
+          state.score1 > state.score2 ? 'team1' : 'team2';
+        const nextSetWins = {
+          team1: state.setWins.team1 + (winnerSide === 'team1' ? 1 : 0),
+          team2: state.setWins.team2 + (winnerSide === 'team2' ? 1 : 0),
+        };
+        const matchEnded = nextSetWins[winnerSide] >= state.match.sets;
+        const nextSetScores = [
+          ...state.setScores,
+          { team1: state.score1, team2: state.score2 },
+        ];
+        const now = Date.now();
+        set({
+          score1: 0,
+          score2: 0,
+          server: null,
+          setWins: nextSetWins,
+          matchWinner: matchEnded ? winnerSide : null,
+          setScores: nextSetScores,
+          pendingSideChange: false,
+          mid11Triggered: false,
+          pendingTieBreak: false,
+          currentSetStartedAt: null,
+          history: [],
+          pendingFeedback: matchEnded ? 'matchWon' : 'setWon',
+          lastSetSummary: {
+            winner: winnerSide,
+            a: state.score1,
+            b: state.score2,
+          },
+          endedAt: matchEnded ? now : null,
+        });
+        return 'set-closed';
+      },
+
       saveToHistory: match => {
         const history = get().matchHistory;
         if (history.some(m => m.id === match.id)) return;
-        const next = [match, ...history].slice(0, 50);
-        set({ matchHistory: next });
+        // `storage.saveMatchToHistory` applique le plafond MAX_HISTORY ;
+        // on re-lit ensuite l'historique pour rester en cohérence avec
+        // ce qui est réellement persisté (source de vérité = localStorage).
         storage.saveMatchToHistory(match);
+        set({ matchHistory: storage.loadHistory() });
+      },
+
+      editSetScore: (setIndex, t1, t2) => {
+        const state = get();
+        if (!state.match) return false;
+        if (setIndex < 0 || setIndex >= state.setScores.length) return false;
+        if (t1 < 0 || t2 < 0) return false;
+        const next = state.setScores.map((s, i) =>
+          i === setIndex ? { team1: t1, team2: t2 } : s
+        );
+        // Recalcule setWins en repassant sur la liste : on suppose qu'à
+        // chaque set, le gagnant est celui qui a le plus grand score (le
+        // wizard valide déjà les seuils ; l'édition se fait après la fin
+        // d'un set donc les scores sont supposés conformes).
+        const setWins = { team1: 0, team2: 0 };
+        for (const s of next) {
+          if (s.team1 > s.team2) setWins.team1 += 1;
+          else if (s.team2 > s.team1) setWins.team2 += 1;
+        }
+        const winner =
+          setWins.team1 >= state.match.sets
+            ? ('team1' as const)
+            : setWins.team2 >= state.match.sets
+              ? ('team2' as const)
+              : null;
+        set({ setScores: next, setWins, matchWinner: winner });
+        return true;
+      },
+
+      editHistorySetScore: (matchId, setIndex, t1, t2) => {
+        if (t1 < 0 || t2 < 0) return false;
+        const history = get().matchHistory;
+        const match = history.find(m => m.id === matchId);
+        if (!match) return false;
+        if (setIndex < 0 || setIndex >= match.setScores.length) return false;
+        const nextSetScores = match.setScores.map((s, i) =>
+          i === setIndex ? { team1: t1, team2: t2 } : s
+        );
+        const finalSetWins = { team1: 0, team2: 0 };
+        for (const s of nextSetScores) {
+          if (s.team1 > s.team2) finalSetWins.team1 += 1;
+          else if (s.team2 > s.team1) finalSetWins.team2 += 1;
+        }
+        const winner: 'team1' | 'team2' =
+          finalSetWins.team1 >= finalSetWins.team2 ? 'team1' : 'team2';
+        const updated: SavedMatch = {
+          ...match,
+          setScores: nextSetScores,
+          finalSetWins,
+          winner,
+        };
+        // Remplacement atomique : on rebâtit la liste persistée puis on
+        // re-synchronise l'état Zustand depuis le storage (source de vérité).
+        const nextHistory = history.map(m => (m.id === matchId ? updated : m));
+        storage.replaceHistory(nextHistory);
+        set({ matchHistory: storage.loadHistory() });
+        return true;
       },
 
       removeFromHistory: id => {
-        const next = get().matchHistory.filter(m => m.id !== id);
-        set({ matchHistory: next });
         storage.removeMatchFromHistory(id);
+        set({ matchHistory: storage.loadHistory() });
       },
 
       clearHistory: () => {
-        set({ matchHistory: [] });
         storage.clearHistory();
+        set({ matchHistory: [] });
+      },
+
+      importBundle: raw => {
+        const parsed = ExportBundleSchema.safeParse(raw);
+        if (!parsed.success) {
+          return { ok: false, error: 'invalid_format' };
+        }
+        const data = parsed.data;
+        let historyCount = 0;
+        let playersCount = 0;
+        let settingsApplied = false;
+        if (data.history) {
+          const ok = storage.replaceHistory(data.history);
+          if (ok) {
+            historyCount = data.history.length;
+            set({ matchHistory: storage.loadHistory() });
+          }
+        }
+        if (data.players) {
+          storage.replacePlayerNames(data.players);
+          playersCount = data.players.length;
+        }
+        if (data.settings) {
+          // L'application effective des réglages reste à la charge du caller
+          // (theme, locale, couleurs, sound, haptic) car ils vivent dans des
+          // hooks séparés. Le store se contente de valider le bundle.
+          settingsApplied = true;
+        }
+        return {
+          ok: true,
+          applied: {
+            history: historyCount,
+            players: playersCount,
+            settings: settingsApplied,
+          },
+        };
       },
     }),
     {
       name: 'mb-match-storage',
       storage: createJSONStorage(() => localStorage),
+      version: 1,
       partialize: state => ({
         match: state.match,
         score1: state.score1,
@@ -451,6 +653,8 @@ export const useMatchStore = create<MatchState>()(
         setScores: state.setScores,
         pendingSideChange: state.pendingSideChange,
         mid11Triggered: state.mid11Triggered,
+        pendingTieBreak: state.pendingTieBreak,
+        currentSetStartedAt: state.currentSetStartedAt,
         startedAt: state.startedAt,
         endedAt: state.endedAt,
         pausedAt: state.pausedAt,
@@ -463,3 +667,21 @@ export const useMatchStore = create<MatchState>()(
     }
   )
 );
+
+// Hydratation asynchrone de l'historique depuis IndexedDB. À l'init, le
+// store contient déjà la copie cache (localStorage, plafonnée). Une fois
+// IDB résolu, on remplace par la version complète non plafonnée. En
+// environnement non-browser (SSR, tests sans jsdom IDB), `loadHistoryAsync`
+// retombe sur le cache localStorage — pas d'effet de bord.
+if (typeof window !== 'undefined') {
+  void storage.loadHistoryAsync().then(history => {
+    const current = useMatchStore.getState().matchHistory;
+    // Évite un setState inutile si rien n'a changé.
+    if (
+      history.length !== current.length ||
+      history.some((m, i) => m.id !== current[i]?.id)
+    ) {
+      useMatchStore.setState({ matchHistory: history });
+    }
+  });
+}
