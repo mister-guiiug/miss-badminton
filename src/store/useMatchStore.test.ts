@@ -209,6 +209,43 @@ describe('useMatchStore', () => {
     });
   });
 
+  describe('closeCurrentSet (time-based)', () => {
+    it("ferme le set au leader si les scores diffèrent", () => {
+      useMatchStore.getState().setMatch(
+        standardConfig({ timeLimitMin: 10, tieBreak: 'sudden-death' })
+      );
+      scoreN('team1', 8);
+      scoreN('team2', 5);
+      expect(useMatchStore.getState().closeCurrentSet()).toBe('set-closed');
+      expect(useMatchStore.getState().setScores).toEqual([
+        { team1: 8, team2: 5 },
+      ]);
+      expect(useMatchStore.getState().setWins).toEqual({ team1: 1, team2: 0 });
+    });
+
+    it("renvoie 'tie-break-required' si égalité et tieBreak='sudden-death'", () => {
+      useMatchStore.getState().setMatch(
+        standardConfig({ timeLimitMin: 10, tieBreak: 'sudden-death' })
+      );
+      scoreN('team1', 5);
+      scoreN('team2', 5);
+      expect(useMatchStore.getState().closeCurrentSet()).toBe(
+        'tie-break-required'
+      );
+      // Aucun set attribué tant que le tie-break n'est pas joué
+      expect(useMatchStore.getState().setScores).toEqual([]);
+    });
+
+    it("renvoie 'draw' si égalité sans tie-break", () => {
+      useMatchStore.getState().setMatch(
+        standardConfig({ timeLimitMin: 10, tieBreak: 'none' })
+      );
+      scoreN('team1', 3);
+      scoreN('team2', 3);
+      expect(useMatchStore.getState().closeCurrentSet()).toBe('draw');
+    });
+  });
+
   describe('importBundle', () => {
     it('rejette un payload structurellement invalide', () => {
       const res = useMatchStore.getState().importBundle({ history: 'oops' });
