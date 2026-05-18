@@ -8,6 +8,7 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   FlameIcon,
+  HistoryIcon,
   RotateCwIcon,
   Trash2Icon,
   TrophyIcon,
