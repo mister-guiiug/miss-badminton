@@ -11,17 +11,17 @@ npm run dev
 
 ## 📦 Scripts disponibles
 
-| Commande | Description |
-|---|---|
-| `npm run dev` | Serveur de développement |
-| `npm run build` | Build de production |
-| `npm run preview` | Prévisualiser le build |
-| `npm run lint` | Vérifier le code |
-| `npm run format` | Formater le code |
-| `npm run type-check` | Vérification TypeScript |
-| `npm run test` | Tests unitaires |
-| `npm run test:e2e` | Tests E2E Playwright |
-| `npm run icons` | Générer les icônes PWA depuis `docs/Designer.png` |
+| Commande             | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `npm run dev`        | Serveur de développement                          |
+| `npm run build`      | Build de production                               |
+| `npm run preview`    | Prévisualiser le build                            |
+| `npm run lint`       | Vérifier le code                                  |
+| `npm run format`     | Formater le code                                  |
+| `npm run type-check` | Vérification TypeScript                           |
+| `npm run test`       | Tests unitaires                                   |
+| `npm run test:e2e`   | Tests E2E Playwright                              |
+| `npm run icons`      | Générer les icônes PWA depuis `docs/Designer.png` |
 
 ## 🏗️ Stack technique
 

@@ -35,8 +35,7 @@ export function SetTransitionBanner({
           background: 'rgba(0,0,0,0.78)',
           color: '#ffffff',
           animation: 'mb-set-pop 220ms ease-out',
-          padding:
-            'clamp(0.75rem, 2.4vw, 1.25rem) clamp(1rem, 3.5vw, 1.75rem)',
+          padding: 'clamp(0.75rem, 2.4vw, 1.25rem) clamp(1rem, 3.5vw, 1.75rem)',
         }}
       >
         <p
