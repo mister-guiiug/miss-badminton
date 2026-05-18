@@ -22,7 +22,9 @@ import {
 import { forceAppUpdate } from '../../register-sw';
 import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
-import { RefreshCwIcon } from '../components/icons';
+import { DownloadIcon, RefreshCwIcon, Trash2Icon, UploadIcon, UserIcon } from '../components/icons';
+import { storage } from '../../storage';
+import { useMatchStore } from '../../store/useMatchStore';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 
@@ -56,6 +58,8 @@ export function SettingsView() {
     getStoredThemePreference()
   );
   const hasKeyboard = useLikelyHasKeyboard();
+  const { matchHistory } = useMatchStore();
+  const [playerNames, setPlayerNames] = useState<string[]>(() => storage.loadPlayerNames());
 
   const colorsAreDefault =
     colors.team1.toLowerCase() === DEFAULT_TEAM1_COLOR &&
@@ -70,8 +74,6 @@ export function SettingsView() {
     try {
       await forceAppUpdate();
     } finally {
-      // forceAppUpdate triggers a reload, but if it falls through (no SW),
-      // restore the button state so the user can retry.
       setUpdating(false);
     }
   };
@@ -84,6 +86,64 @@ export function SettingsView() {
     if (pref === 'light') return t('settings.themeLight');
     if (pref === 'dark') return t('settings.themeDark');
     return t('settings.themeSystem');
+  };
+
+  const handleExport = () => {
+    const data = {
+      history: matchHistory,
+      players: playerNames,
+      settings: {
+        theme,
+        locale,
+        team1Color: colors.team1,
+        team2Color: colors.team2,
+        sound: feedback.sound,
+        haptic: feedback.haptic,
+      }
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `miss-badminton-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (data.history) {
+           // We might want a more robust way to merge or replace history
+           // For now, let's just alert the user or implement a merge.
+           localStorage.setItem('mb_match_history', JSON.stringify(data.history));
+        }
+        if (data.players) {
+           localStorage.setItem('mb_player_names', JSON.stringify(data.players));
+        }
+        if (data.settings) {
+          if (data.settings.theme) setThemePreference(data.settings.theme);
+          if (data.settings.locale) localStorage.setItem('mb_locale', JSON.stringify(data.settings.locale));
+          if (data.settings.team1Color) setTeamColor('team1', data.settings.team1Color);
+          if (data.settings.team2Color) setTeamColor('team2', data.settings.team2Color);
+          feedback.setSound(!!data.settings.sound);
+          feedback.setHaptic(!!data.settings.haptic);
+        }
+        window.location.reload();
+      } catch (err) {
+        alert(t('settings.importError'));
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDeletePlayer = (name: string) => {
+    storage.removePlayerName(name);
+    setPlayerNames(storage.loadPlayerNames());
   };
 
   return (
@@ -193,6 +253,66 @@ export function SettingsView() {
           enabledLabel={t('settings.enabled')}
           disabledLabel={t('settings.disabled')}
         />
+      </Section>
+
+      <Section
+        title={t('settings.playersLabel')}
+        help={t('settings.playersHelp')}
+      >
+        {playerNames.length === 0 ? (
+          <p className="text-sm opacity-50 italic">{t('historyExtra.statsNone')}</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {playerNames.map(name => (
+              <span
+                key={name}
+                className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium"
+                style={{ borderColor: 'var(--border)', background: 'var(--surface-highlight)' }}
+              >
+                <UserIcon size={14} />
+                {name}
+                <button
+                  type="button"
+                  onClick={() => handleDeletePlayer(name)}
+                  className="ml-1 rounded-full p-0.5 hover:bg-black/10"
+                  aria-label={t('history.delete')}
+                >
+                  <Trash2Icon size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      <Section
+        title={t('settings.dataLabel')}
+        help={t('settings.dataHelp')}
+      >
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleExport}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
+            style={{ borderColor: 'var(--border)', background: 'var(--surface-highlight)', color: 'var(--text)' }}
+          >
+            <DownloadIcon size={16} />
+            {t('settings.exportButton')}
+          </button>
+          <label
+            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
+            style={{ borderColor: 'var(--border)', background: 'var(--surface-highlight)', color: 'var(--text)' }}
+          >
+            <UploadIcon size={16} />
+            {t('settings.importButton')}
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
+          </label>
+        </div>
       </Section>
 
       <Section
