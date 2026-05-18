@@ -31,6 +31,7 @@ import {
 } from '../components/icons';
 import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
+import { clearErrorLog, getErrorLog } from '../../error-reporter';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 
@@ -393,7 +394,68 @@ export function SettingsView() {
           </ul>
         </Section>
       )}
+
+      <DiagnosticsSection />
     </PageContainer>
+  );
+}
+
+function DiagnosticsSection() {
+  const { t } = useI18n();
+  const [count, setCount] = useState(() => getErrorLog().length);
+
+  const handleExport = () => {
+    const log = getErrorLog();
+    const blob = new Blob([JSON.stringify(log, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `miss-badminton-errors-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const handleClear = () => {
+    clearErrorLog();
+    setCount(0);
+  };
+
+  if (count === 0) return null;
+  return (
+    <Section
+      title={t('settings.diagnosticsLabel')}
+      help={t('settings.diagnosticsHelp', { n: count })}
+    >
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleExport}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
+          style={{
+            borderColor: 'var(--border)',
+            background: 'var(--surface-highlight)',
+            color: 'var(--text)',
+          }}
+        >
+          <DownloadIcon size={16} />
+          {t('settings.diagnosticsExport')}
+        </button>
+        <button
+          type="button"
+          onClick={handleClear}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
+          style={{
+            borderColor: 'var(--border)',
+            background: 'var(--surface-highlight)',
+            color: 'var(--muted)',
+          }}
+        >
+          <Trash2Icon size={16} />
+          {t('settings.diagnosticsClear')}
+        </button>
+      </div>
+    </Section>
   );
 }
 

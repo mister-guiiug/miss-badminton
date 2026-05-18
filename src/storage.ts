@@ -1,10 +1,12 @@
 import type { MatchConfig } from './react/components/MatchSetupWizard';
 import {
   MatchConfigSchema,
+  MatchTemplateArraySchema,
   PersistedGameStateSchema,
   PlayerNamesSchema,
   SavedMatchArraySchema,
   SavedMatchSchema,
+  type MatchTemplate,
 } from './schemas';
 import type { z } from 'zod';
 import { idbGet, idbSet } from './idb';
@@ -14,6 +16,7 @@ const LS = {
   game: 'mb_active_game',
   history: 'mb_match_history',
   players: 'mb_player_names',
+  templates: 'mb_match_templates',
   sound: 'mb_sound_enabled',
   haptic: 'mb_haptic_enabled',
   dataVersion: 'mb_data_version',
@@ -21,6 +24,7 @@ const LS = {
 
 const MAX_PLAYERS = 24;
 const MAX_HISTORY = 200;
+const MAX_TEMPLATES = 12;
 
 /**
  * Bump when the shape/sémantique des données persistées change de façon
@@ -216,6 +220,18 @@ export const storage = {
     safeWrite(LS.history, result.data.slice(0, MAX_HISTORY));
     void idbSet('history', result.data);
     return true;
+  },
+
+  loadTemplates: (): MatchTemplate[] =>
+    safeReadValidated(LS.templates, MatchTemplateArraySchema, []) ?? [],
+  addTemplate: (template: MatchTemplate): void => {
+    const current = storage.loadTemplates().filter(t => t.id !== template.id);
+    const next = [template, ...current].slice(0, MAX_TEMPLATES);
+    safeWrite(LS.templates, next);
+  },
+  removeTemplate: (id: string): void => {
+    const next = storage.loadTemplates().filter(t => t.id !== id);
+    safeWrite(LS.templates, next);
   },
 
   loadBoolPref: (key: 'sound' | 'haptic', fallback: boolean): boolean => {
