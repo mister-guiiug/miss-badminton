@@ -153,7 +153,7 @@ export function SettingsView() {
           feedback.setHaptic(!!data.settings.haptic);
         }
         window.location.reload();
-      } catch (err) {
+      } catch {
         alert(t('settings.importError'));
       }
     };

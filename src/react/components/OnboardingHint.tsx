@@ -27,6 +27,11 @@ export function OnboardingHint() {
   const dialogRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState<boolean>(() => !hasSeenOnboarding());
 
+  const dismiss = () => {
+    markSeen();
+    setVisible(false);
+  };
+
   useEffect(() => {
     if (!visible) return;
     dialogRef.current?.focus();
@@ -36,11 +41,6 @@ export function OnboardingHint() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [visible]);
-
-  const dismiss = () => {
-    markSeen();
-    setVisible(false);
-  };
 
   if (!visible) return null;
 

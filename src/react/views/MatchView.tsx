@@ -101,12 +101,6 @@ function isSetPoint(
   return isSetWon(scoreA + 1, scoreB, target, cap);
 }
 
-function flipSide(side: ServiceSide | null): ServiceSide | null {
-  if (side === 'team1') return 'team2';
-  if (side === 'team2') return 'team1';
-  return null;
-}
-
 export function MatchView() {
   const { t, locale } = useI18n();
   const feedback = useFeedback();
