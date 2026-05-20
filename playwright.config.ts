@@ -23,9 +23,18 @@ export default defineConfig({
     process.env.CI ? ['github'] : [],
   ].filter(Boolean) as unknown as PlaywrightTestConfig['reporter'],
 
+  // `use` est redéfini explicitement (et non spread depuis basePlaywrightOptions.use)
+  // car le .d.ts du paquet expose `basePlaywrightOptions` en Record<string, unknown>
+  // pour éviter d'importer @playwright/test (peerDep optionnelle), ce qui casse
+  // l'inférence du spread imbriqué.
+  // `reducedMotion` est une BrowserContextOption (pas dans PlaywrightTestOptions),
+  // donc on la passe via contextOptions.
   use: {
-    ...basePlaywrightOptions.use,
-    reducedMotion: 'reduce',
+    baseURL: 'http://localhost:5173',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    contextOptions: { reducedMotion: 'reduce' },
   },
 
   projects: [
