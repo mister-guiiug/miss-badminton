@@ -1,3 +1,5 @@
+# Deploy délégué au reusable workflow famille (dev-wpa-config).
+# Les permissions doivent être déclarées au niveau caller (intersection only).
 name: Deploy to GitHub Pages
 
 on:
@@ -16,42 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: npm
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@mister-guiiug'
-
-      - name: Install
-        run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build
-        env:
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
-        run: npm run build
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
   deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+    uses: mister-guiiug/dev-wpa-config/.github/workflows/pwa-deploy.yml@v1
+    secrets: inherit
+    with:
+      use-base-path: true

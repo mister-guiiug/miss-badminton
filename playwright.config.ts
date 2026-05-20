@@ -3,18 +3,18 @@ import {
   devices,
   type PlaywrightTestConfig,
 } from '@playwright/test';
+import { basePlaywrightOptions } from '@mister-guiiug/dev-wpa-config/playwright-base';
 
 export default defineConfig({
-  testDir: './e2e',
+  ...basePlaywrightOptions,
   testMatch: /.*\.spec\.ts$/,
 
-  fullyParallel: true,
+  // Overrides : plus de workers en local, 1 retry local pour détecter les flaky.
   workers: process.env.CI ? 1 : 4,
-
   retries: process.env.CI ? 2 : 1,
-  timeout: 30 * 1000,
   expect: { timeout: 10 * 1000 },
 
+  // Reporters multi-format (JSON + JUnit en plus de HTML/list de la base).
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'test-results/results.json' }],
@@ -24,34 +24,16 @@ export default defineConfig({
   ].filter(Boolean) as unknown as PlaywrightTestConfig['reporter'],
 
   use: {
-    baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    ...basePlaywrightOptions.use,
     reducedMotion: 'reduce',
   },
 
   projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    {
-      name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'mobile-safari',
-      use: { ...devices['iPhone 12'] },
-    },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    { name: 'mobile-chrome', use: { ...devices['Pixel 5'] } },
+    { name: 'mobile-safari', use: { ...devices['iPhone 12'] } },
   ],
 
   webServer: {
