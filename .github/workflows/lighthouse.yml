@@ -1,3 +1,4 @@
+# Lighthouse délégué au reusable workflow famille (dev-wpa-config).
 name: Lighthouse
 
 on:
@@ -11,32 +12,5 @@ permissions:
 
 jobs:
   lighthouse:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: npm
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@mister-guiiug'
-
-      - name: Install
-        run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build
-        env:
-          # LHCI sert dist/ à la racine ; pas de préfixe `/miss-badminton/`.
-          VITE_BASE_PATH: /
-        run: npm run build
-
-      - name: Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v12
-        with:
-          configPath: ./.lighthouserc.json
-          # Le runner sert le build via http-server pour mesurer la prod.
-          uploadArtifacts: true
-          temporaryPublicStorage: true
+    uses: mister-guiiug/dev-wpa-config/.github/workflows/pwa-lighthouse.yml@v1
+    secrets: inherit
