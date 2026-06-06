@@ -1,3 +1,6 @@
+/// <reference types="node" />
+// ^ `Buffer` (branche non-navigateur de buildReplayUrl) : type-only, aucun effet
+//   runtime. Nécessaire depuis Vite 8 (vite/client n'inclut plus les globals Node).
 import type { SavedMatch } from './storage';
 
 /**
