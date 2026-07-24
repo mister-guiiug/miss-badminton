@@ -8,6 +8,7 @@ import type { ServerResponse } from 'node:http';
 import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { pwaSeoPlugin } from '@mister-guiiug/dev-wpa-config/vite-pwa-base';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 const analyze = process.env.ANALYZE === '1';
@@ -59,6 +60,13 @@ export default defineConfig(({ command }) => {
     plugins: [
       react(),
       tailwindcss(),
+      // SEO partagé famille : canonical/OG via placeholders index.html +
+      // sitemap.xml/robots.txt générés au build (source unique).
+      pwaSeoPlugin({
+        siteName: 'Miss Badminton',
+        basePath,
+        logoPath: '/logo.svg',
+      }),
       {
         name: 'miss-badminton-trailing-slash',
         configureServer(server: ViteDevServer) {
@@ -88,7 +96,6 @@ export default defineConfig(({ command }) => {
           'icons/icon-192.png',
           'icons/icon-512.png',
           'icons/apple-touch-icon.png',
-          'robots.txt',
         ],
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,svg,png,woff2,webmanifest}'],

@@ -65,9 +65,40 @@
       name="description"
       content="Suivez vos scores et statistiques de badminton en temps réel."
     />
+    <link rel="canonical" href="__SEO_HOME_URL__" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Miss Badminton" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:url" content="__SEO_HOME_URL__" />
+    <meta
+      property="og:title"
+      content="Miss Badminton — scores et statistiques"
+    />
+    <meta
+      property="og:description"
+      content="Suivez vos scores et statistiques de badminton en temps réel."
+    />
+    <meta property="og:image" content="__SEO_LOGO_URL__" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="Miss Badminton — scores et statistiques"
+    />
+    <meta
+      name="twitter:description"
+      content="Suivi de scores et statistiques de badminton, installable (PWA)."
+    />
+    <meta name="twitter:image" content="__SEO_LOGO_URL__" />
+
+    <!-- Analytics (GTM/GA4) injecté par pwaSeoPlugin() — vide tant qu'aucun
+         VITE_GTM_CONTAINER_ID / VITE_GA_MEASUREMENT_ID n'est configuré. -->
+    __ANALYTICS_HEAD__
     <title>Miss Badminton</title>
   </head>
   <body>
+    __ANALYTICS_BODY__
     <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
