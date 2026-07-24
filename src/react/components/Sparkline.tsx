@@ -20,6 +20,7 @@ export function Sparkline({
   stroke = 'currentColor',
 }: SparklineProps) {
   if (values.length < 2) return null;
+  const lastValue = values.at(-1) ?? 0;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
@@ -57,7 +58,7 @@ export function Sparkline({
       {values.length <= 30 && (
         <circle
           cx={(values.length - 1) * xStep}
-          cy={height - ((values[values.length - 1] - min) / range) * height}
+          cy={height - ((lastValue - min) / range) * height}
           r={2.5}
           fill={stroke}
         />

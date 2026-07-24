@@ -17,7 +17,7 @@ describe('migrate', () => {
   it('applique séquentiellement les migrations enregistrées', () => {
     // On enregistre temporairement une migration synthétique pour tester
     // la mécanique de chaînage.
-    const before = { ...migrations.matchConfig };
+    const before = migrations.matchConfig;
     try {
       migrations.matchConfig = {
         current: 3,
@@ -36,7 +36,7 @@ describe('migrate', () => {
       expect(out.added_in_v3).toBe(42);
       expect(out.__version).toBe(3);
     } finally {
-      migrations.matchConfig = before;
+      if (before) migrations.matchConfig = before;
     }
   });
 

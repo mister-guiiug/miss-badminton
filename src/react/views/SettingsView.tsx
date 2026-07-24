@@ -33,7 +33,10 @@ import {
 } from '../components/icons';
 import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
-import { clearErrorLog, getErrorLog } from '../../error-reporter';
+import {
+  clearErrorLog,
+  getErrorLog,
+} from '@mister-guiiug/dev-wpa-config/react/observability';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 

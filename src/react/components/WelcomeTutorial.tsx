@@ -61,6 +61,7 @@ export function WelcomeTutorial() {
   ];
   const current = slides[step];
   const isLast = step === slides.length - 1;
+  if (!current) return null;
 
   return (
     <Modal width="sm" ariaLabel={current.title} onClose={close}>
