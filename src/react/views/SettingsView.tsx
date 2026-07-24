@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { REPO_URL, SPONSOR_URL } from '../../links';
+import { FamilyApps } from '@mister-guiiug/dev-wpa-config/react';
 import { useI18n } from '../../i18n/useI18n';
 import {
   LOCALES,
@@ -428,6 +429,30 @@ export function SettingsView() {
           <span aria-hidden="true">☕</span>
           M'offrir un café
         </a>
+      </div>
+
+      <div className="bb-family mt-8">
+        <FamilyApps
+          currentAppId="miss-badminton"
+          showSource={false}
+          showSponsor={false}
+          labels={
+            {
+              fr: {
+                otherApps: 'Nos autres applications',
+                maturity: { alpha: 'Alpha', beta: 'Bêta', stable: 'Stable' },
+              },
+              en: {
+                otherApps: 'Our other apps',
+                maturity: { alpha: 'Alpha', beta: 'Beta', stable: 'Stable' },
+              },
+              es: {
+                otherApps: 'Nuestras otras apps',
+                maturity: { alpha: 'Alpha', beta: 'Beta', stable: 'Estable' },
+              },
+            }[locale]
+          }
+        />
       </div>
     </PageContainer>
   );
