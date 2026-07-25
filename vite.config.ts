@@ -9,6 +9,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { pwaSeoPlugin } from '@mister-guiiug/dev-wpa-config/vite-pwa-base';
+import { cspPlugin } from '@mister-guiiug/dev-wpa-config/vite-csp';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 const analyze = process.env.ANALYZE === '1';
@@ -66,6 +67,16 @@ export default defineConfig(({ command }) => {
         siteName: 'Miss Badminton',
         basePath,
         logoPath: '/logo.svg',
+      }),
+      // CSP durcie : script-src par hash SHA-256 de l'IIFE anti-FOUC inline
+      // (plus de 'unsafe-inline' en prod). Placé après pwaSeoPlugin pour hasher
+      // aussi d'éventuels scripts injectés au build. Directives portées à
+      // l'identique depuis l'ancienne meta statique de index.html.
+      cspPlugin({
+        dev: command === 'serve',
+        extraDirectives: {
+          'frame-ancestors': "'none'",
+        },
       }),
       {
         name: 'miss-badminton-trailing-slash',
