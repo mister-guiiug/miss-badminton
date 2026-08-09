@@ -184,9 +184,10 @@ export function HomeView() {
           </h2>
 
           {recentMatches.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center py-8 text-center opacity-40">
-              <HistoryIcon size={48} className="mb-2" />
-              <p>{t('history.empty')}</p>
+            <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
+              <HistoryIcon size={48} className="mb-2 opacity-40" />
+              {/* opacity-70 (pas 40) : garde ~4.5:1 de contraste (axe color-contrast). */}
+              <p className="opacity-70">{t('history.empty')}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">

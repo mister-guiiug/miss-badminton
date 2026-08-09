@@ -17,8 +17,9 @@ interface Lab {
 
 function parseHex(hex: string): Rgb | null {
   const m = hex.trim().match(/^#?([0-9a-f]{6})$/i);
-  if (!m?.[1]) return null;
-  const value = parseInt(m[1], 16);
+  const hexDigits = m?.[1];
+  if (!hexDigits) return null;
+  const value = parseInt(hexDigits, 16);
   return {
     r: (value >> 16) & 0xff,
     g: (value >> 8) & 0xff,

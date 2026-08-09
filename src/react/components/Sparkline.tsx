@@ -20,11 +20,10 @@ export function Sparkline({
   stroke = 'currentColor',
 }: SparklineProps) {
   if (values.length < 2) return null;
+  const lastValue = values.at(-1) ?? 0;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
-  // Non vide : `values.length < 2` a déjà court-circuité au-dessus.
-  const lastValue = values[values.length - 1] ?? max;
   const xStep = width / (values.length - 1);
   const points = values
     .map((v, i) => {

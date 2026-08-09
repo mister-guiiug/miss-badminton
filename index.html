@@ -2,17 +2,9 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <!--
-      CSP de défense en profondeur. 'unsafe-inline' est tolérée pour
-      script-src parce que le script anti-FOUC ci-dessous est inline ; pour
-      style-src à cause des styles Tailwind émis inline en JIT et de la
-      réinjection par vite-plugin-pwa. Pas de connexion réseau externe :
-      l'app est 100 % offline-first (les données vivent en localStorage / IDB).
-    -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
-    />
+    <!-- La Content-Security-Policy est injectée au build par cspPlugin()
+         (@mister-guiiug/dev-wpa-config/vite-csp) : script-src par hash SHA-256
+         de l'IIFE anti-FOUC ci-dessous, plus de 'unsafe-inline'. -->
     <!-- Script anti-FOUC : applique le thème avant tout rendu -->
     <script>
       (function () {
@@ -65,9 +57,40 @@
       name="description"
       content="Suivez vos scores et statistiques de badminton en temps réel."
     />
+    <link rel="canonical" href="__SEO_HOME_URL__" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Miss Badminton" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:url" content="__SEO_HOME_URL__" />
+    <meta
+      property="og:title"
+      content="Miss Badminton — scores et statistiques"
+    />
+    <meta
+      property="og:description"
+      content="Suivez vos scores et statistiques de badminton en temps réel."
+    />
+    <meta property="og:image" content="__SEO_LOGO_URL__" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="Miss Badminton — scores et statistiques"
+    />
+    <meta
+      name="twitter:description"
+      content="Suivi de scores et statistiques de badminton, installable (PWA)."
+    />
+    <meta name="twitter:image" content="__SEO_LOGO_URL__" />
+
+    <!-- Analytics (GTM/GA4) injecté par pwaSeoPlugin() — vide tant qu'aucun
+         VITE_GTM_CONTAINER_ID / VITE_GA_MEASUREMENT_ID n'est configuré. -->
+    __ANALYTICS_HEAD__
     <title>Miss Badminton</title>
   </head>
   <body>
+    __ANALYTICS_BODY__
     <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

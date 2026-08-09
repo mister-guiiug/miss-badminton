@@ -47,10 +47,16 @@ test.describe('History flow @critical', () => {
   test("un match seedé apparaît dans l'historique", async ({ page }) => {
     await seedHistory(page, [SAMPLE_MATCH]);
     await page.goto('/historique');
-    await expect(page.getByText('Anass', { exact: false })).toBeVisible();
-    await expect(page.getByText('Guillaume', { exact: false })).toBeVisible();
+    // `.first()` : les joueurs apparaissent à plusieurs endroits de la page
+    // (carte du match, stats, top joueurs) — on vérifie la présence.
+    await expect(
+      page.getByText('Anass', { exact: false }).first()
+    ).toBeVisible();
+    await expect(
+      page.getByText('Guillaume', { exact: false }).first()
+    ).toBeVisible();
     // Le score final 2-0 doit être affiché quelque part.
-    await expect(page.locator('text=/2.*–.*0/')).toBeVisible();
+    await expect(page.locator('text=/2.*–.*0/').first()).toBeVisible();
   });
 
   test('filtre période 7 jours masque un match ancien', async ({ page }) => {
@@ -61,7 +67,7 @@ test.describe('History flow @critical', () => {
     };
     await seedHistory(page, [oldMatch]);
     await page.goto('/historique');
-    await expect(page.getByText('Anass')).toBeVisible();
+    await expect(page.getByText('Anass').first()).toBeVisible();
     // On clique sur le filtre "7 jours".
     await page.getByRole('button', { name: /7 jours|7 days|7 días/ }).click();
     await expect(
@@ -96,13 +102,25 @@ test.describe('Replay URL @critical', () => {
     });
 
     await page.goto(`/?replay=${encodeURIComponent(b64)}`);
-    // Le wizard apparaît (dialog avec aria-modal).
-    await expect(page.getByRole('dialog')).toBeVisible();
-    // Le pré-remplissage du joueur "Alice" se voit dans Step 3 — on
-    // navigue jusque-là pour vérifier.
-    await page.getByRole('button', { name: /Suivant|Next|Siguiente/ }).click();
-    await page.getByRole('button', { name: /Suivant|Next|Siguiente/ }).click();
-    await expect(page.getByDisplayValue('Alice')).toBeVisible();
+    // Le wizard apparaît (dialog avec aria-modal). Il peut s'ouvrir à
+    // n'importe quelle étape : on avance tant qu'un bouton « Suivant » est
+    // visible, puis on vérifie le pré-remplissage « Alice » (champ joueur
+    // ou récapitulatif). `getByDisplayValue` n'existe pas dans Playwright.
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const nextBtn = dialog
+      .getByRole('button', { name: /Suivant|Next|Siguiente/ })
+      .first();
+    for (let i = 0; i < 4; i++) {
+      if (!(await nextBtn.isVisible().catch(() => false))) break;
+      await nextBtn.click();
+    }
+    const values = await dialog
+      .locator('input[type="text"]')
+      .evaluateAll(els => els.map(el => (el as HTMLInputElement).value));
+    if (!values.includes('Alice')) {
+      await expect(dialog.getByText('Alice').first()).toBeVisible();
+    }
   });
 });
 
