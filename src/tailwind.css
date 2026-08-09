@@ -1,70 +1,9 @@
 @import 'tailwindcss';
+@import '@mister-guiiug/dev-wpa-config/tailwind-preset.css';
 
-/* ── Design tokens partagés (typo & spacing fluides) ─────────── */
-@theme {
-  --text-fluid-xs: clamp(0.7rem, 1.6vw, 0.8125rem);
-  --text-fluid-sm: clamp(0.8125rem, 1.9vw, 0.95rem);
-  --text-fluid-base: clamp(0.9rem, 2.2vw, 1.05rem);
-  --text-fluid-lg: clamp(1rem, 2.6vw, 1.25rem);
-  --text-fluid-xl: clamp(1.15rem, 3vw, 1.5rem);
-  --text-fluid-2xl: clamp(1.35rem, 4.2vw, 2rem);
-
-  --spacing-fluid-sm: clamp(0.5rem, 1.4vw, 0.75rem);
-  --spacing-fluid-md: clamp(0.75rem, 2.4vw, 1.25rem);
-  --spacing-fluid-lg: clamp(1rem, 3.2vw, 1.75rem);
-}
-
-/* ── Safe-area helpers (notch / Dynamic Island / home bar iOS) ─── */
-@utility pt-safe {
-  padding-top: max(env(safe-area-inset-top), 0px);
-}
-@utility pb-safe {
-  padding-bottom: max(env(safe-area-inset-bottom), 0px);
-}
-@utility pl-safe {
-  padding-left: max(env(safe-area-inset-left), 0px);
-}
-@utility pr-safe {
-  padding-right: max(env(safe-area-inset-right), 0px);
-}
-@utility px-safe {
-  padding-left: max(env(safe-area-inset-left), 0px);
-  padding-right: max(env(safe-area-inset-right), 0px);
-}
-@utility py-safe {
-  padding-top: max(env(safe-area-inset-top), 0px);
-  padding-bottom: max(env(safe-area-inset-bottom), 0px);
-}
-
-@utility top-safe {
-  top: max(env(safe-area-inset-top), 0px);
-}
-@utility bottom-safe {
-  bottom: max(env(safe-area-inset-bottom), 0px);
-}
-@utility left-safe {
-  left: max(env(safe-area-inset-left), 0px);
-}
-@utility right-safe {
-  right: max(env(safe-area-inset-right), 0px);
-}
-
-/* Variantes "offset" — combine inset système + 0.75rem (≈ ancien `*-3`) */
-@utility top-safe-3 {
-  top: calc(max(env(safe-area-inset-top), 0px) + 0.75rem);
-}
-@utility bottom-safe-3 {
-  bottom: calc(max(env(safe-area-inset-bottom), 0px) + 0.75rem);
-}
-@utility left-safe-3 {
-  left: calc(max(env(safe-area-inset-left), 0px) + 0.75rem);
-}
-@utility right-safe-3 {
-  right: calc(max(env(safe-area-inset-right), 0px) + 0.75rem);
-}
-
-/* Cible tactile recommandée (≈ 44 px) */
-@utility touch-target {
-  min-height: 2.75rem;
-  min-width: 2.75rem;
-}
+/*
+ * Les tokens fluides (text-fluid-*, spacing-fluid-*), les helpers safe-area
+ * (pt-safe, top-safe-3, …) et touch-target viennent du preset partagé
+ * @mister-guiiug/dev-wpa-config. N'ajouter ici que ce qui est spécifique à
+ * miss-badminton.
+ */
