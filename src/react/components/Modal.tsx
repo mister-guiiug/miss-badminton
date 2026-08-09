@@ -52,6 +52,7 @@ export function Modal({
       if (e.key === 'Tab' && focusables && focusables.length > 0) {
         const firstEl = focusables[0];
         const lastEl = focusables[focusables.length - 1];
+        if (!firstEl || !lastEl) return;
         if (e.shiftKey && document.activeElement === firstEl) {
           e.preventDefault();
           lastEl.focus();

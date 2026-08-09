@@ -17,7 +17,9 @@ describe('migrate', () => {
   it('applique séquentiellement les migrations enregistrées', () => {
     // On enregistre temporairement une migration synthétique pour tester
     // la mécanique de chaînage.
-    const before = { ...migrations.matchConfig };
+    const before = { ...migrations.matchConfig } as NonNullable<
+      typeof migrations.matchConfig
+    >;
     try {
       migrations.matchConfig = {
         current: 3,

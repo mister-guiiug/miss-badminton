@@ -366,6 +366,7 @@ export const useMatchStore = create<MatchState>()(
         const state = get();
         if (state.history.length === 0) return;
         const last = state.history[state.history.length - 1];
+        if (!last) return;
         set({
           score1: last.score1,
           score2: last.score2,

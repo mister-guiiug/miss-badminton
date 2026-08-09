@@ -23,6 +23,8 @@ export function Sparkline({
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
+  // Non vide : `values.length < 2` a déjà court-circuité au-dessus.
+  const lastValue = values[values.length - 1] ?? max;
   const xStep = width / (values.length - 1);
   const points = values
     .map((v, i) => {
@@ -57,7 +59,7 @@ export function Sparkline({
       {values.length <= 30 && (
         <circle
           cx={(values.length - 1) * xStep}
-          cy={height - ((values[values.length - 1] - min) / range) * height}
+          cy={height - ((lastValue - min) / range) * height}
           r={2.5}
           fill={stroke}
         />
