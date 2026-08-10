@@ -9,3 +9,6 @@ dev-dist/
 playwright-report/
 test-results/
 coverage/
+
+# Lighthouse CI (rapports locaux)
+.lighthouseci/
