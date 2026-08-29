@@ -67,10 +67,21 @@ export default defineConfig(({ command }) => {
         siteName: 'Miss Badminton',
         basePath,
         logoPath: '/logo.svg',
+        // Script anti-FOUC engendré par le socle (theme-boot), injecté en tête
+        // de <head>. Il interroge `(prefers-color-scheme: dark)` — l'ancienne
+        // IIFE maison interrogeait `light` avec repli sombre, donc tout
+        // navigateur incapable d'évaluer la media query démarrait en sombre.
+        // `legacyKeys` migre la préférence déjà stockée sous `mb_theme` vers
+        // la clé famille `dwc_theme`, partagée avec ThemeProvider/useTheme.
+        themeBoot: { legacyKeys: ['mb_theme'] },
+        // Deux <meta name="theme-color"> par schéma (attribut media) : la
+        // barre du navigateur suit le système dès le premier rendu ; le choix
+        // explicite contraire au système est couvert par ThemeProvider.
+        themeColor: { light: '#4f46e5', dark: '#0f172a' },
       }),
-      // CSP durcie : script-src par hash SHA-256 de l'IIFE anti-FOUC inline
-      // (plus de 'unsafe-inline' en prod). Placé après pwaSeoPlugin pour hasher
-      // aussi d'éventuels scripts injectés au build. Directives portées à
+      // CSP durcie : script-src par hash SHA-256 des scripts inline (plus de
+      // 'unsafe-inline' en prod). Placé après pwaSeoPlugin pour hasher le
+      // script anti-FOUC injecté par themeBoot. Directives portées à
       // l'identique depuis l'ancienne meta statique de index.html.
       cspPlugin({
         dev: command === 'serve',

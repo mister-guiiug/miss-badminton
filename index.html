@@ -4,25 +4,10 @@
     <meta charset="UTF-8" />
     <!-- La Content-Security-Policy est injectée au build par cspPlugin()
          (@mister-guiiug/dev-wpa-config/vite-csp) : script-src par hash SHA-256
-         de l'IIFE anti-FOUC ci-dessous, plus de 'unsafe-inline'. -->
-    <!-- Script anti-FOUC : applique le thème avant tout rendu -->
-    <script>
-      (function () {
-        try {
-          var k = 'mb_theme';
-          var v = localStorage.getItem(k);
-          var eff;
-          if (v === 'light' || v === 'dark') eff = v;
-          else
-            eff = window.matchMedia('(prefers-color-scheme: light)').matches
-              ? 'light'
-              : 'dark';
-          document.documentElement.setAttribute('data-theme', eff);
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'light');
-        }
-      })();
-    </script>
+         des scripts inline, plus de 'unsafe-inline'. -->
+    <!-- Le script anti-FOUC est injecté en tête de <head> par pwaSeoPlugin()
+         (option themeBoot, @mister-guiiug/dev-wpa-config/theme-boot) : clé
+         dwc_theme, migration depuis l'ancienne clé mb_theme. -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link
       rel="icon"
@@ -40,7 +25,8 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta id="meta-theme-color" name="theme-color" content="#166534" />
+    <!-- <meta name="theme-color"> : deux balises par schéma (attribut media)
+         injectées par pwaSeoPlugin() via l'option themeColor. -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
