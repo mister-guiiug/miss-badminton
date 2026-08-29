@@ -5,6 +5,11 @@ import {
   useThemeContext,
   type ThemePreference,
 } from '@mister-guiiug/dev-wpa-config/react';
+import {
+  dateSlug,
+  downloadJson,
+  readJsonFile,
+} from '@mister-guiiug/dev-wpa-config/download';
 import { useI18n } from '../../i18n/useI18n';
 import {
   LOCALES,
@@ -116,26 +121,17 @@ export function SettingsView() {
         haptic: feedback.haptic,
       },
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `miss-badminton-data-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadJson(data, `miss-badminton-data-${dateSlug()}.json`);
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImportError(null);
-    const reader = new FileReader();
-    reader.onload = event => {
+    void (async () => {
       let parsed: unknown;
       try {
-        parsed = JSON.parse(event.target?.result as string);
+        parsed = await readJsonFile(file);
       } catch {
         setImportError(t('settings.importError'));
         return;
@@ -168,8 +164,7 @@ export function SettingsView() {
       // Liste des joueurs : importBundle a déjà mis à jour le storage ;
       // on rafraîchit l'état local pour refléter le changement sans reload.
       setPlayerNames(storage.loadPlayerNames());
-    };
-    reader.readAsText(file);
+    })();
   };
 
   const handleDeletePlayer = (name: string) => {
@@ -466,16 +461,7 @@ function DiagnosticsSection() {
   const [count, setCount] = useState(() => getErrorLog().length);
 
   const handleExport = () => {
-    const log = getErrorLog();
-    const blob = new Blob([JSON.stringify(log, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `miss-badminton-errors-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadJson(getErrorLog(), `miss-badminton-errors-${dateSlug()}.json`);
   };
   const handleClear = () => {
     clearErrorLog();
