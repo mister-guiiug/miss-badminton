@@ -1,6 +1,10 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { REPO_URL, SPONSOR_URL } from '../../links';
-import { FamilyApps } from '@mister-guiiug/dev-wpa-config/react';
+import {
+  FamilyApps,
+  useThemeContext,
+  type ThemePreference,
+} from '@mister-guiiug/dev-wpa-config/react';
 import { useI18n } from '../../i18n/useI18n';
 import {
   LOCALES,
@@ -8,11 +12,6 @@ import {
   LOCALE_LABELS,
   type Locale,
 } from '../../i18n/messages';
-import {
-  getStoredThemePreference,
-  setThemePreference,
-  type ThemePreference,
-} from '../../theme';
 import { useFeedback } from '../hooks/useFeedback';
 import { useTeamColors } from '../hooks/useTeamColors';
 import {
@@ -66,9 +65,14 @@ export function SettingsView() {
   const { t, locale, setLocale } = useI18n();
   const feedback = useFeedback();
   const colors = useTeamColors();
-  const [theme, setTheme] = useState<ThemePreference>(() =>
-    getStoredThemePreference()
-  );
+  // État partagé du ThemeProvider monté dans main.tsx (persistance, écoute
+  // système et <meta theme-color> comprises). Hors fournisseur (test isolé),
+  // repli inerte sur `system`.
+  const themeCtx = useThemeContext();
+  const theme = (themeCtx?.theme ?? 'system') as ThemePreference;
+  const setTheme = (pref: ThemePreference): void => {
+    themeCtx?.setTheme(pref);
+  };
   const hasKeyboard = useLikelyHasKeyboard();
   const { matchHistory, importBundle } = useMatchStore();
   const [playerNames, setPlayerNames] = useState<string[]>(() =>
@@ -92,10 +96,6 @@ export function SettingsView() {
       setUpdating(false);
     }
   };
-
-  useEffect(() => {
-    setThemePreference(theme);
-  }, [theme]);
 
   const themeLabel = (pref: ThemePreference): string => {
     if (pref === 'light') return t('settings.themeLight');
@@ -158,7 +158,7 @@ export function SettingsView() {
             haptic?: boolean;
           }
         | undefined;
-      if (settings?.theme) setThemePreference(settings.theme);
+      if (settings?.theme) setTheme(settings.theme);
       if (settings?.team1Color) setTeamColor('team1', settings.team1Color);
       if (settings?.team2Color) setTeamColor('team2', settings.team2Color);
       if (typeof settings?.sound === 'boolean')
