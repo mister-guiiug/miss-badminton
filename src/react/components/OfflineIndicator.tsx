@@ -1,5 +1,5 @@
 import { useI18n } from '../../i18n/useI18n';
-import { useOnline } from '../hooks/useOnline';
+import { useOnline } from '@mister-guiiug/dev-wpa-config/react/use-online';
 
 export function OfflineIndicator() {
   const { t } = useI18n();
