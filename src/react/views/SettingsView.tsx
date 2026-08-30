@@ -1,5 +1,8 @@
 import { useState, useSyncExternalStore } from 'react';
-import { REPO_URL, SPONSOR_URL } from '../../links';
+import {
+  SPONSOR_URL,
+  repoUrl,
+} from '@mister-guiiug/dev-wpa-config/apps-catalog';
 import {
   FamilyApps,
   useThemeContext,
@@ -402,7 +405,7 @@ export function SettingsView() {
         style={{ color: 'var(--text)' }}
       >
         <a
-          href={REPO_URL}
+          href={repoUrl('miss-badminton')}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 font-medium opacity-70 transition hover:opacity-100"
