@@ -1,9 +1,15 @@
 @import 'tailwindcss';
 @import '@mister-guiiug/dev-wpa-config/tailwind-preset.css';
+@import '@mister-guiiug/dev-wpa-config/components.css';
 
 /*
  * Les tokens fluides (text-fluid-*, spacing-fluid-*), les helpers safe-area
  * (pt-safe, top-safe-3, …) et touch-target viennent du preset partagé
  * @mister-guiiug/dev-wpa-config. N'ajouter ici que ce qui est spécifique à
  * miss-badminton.
+ *
+ * `components.css` (opt-in) habille les composants `[data-dwc]` du socle —
+ * tout est en `@layer components`, donc les utilitaires Tailwind et le CSS
+ * non layered de styles.css gardent la priorité. Les couleurs sont lues via
+ * le contrat `--dwc-*`, branché sur nos variables de thème dans styles.css.
  */
