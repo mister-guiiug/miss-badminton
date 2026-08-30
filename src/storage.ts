@@ -9,7 +9,21 @@ import {
   type MatchTemplate,
 } from './schemas';
 import type { z } from 'zod';
-import { idbGet, idbSet } from './idb';
+import { createIdb } from '@mister-guiiug/dev-wpa-config/idb';
+
+/**
+ * IndexedDB via le socle — source de vérité pour l'historique complet (sans
+ * plafond), pendant que localStorage conserve une copie plafonnée à
+ * `MAX_HISTORY` pour la lecture synchrone à l'init du store.
+ *
+ * Compat : même identité que l'ancien wrapper local `src/idb.ts` (supprimé) —
+ * base `miss-badminton`, version 1, object-store `kv` — donc la base des
+ * utilisateurs existants s'ouvre telle quelle, sans migration. Seul écart :
+ * cette base héritée n'a pas de store `blobs` (créé uniquement à la création
+ * d'une base neuve) ; les API blob du socle s'y replient sans lever, et l'app
+ * ne les utilise pas. Voir `storage.test.ts`.
+ */
+const idb = createIdb('miss-badminton');
 
 const LS = {
   match: 'mb_active_match',
@@ -166,7 +180,7 @@ export const storage = {
    * Effectue une migration one-shot localStorage → IDB si IDB est vide.
    */
   loadHistoryAsync: async (): Promise<SavedMatch[]> => {
-    const raw = await idbGet<unknown>('history');
+    const raw = await idb.get('history');
     if (raw !== undefined) {
       const result = SavedMatchArraySchema.safeParse(raw);
       if (result.success) return result.data;
@@ -174,7 +188,7 @@ export const storage = {
     // IDB vide : seed depuis localStorage si présent (migration douce).
     const fromLs = storage.loadHistory();
     if (fromLs.length > 0) {
-      await idbSet('history', fromLs);
+      await idb.set('history', fromLs);
     }
     return fromLs;
   },
@@ -187,20 +201,20 @@ export const storage = {
     // IDB : source de vérité non plafonnée. On lit l'état IDB, on insère
     // en tête, et on ré-écrit. Le `void` est volontaire — l'UI ne doit pas
     // attendre l'IDB pour répondre.
-    void idbGet<unknown>('history').then(raw => {
+    void idb.get('history').then(raw => {
       const parsed = SavedMatchArraySchema.safeParse(raw ?? []);
       const base: SavedMatch[] = parsed.success ? parsed.data : [];
       if (base.some(x => x.id === m.id)) return;
-      void idbSet('history', [m, ...base]);
+      void idb.set('history', [m, ...base]);
     });
   },
   removeMatchFromHistory: (id: string): void => {
     const next = storage.loadHistory().filter(m => m.id !== id);
     safeWrite(LS.history, next);
-    void idbGet<unknown>('history').then(raw => {
+    void idb.get('history').then(raw => {
       const parsed = SavedMatchArraySchema.safeParse(raw ?? []);
       if (!parsed.success) return;
-      void idbSet(
+      void idb.set(
         'history',
         parsed.data.filter(m => m.id !== id)
       );
@@ -208,7 +222,7 @@ export const storage = {
   },
   clearHistory: (): void => {
     safeRemove(LS.history);
-    void idbSet('history', []);
+    void idb.set('history', []);
   },
   /**
    * Remplace tout l'historique (utilisé par l'import) en passant par la
@@ -218,7 +232,7 @@ export const storage = {
     const result = SavedMatchArraySchema.safeParse(matches);
     if (!result.success) return false;
     safeWrite(LS.history, result.data.slice(0, MAX_HISTORY));
-    void idbSet('history', result.data);
+    void idb.set('history', result.data);
     return true;
   },
 
