@@ -37,6 +37,32 @@ html[data-theme='light'] {
       transparent 50%
     ),
     #f8fafc;
+
+  /* ── Contrat des composants partagés ─────────────────────────
+     `components.css` (dev-wpa-config) lit ces 15 jetons `--dwc-*` ;
+     on les branche sur la palette de l'app pour que Sheet,
+     ConfirmDialog, Sparkline & co suivent le thème. Les jetons
+     dérivés de variables ci-dessus basculent seuls en sombre ; seuls
+     les tons d'état posés en dur sont repris dans le bloc dark. */
+  --dwc-surface: var(--surface);
+  --dwc-surface-2: var(--surface-highlight);
+  --dwc-text: var(--text);
+  --dwc-text-soft: var(--muted);
+  --dwc-border: var(--border);
+  --dwc-border-strong: var(--muted);
+  --dwc-primary: var(--primary);
+  /* L'app pose partout du texte blanc sur la primaire (boutons période,
+     rang n°1 du classement) — y compris en sombre. */
+  --dwc-primary-contrast: #ffffff;
+  --dwc-primary-soft: rgba(var(--accent-rgb), 0.12);
+  --dwc-success: #16a34a;
+  --dwc-warning: #b45309;
+  --dwc-danger: var(--danger);
+  --dwc-info: #0369a1;
+  /* 0,75rem : les panneaux du socle (×1,4 / ×1,6) retombent sur le
+     rounded-2xl des modales locales, les boutons sur rounded-xl. */
+  --dwc-radius: 0.75rem;
+  --dwc-shadow: var(--shadow);
 }
 
 html[data-theme='dark'] {
@@ -73,6 +99,12 @@ html[data-theme='dark'] {
       transparent 50%
     ),
     #0f172a;
+
+  /* Contrat --dwc-* : seuls les tons d'état posés en dur plus haut
+     changent ici — le reste suit les variables du thème. */
+  --dwc-success: #4ade80;
+  --dwc-warning: #fbbf24;
+  --dwc-info: #38bdf8;
 }
 
 /* ── Reset de base ───────────────────────────────────────────── */

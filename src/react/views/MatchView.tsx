@@ -18,7 +18,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useTeamColors } from '../hooks/useTeamColors';
 import { useTapOrLongPress } from '../hooks/useTapOrLongPress';
 import { ScoreToast } from '../components/ScoreToast';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
 import { MatchDuration } from '../components/MatchDuration';
@@ -714,22 +714,31 @@ export function MatchView() {
           onComplete={handleComplete}
         />
       )}
-      {resetConfirmOpen && (
-        <ConfirmDialog
-          message={t('scoreboard.reset')}
-          danger
-          onConfirm={confirmReset}
-          onCancel={() => setResetConfirmOpen(false)}
-        />
-      )}
-      {resetChronoConfirmOpen && (
-        <ConfirmDialog
-          message={t('scoreboard.confirmResetChrono')}
-          danger
-          onConfirm={confirmResetChrono}
-          onCancel={() => setResetChronoConfirmOpen(false)}
-        />
-      )}
+      {/* ConfirmDialog du socle : `z-[80]` comme l'ancienne copie locale
+          (au-dessus des bandeaux fixes z-55/60/65) ; libellés explicites,
+          le dictionnaire du socle ne couvrant pas l'espagnol. */}
+      <ConfirmDialog
+        open={resetConfirmOpen}
+        className="z-[80]"
+        title={t('confirm.title')}
+        message={t('scoreboard.reset')}
+        confirmLabel={t('confirm.confirm')}
+        cancelLabel={t('confirm.cancel')}
+        destructive
+        onConfirm={confirmReset}
+        onCancel={() => setResetConfirmOpen(false)}
+      />
+      <ConfirmDialog
+        open={resetChronoConfirmOpen}
+        className="z-[80]"
+        title={t('confirm.title')}
+        message={t('scoreboard.confirmResetChrono')}
+        confirmLabel={t('confirm.confirm')}
+        cancelLabel={t('confirm.cancel')}
+        destructive
+        onConfirm={confirmResetChrono}
+        onCancel={() => setResetChronoConfirmOpen(false)}
+      />
     </>
   );
 }

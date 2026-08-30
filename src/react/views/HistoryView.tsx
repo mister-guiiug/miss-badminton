@@ -5,7 +5,7 @@ import { type SavedMatch } from '../../storage';
 import type { Locale } from '../../i18n/messages';
 import { useTeamColors } from '../hooks/useTeamColors';
 import { PageContainer } from '../components/layout/PageContainer';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import {
   FlameIcon,
   HistoryIcon,
@@ -19,8 +19,8 @@ import {
 import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
 import { buildShareText, shareText } from '../../share';
-import { Modal } from '../components/Modal';
-import { Sparkline } from '../components/Sparkline';
+import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
+import { Sparkline } from '@mister-guiiug/dev-wpa-config/react/sparkline';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 
 function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
@@ -392,16 +392,19 @@ export function HistoryView() {
               </p>
             )}
             {topPlayerSparkline && (
-              <div
-                className="mt-2"
-                style={{ color: 'var(--primary)' }}
-                aria-hidden={false}
-              >
+              <div className="mt-2">
+                {/* Sparkline du socle : SVG décoratif + alternative textuelle
+                    calculée par describeSeries (points, bornes, tendance) —
+                    plus riche que l'ancien aria-label seul. La couleur vient
+                    de components.css (--dwc-primary). */}
                 <Sparkline
                   values={topPlayerSparkline}
-                  ariaLabel={t('historyExtra.sparklineAria', {
+                  width={160}
+                  label={t('historyExtra.sparklineAria', {
                     name: stats.topPlayer?.name ?? '',
                   })}
+                  unit="%"
+                  format={v => v.toFixed(0)}
                 />
               </div>
             )}
@@ -712,14 +715,22 @@ export function HistoryView() {
           })}
         </ul>
       )}
-      {clearOpen && (
-        <ConfirmDialog
-          message={t('history.confirmClear')}
-          danger
-          onConfirm={confirmClear}
-          onCancel={() => setClearOpen(false)}
-        />
-      )}
+      {/* ConfirmDialog du socle : `z-[80]` (utilitaire, donc prioritaire sur
+          le z-60 de components.css) pour rester au-dessus du tiroir de
+          navigation (70) et des bandeaux (55-75), comme l'ancienne copie
+          locale. Libellés explicites : le dictionnaire du socle ne couvre
+          pas l'espagnol. */}
+      <ConfirmDialog
+        open={clearOpen}
+        className="z-[80]"
+        title={t('confirm.title')}
+        message={t('history.confirmClear')}
+        confirmLabel={t('confirm.confirm')}
+        cancelLabel={t('confirm.cancel')}
+        destructive
+        onConfirm={confirmClear}
+        onCancel={() => setClearOpen(false)}
+      />
 
       {editTarget && (
         <EditSetDialog
@@ -764,9 +775,41 @@ function EditSetDialog({
   const [t2, setT2] = useState(initial.team2);
   const invalid = t1 < 0 || t2 < 0 || t1 === t2;
 
+  /* Feuille d'édition (pas une confirmation) → Sheet du socle : titre porté
+     par la feuille, actions épinglées dans le pied, croix « fermer »
+     étiquetée avec le libellé d'annulation déjà localisé. Le parent ne la
+     monte que quand une cible existe, donc `open` est constant. */
   return (
-    <Modal width="sm" ariaLabel={title} onClose={onCancel}>
-      <h3 className="mb-4 text-base font-bold">{title}</h3>
+    <Sheet
+      open
+      title={title}
+      closeLabel={cancelLabel}
+      onClose={onCancel}
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
+            style={{
+              borderColor: 'var(--border)',
+              color: 'var(--muted)',
+            }}
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            disabled={invalid}
+            onClick={() => onConfirm({ team1: t1, team2: t2 })}
+            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+            style={{ background: 'var(--primary)' }}
+          >
+            {confirmLabel}
+          </button>
+        </>
+      }
+    >
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-xs font-semibold">
           <span className="opacity-60">Team 1</span>
@@ -799,28 +842,6 @@ function EditSetDialog({
           />
         </label>
       </div>
-      <div className="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
-          style={{
-            borderColor: 'var(--border)',
-            color: 'var(--muted)',
-          }}
-        >
-          {cancelLabel}
-        </button>
-        <button
-          type="button"
-          disabled={invalid}
-          onClick={() => onConfirm({ team1: t1, team2: t2 })}
-          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
-          style={{ background: 'var(--primary)' }}
-        >
-          {confirmLabel}
-        </button>
-      </div>
-    </Modal>
+    </Sheet>
   );
 }
