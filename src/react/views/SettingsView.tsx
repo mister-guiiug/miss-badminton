@@ -28,7 +28,8 @@ import {
   resetTeamColors,
   setTeamColor,
 } from '../../team-colors';
-import { forceAppUpdate } from '../../register-sw';
+import { useAppUpdates } from '@mister-guiiug/dev-wpa-config/react/app-updates';
+import { useUpdatePrompt } from '@mister-guiiug/dev-wpa-config/react/use-update-prompt';
 import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
 import {
@@ -94,15 +95,17 @@ export function SettingsView() {
   const colorsTooClose =
     colorDistance(colors.team1, colors.team2) < COLOR_CLOSE_THRESHOLD;
 
-  const [updating, setUpdating] = useState(false);
-  const handleForceUpdate = async () => {
+  // Même aiguillage que les composants du socle : sous `AppUpdates` on partage
+  // l'état du fournisseur (le bandeau et ce bouton disent alors la même chose),
+  // hors fournisseur on monte son propre crochet — sans `registerSW`, ce qui
+  // suffit : « Forcer la mise à jour » n'a jamais eu besoin d'enregistrement.
+  // Les deux crochets sont appelés inconditionnellement (règle des hooks).
+  const sharedUpdates = useAppUpdates();
+  const ownUpdates = useUpdatePrompt();
+  const { updating, forceUpdate } = sharedUpdates ?? ownUpdates;
+  const handleForceUpdate = () => {
     if (updating) return;
-    setUpdating(true);
-    try {
-      await forceAppUpdate();
-    } finally {
-      setUpdating(false);
-    }
+    void forceUpdate();
   };
 
   const themeLabel = (pref: ThemePreference): string => {
