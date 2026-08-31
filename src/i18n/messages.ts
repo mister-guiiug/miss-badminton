@@ -156,6 +156,17 @@ export interface Messages {
     install: string;
     dismiss: string;
   };
+  /**
+   * Bandeau « nouvelle version ». Ces quatre libellés surchargent le groupe
+   * `update` de `react/labels` du socle, qui ne connaît que `fr` et `en` et
+   * retomberait SILENCIEUSEMENT sur le français en espagnol.
+   */
+  update: {
+    available: string;
+    action: string;
+    updating: string;
+    dismiss: string;
+  };
   settings: {
     languageLabel: string;
     languageHelp: string;
@@ -417,6 +428,12 @@ const fr: Messages = {
   pwa: {
     installPrompt: 'Installer Miss Badminton sur votre appareil.',
     install: 'Installer',
+    dismiss: 'Plus tard',
+  },
+  update: {
+    available: "Une nouvelle version de l'application est disponible.",
+    action: 'Mettre à jour',
+    updating: 'Mise à jour…',
     dismiss: 'Plus tard',
   },
   settings: {
@@ -686,6 +703,12 @@ const en: Messages = {
     install: 'Install',
     dismiss: 'Later',
   },
+  update: {
+    available: 'A new version of the app is available.',
+    action: 'Update',
+    updating: 'Updating…',
+    dismiss: 'Later',
+  },
   settings: {
     languageLabel: 'Language',
     languageHelp: 'Choose the interface language.',
@@ -949,6 +972,12 @@ const es: Messages = {
   pwa: {
     installPrompt: 'Instala Miss Badminton en tu dispositivo.',
     install: 'Instalar',
+    dismiss: 'Más tarde',
+  },
+  update: {
+    available: 'Hay una nueva versión de la aplicación disponible.',
+    action: 'Actualizar',
+    updating: 'Actualizando…',
     dismiss: 'Más tarde',
   },
   settings: {

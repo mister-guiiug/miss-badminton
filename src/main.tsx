@@ -11,8 +11,10 @@ import {
   initSentry,
   recordError,
 } from '@mister-guiiug/dev-wpa-config/react/observability';
-import { registerServiceWorker } from './register-sw';
+import { unregisterServiceWorkers } from '@mister-guiiug/dev-wpa-config/sw-update';
+import { registerSW } from 'virtual:pwa-register';
 import { App } from './react/AppRouter';
+import { AppUpdatesProvider } from './react/AppUpdatesProvider';
 import { I18nProvider } from './i18n/I18nProvider';
 
 installErrorReporter();
@@ -20,7 +22,14 @@ void initSentry({
   dsn: import.meta.env.VITE_SENTRY_DSN,
   environment: import.meta.env.MODE,
 });
-registerServiceWorker();
+
+// PURGE DE DÉVELOPPEMENT. Un service worker resté d'une session précédente sert
+// du cache périmé pendant qu'on code, et se bat contre le HMR. Le socle fournit
+// la désinscription (`unregisterServiceWorkers`), mais la CONDITION reste ici :
+// ce paquet est aussi lu par `node --test`, qui n'a pas `import.meta.env`.
+if (import.meta.env.DEV) {
+  void unregisterServiceWorkers();
+}
 
 const rootElement = document.querySelector<HTMLDivElement>('#app');
 if (rootElement) {
@@ -43,7 +52,15 @@ if (rootElement) {
           themeColor={{ light: '#4f46e5', dark: '#0f172a' }}
         >
           <I18nProvider>
-            <App />
+            {/* En développement, `registerSW` vaut `undefined` : le hook du
+                socle sort de son effet, aucun worker n'est enregistré, et le
+                bandeau ne peut pas apparaître. C'est le versant « ne pas
+                enregistrer en dev » de la purge ci-dessus. */}
+            <AppUpdatesProvider
+              registerSW={import.meta.env.PROD ? registerSW : undefined}
+            >
+              <App />
+            </AppUpdatesProvider>
           </I18nProvider>
         </ThemeProvider>
       </ErrorBoundary>
