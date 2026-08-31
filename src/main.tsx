@@ -15,7 +15,7 @@ import { unregisterServiceWorkers } from '@mister-guiiug/dev-wpa-config/sw-updat
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './react/AppRouter';
 import { AppUpdatesProvider } from './react/AppUpdatesProvider';
-import { I18nProvider } from './i18n/I18nProvider';
+import { I18nProvider } from './i18n';
 
 installErrorReporter();
 void initSentry({

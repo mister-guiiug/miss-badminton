@@ -13,7 +13,7 @@ import {
   downloadJson,
   readJsonFile,
 } from '@mister-guiiug/dev-wpa-config/download';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import {
   LOCALES,
   LOCALE_FLAGS,

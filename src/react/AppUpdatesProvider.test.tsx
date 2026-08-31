@@ -21,8 +21,8 @@ import {
   swStub,
 } from '@mister-guiiug/dev-wpa-config/testing/pwa-register';
 import { LABELS } from '@mister-guiiug/dev-wpa-config/react/labels';
-import { I18nProvider } from '../i18n/I18nProvider';
-import { useI18n } from '../i18n/useI18n';
+import { I18nProvider } from '../i18n';
+import { useI18n } from '../i18n';
 import { messages } from '../i18n/messages';
 import { AppUpdatesProvider } from './AppUpdatesProvider';
 

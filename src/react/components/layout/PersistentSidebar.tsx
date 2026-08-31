@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useI18n } from '../../../i18n/useI18n';
+import { useI18n } from '../../../i18n';
 import { Logo } from '../Logo';
 import { HistoryIcon, HomeIcon, SettingsIcon } from '../icons';
 
