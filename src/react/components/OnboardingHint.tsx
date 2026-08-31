@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { Logo } from './Logo';
 
 const STORAGE_KEY = 'mb_onboarded_v1';

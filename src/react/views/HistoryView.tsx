@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { type SavedMatch } from '../../storage';
 import type { Locale } from '../../i18n/messages';
 import { useTeamColors } from '../hooks/useTeamColors';
@@ -18,7 +18,8 @@ import {
 } from '../components/icons';
 import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
-import { buildShareText, shareText } from '../../share';
+import { shareOrCopy } from '@mister-guiiug/dev-wpa-config/share';
+import { buildShareText } from '../../share';
 import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
 import { Sparkline } from '@mister-guiiug/dev-wpa-config/react/sparkline';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
@@ -583,7 +584,10 @@ export function HistoryView() {
                           team2: t2,
                           template: params => t('scoreboard.shareBody', params),
                         });
-                        void shareText(t('scoreboard.shareTitle'), text);
+                        void shareOrCopy({
+                          title: t('scoreboard.shareTitle'),
+                          text,
+                        });
                       }}
                       aria-label={t('scoreboard.share')}
                       className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"

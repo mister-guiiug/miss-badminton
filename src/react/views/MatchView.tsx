@@ -12,13 +12,14 @@ import { CourtOverlay } from '../components/CourtOverlay';
 import { SideChangeBanner } from '../components/SideChangeBanner';
 import { SetTransitionBanner } from '../components/SetTransitionBanner';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { useFeedback } from '../hooks/useFeedback';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useTeamColors } from '../hooks/useTeamColors';
 import { useTapOrLongPress } from '../hooks/useTapOrLongPress';
 import { ScoreToast } from '../components/ScoreToast';
 import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
+import { shareOrCopy } from '@mister-guiiug/dev-wpa-config/share';
 import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
 import { MatchDuration } from '../components/MatchDuration';
@@ -321,6 +322,14 @@ export function MatchView() {
     saveToHistory,
   ]);
 
+  /**
+   * SECONDE copie du partage, recopiée à la main ici alors que `src/share.ts`
+   * en portait déjà une. Les deux avaient le même trou : `navigator.share`
+   * présent mais qui échoue sautait le repli presse-papiers, et l'écran ne
+   * disait rien. `shareOrCopy` du socle ne saute le repli que sur
+   * `AbortError` — la feuille fermée par l'utilisateur — et renvoie ce qui
+   * s'est réellement passé.
+   */
   const handleShare = async () => {
     if (!match || !matchWinner) return;
     const setsText = setScores.map(s => `${s.team1}-${s.team2}`).join(', ');
@@ -331,20 +340,7 @@ export function MatchView() {
       b: player2Label,
       sets: setsText,
     });
-    const nav: Navigator | undefined =
-      typeof navigator === 'undefined' ? undefined : navigator;
-    try {
-      if (nav && typeof nav.share === 'function') {
-        await nav.share({
-          title: t('scoreboard.shareTitle'),
-          text: body,
-        });
-      } else if (nav && typeof nav.clipboard?.writeText === 'function') {
-        await nav.clipboard.writeText(body);
-      }
-    } catch {
-      /* user cancelled or share failed */
-    }
+    await shareOrCopy({ title: t('scoreboard.shareTitle'), text: body });
   };
 
   const handleSwapEnhanced = useCallback(() => {

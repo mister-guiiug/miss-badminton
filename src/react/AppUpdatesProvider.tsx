@@ -5,7 +5,7 @@ import {
   type LabelOverrides,
 } from '@mister-guiiug/dev-wpa-config/react/labels';
 import type { RegisterSW } from '@mister-guiiug/dev-wpa-config/react/use-update-prompt';
-import { useI18n } from '../i18n/useI18n';
+import { useI18n } from '../i18n';
 
 /**
  * Pont entre le i18n de l'app et le bandeau de mise à jour du socle.

@@ -8,7 +8,7 @@ import {
 } from 'react-router-dom';
 import { Shell } from './components/layout/Shell';
 import { HomeView } from './views/HomeView';
-import { useI18n } from '../i18n/useI18n';
+import { useI18n } from '../i18n';
 
 // HomeView reste eager : c'est la page d'atterrissage par défaut. Les
 // autres vues ne sont chargées qu'au premier accès — gain de bundle initial
