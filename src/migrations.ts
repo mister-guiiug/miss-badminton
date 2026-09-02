@@ -15,8 +15,6 @@
  * uniquement à la lecture depuis storage.
  */
 
-import type { z } from 'zod';
-
 export type MigrationFn = (old: unknown) => unknown;
 
 export interface MigrationRegistry {
@@ -67,20 +65,4 @@ export function migrate(
     (value as Record<string, unknown>).__version = target;
   }
   return value;
-}
-
-/**
- * Helper : lit un blob depuis localStorage, applique les migrations, puis
- * valide via zod. Retourne `fallback` si tout échoue (et conserve le brut
- * via le mécanisme de backup de `storage.ts`).
- */
-export function readMigratedAndValidated<T>(
-  entity: keyof MigrationRegistry,
-  raw: unknown,
-  schema: z.ZodType<T>,
-  fallback: T | null = null
-): T | null {
-  const migrated = migrate(entity, raw);
-  const result = schema.safeParse(migrated);
-  return result.success ? result.data : fallback;
 }

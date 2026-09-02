@@ -22,11 +22,3 @@ export const ROUTE_META: Record<
     breadcrumb: 'Paramètres',
   },
 };
-
-export function getDocumentTitle(route: AppRoute): string {
-  return ROUTE_META[route].documentTitle;
-}
-
-export function getBreadcrumbLabel(route: AppRoute): string {
-  return ROUTE_META[route].breadcrumb;
-}
