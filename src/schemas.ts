@@ -10,20 +10,20 @@ import { z } from 'zod';
  * source de vérité reste TS, zod sert de garde runtime.
  */
 
-export const TeamSchema = z.object({
+const TeamSchema = z.object({
   primary: z.string(),
   partner: z.string().optional(),
   id: z.enum(['A', 'B']).optional(),
 });
 
-export const MatchTypeSchema = z.enum(['singles', 'doubles']);
-export const SetCountSchema = z.union([
+const MatchTypeSchema = z.enum(['singles', 'doubles']);
+const SetCountSchema = z.union([
   z.literal(1),
   z.literal(2),
   z.literal(3),
   z.literal(5),
 ]);
-export const PointsTargetSchema = z.union([
+const PointsTargetSchema = z.union([
   z.literal(5),
   z.literal(11),
   z.literal(15),
@@ -31,13 +31,13 @@ export const PointsTargetSchema = z.union([
   z.literal(30),
   z.literal(31),
 ]);
-export const SideChangeSchema = z.enum(['decisive', 'each-set', 'mid-match']);
+const SideChangeSchema = z.enum(['decisive', 'each-set', 'mid-match']);
 /** Borne supérieure au score d'un set (peut être null = pas de plafond). */
-export const PointsCapSchema = z.number().int().positive().nullable();
+const PointsCapSchema = z.number().int().positive().nullable();
 /** Limite de temps en minutes (null = pas de limite). */
-export const TimeLimitSchema = z.number().int().positive().nullable();
+const TimeLimitSchema = z.number().int().positive().nullable();
 /** Comportement quand la limite de temps est atteinte ou à égalité. */
-export const TieBreakSchema = z.enum(['none', 'sudden-death']);
+const TieBreakSchema = z.enum(['none', 'sudden-death']);
 
 export const MatchConfigSchema = z.object({
   type: MatchTypeSchema,
@@ -53,12 +53,12 @@ export const MatchConfigSchema = z.object({
   tieBreak: TieBreakSchema.optional(),
 });
 
-export const SetScoreSchema = z.object({
+const SetScoreSchema = z.object({
   team1: z.number().int().min(0),
   team2: z.number().int().min(0),
 });
 
-export const ServiceSideSchema = z.enum(['team1', 'team2']);
+const ServiceSideSchema = z.enum(['team1', 'team2']);
 
 export const SavedMatchSchema = z.object({
   id: z.string(),
@@ -107,7 +107,7 @@ export const PersistedGameStateSchema = z.object({
 export const PlayerNamesSchema = z.array(z.string());
 
 /** Modèle de match favori : un MatchConfig nommé, rappelable depuis la home. */
-export const MatchTemplateSchema = z.object({
+const MatchTemplateSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
   createdAt: z.number().int().positive(),
