@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import { baseTestOptions } from '@mister-guiiug/dev-wpa-config/vitest-base';
+import { baseTestOptions } from '@mister-guiiug/dev-pwa-config/vitest-base';
 
 export default defineConfig({
   plugins: [react()],
@@ -18,7 +18,7 @@ export default defineConfig({
       // bandeau peut s'afficher.
       'virtual:pwa-register': fileURLToPath(
         import.meta
-          .resolve('@mister-guiiug/dev-wpa-config/testing/pwa-register')
+          .resolve('@mister-guiiug/dev-pwa-config/testing/pwa-register')
       ),
     },
   },

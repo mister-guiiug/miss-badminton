@@ -9,7 +9,7 @@ import {
   type MatchTemplate,
 } from './schemas';
 import type { z } from 'zod';
-import { createIdb } from '@mister-guiiug/dev-wpa-config/idb';
+import { createIdb } from '@mister-guiiug/dev-pwa-config/idb';
 
 /**
  * IndexedDB via le socle — source de vérité pour l'historique complet (sans

@@ -1,10 +1,10 @@
 import { useMemo, type ReactNode } from 'react';
-import { AppUpdates } from '@mister-guiiug/dev-wpa-config/react/app-updates';
+import { AppUpdates } from '@mister-guiiug/dev-pwa-config/react/app-updates';
 import {
   LabelsProvider,
   type LabelOverrides,
-} from '@mister-guiiug/dev-wpa-config/react/labels';
-import type { RegisterSW } from '@mister-guiiug/dev-wpa-config/react/use-update-prompt';
+} from '@mister-guiiug/dev-pwa-config/react/labels';
+import type { RegisterSW } from '@mister-guiiug/dev-pwa-config/react/use-update-prompt';
 import { useI18n } from '../i18n';
 
 /**

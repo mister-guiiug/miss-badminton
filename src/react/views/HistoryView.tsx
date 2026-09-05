@@ -5,7 +5,7 @@ import { type SavedMatch } from '../../storage';
 import type { Locale } from '../../i18n/messages';
 import { useTeamColors } from '../hooks/useTeamColors';
 import { PageContainer } from '../components/layout/PageContainer';
-import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
+import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import {
   FlameIcon,
   HistoryIcon,
@@ -18,10 +18,10 @@ import {
 } from '../components/icons';
 import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
-import { shareOrCopy } from '@mister-guiiug/dev-wpa-config/share';
+import { shareOrCopy } from '@mister-guiiug/dev-pwa-config/share';
 import { buildShareText } from '../../share';
-import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
-import { Sparkline } from '@mister-guiiug/dev-wpa-config/react/sparkline';
+import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
+import { Sparkline } from '@mister-guiiug/dev-pwa-config/react/sparkline';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 
 function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
