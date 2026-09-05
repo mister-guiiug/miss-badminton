@@ -33,7 +33,7 @@ npm run dev
 - **Vitest** (tests unitaires)
 - **Playwright** (tests E2E)
 - **ESLint** + **Prettier** + **Husky** + **lint-staged**
-- **@mister-guiiug/dev-wpa-config** (configurations partagées)
+- **@mister-guiiug/dev-pwa-config** (configurations partagées)
 
 ## 🌐 Déploiement
 

@@ -1,4 +1,4 @@
-# Deploy délégué au reusable workflow famille (dev-wpa-config).
+# Deploy délégué au reusable workflow famille (dev-pwa-config).
 # Les permissions doivent être déclarées au niveau caller (intersection only).
 name: Deploy to GitHub Pages
 
@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   deploy:
-    uses: mister-guiiug/dev-wpa-config/.github/workflows/pwa-deploy.yml@v3
+    uses: mister-guiiug/dev-pwa-config/.github/workflows/pwa-deploy.yml@v4
     secrets: inherit
     with:
       use-base-path: true

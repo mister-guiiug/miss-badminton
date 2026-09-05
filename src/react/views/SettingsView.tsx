@@ -2,17 +2,17 @@ import { useState, useSyncExternalStore } from 'react';
 import {
   SPONSOR_URL,
   repoUrl,
-} from '@mister-guiiug/dev-wpa-config/apps-catalog';
+} from '@mister-guiiug/dev-pwa-config/apps-catalog';
 import {
   FamilyApps,
   useThemeContext,
   type ThemePreference,
-} from '@mister-guiiug/dev-wpa-config/react';
+} from '@mister-guiiug/dev-pwa-config/react';
 import {
   dateSlug,
   downloadJson,
   readJsonFile,
-} from '@mister-guiiug/dev-wpa-config/download';
+} from '@mister-guiiug/dev-pwa-config/download';
 import { useI18n } from '../../i18n';
 import {
   LOCALES,
@@ -28,8 +28,8 @@ import {
   resetTeamColors,
   setTeamColor,
 } from '../../team-colors';
-import { useAppUpdates } from '@mister-guiiug/dev-wpa-config/react/app-updates';
-import { useUpdatePrompt } from '@mister-guiiug/dev-wpa-config/react/use-update-prompt';
+import { useAppUpdates } from '@mister-guiiug/dev-pwa-config/react/app-updates';
+import { useUpdatePrompt } from '@mister-guiiug/dev-pwa-config/react/use-update-prompt';
 import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
 import {
@@ -44,7 +44,7 @@ import { useMatchStore } from '../../store/useMatchStore';
 import {
   clearErrorLog,
   getErrorLog,
-} from '@mister-guiiug/dev-wpa-config/react/observability';
+} from '@mister-guiiug/dev-pwa-config/react/observability';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 

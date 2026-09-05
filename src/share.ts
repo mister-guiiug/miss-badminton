@@ -1,7 +1,7 @@
 /// <reference types="node" />
 // ^ `Buffer` (branche non-navigateur de buildReplayUrl) : type-only, aucun effet
 //   runtime. Nécessaire depuis Vite 8 (vite/client n'inclut plus les globals Node).
-import { currentAppUrl } from '@mister-guiiug/dev-wpa-config/share';
+import { currentAppUrl } from '@mister-guiiug/dev-pwa-config/share';
 import type { SavedMatch } from './storage';
 
 /**

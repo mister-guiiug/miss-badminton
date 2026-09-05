@@ -19,8 +19,8 @@ vi.unmock('virtual:pwa-register');
 import {
   registerSW as pilotableRegisterSW,
   swStub,
-} from '@mister-guiiug/dev-wpa-config/testing/pwa-register';
-import { LABELS } from '@mister-guiiug/dev-wpa-config/react/labels';
+} from '@mister-guiiug/dev-pwa-config/testing/pwa-register';
+import { LABELS } from '@mister-guiiug/dev-pwa-config/react/labels';
 import { I18nProvider } from '../i18n';
 import { useI18n } from '../i18n';
 import { messages } from '../i18n/messages';

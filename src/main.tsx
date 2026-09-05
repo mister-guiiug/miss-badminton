@@ -5,13 +5,13 @@ import { createRoot } from 'react-dom/client';
 import {
   ErrorBoundary,
   ThemeProvider,
-} from '@mister-guiiug/dev-wpa-config/react';
+} from '@mister-guiiug/dev-pwa-config/react';
 import {
   installErrorReporter,
   initSentry,
   recordError,
-} from '@mister-guiiug/dev-wpa-config/react/observability';
-import { unregisterServiceWorkers } from '@mister-guiiug/dev-wpa-config/sw-update';
+} from '@mister-guiiug/dev-pwa-config/react/observability';
+import { unregisterServiceWorkers } from '@mister-guiiug/dev-pwa-config/sw-update';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './react/AppRouter';
 import { AppUpdatesProvider } from './react/AppUpdatesProvider';

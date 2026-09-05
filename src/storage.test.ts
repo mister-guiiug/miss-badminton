@@ -8,7 +8,7 @@
  */
 import 'fake-indexeddb/auto';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createIdb } from '@mister-guiiug/dev-wpa-config/idb';
+import { createIdb } from '@mister-guiiug/dev-pwa-config/idb';
 import { storage, type SavedMatch } from './storage';
 
 const legacyMatch: SavedMatch = {
