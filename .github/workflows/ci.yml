@@ -27,13 +27,17 @@ jobs:
       # couverture et ne rend rien, c'est le mécanisme de pourrissement
       # lui-même : on ne filtre pas.
       e2e-grep: '.*'
-      # Un seul projet, et ce ne peut pas être un mobile : le réutilisable
-      # passe `e2e-project` À LA FOIS à `--project=` et à `playwright install`,
-      # qui refuse « mobile-chrome » (« Invalid installation targets »). La
-      # matrice locale reste la seule à jouer Pixel 5 / iPhone 12 —
-      # `npm run test:e2e` avant d'ouvrir une PR qui touche la coquille ou la
-      # navigation. Coût mesuré des cinq projets : 71 s de tests en tout, dont
-      # 7 s pour mobile-chrome, qui ne demande aucun navigateur de plus (Pixel
-      # 5 tourne sur le chromium déjà installé) — le jour où le socle sait
-      # nommer plusieurs projets, l'angle mort se ferme pour sept secondes.
-      e2e-project: chromium
+      # Le bureau ET le téléphone. C'est ICI que le bug a vécu : sous le seuil
+      # `md`, la barre latérale disparaît et le tiroir est fermé — deux tests
+      # échouaient sur Pixel 5 et iPhone 12 depuis toujours, sur une CI qui ne
+      # jouait rien. Le socle refusait de nommer un projet mobile jusqu'à la
+      # 4.5.2 (`playwright install mobile-chrome` : « Invalid installation
+      # targets ») ; il accepte désormais une liste et déduit les navigateurs.
+      #
+      # `mobile-chrome` et pas les cinq : Pixel 5 tourne sur le chromium déjà
+      # installé, donc il coûte 7 s de tests et aucun téléchargement, tandis
+      # que `mobile-safari` demanderait webkit en plus — pour un moteur que la
+      # CI ne joue nulle part ailleurs, même en bureau. La CI couvre un moteur
+      # à deux largeurs ; la matrice locale (`npm run test:e2e`, 55 tests sur
+      # cinq navigateurs) reste l'endroit où les cinq tournent.
+      e2e-project: 'chromium mobile-chrome'
