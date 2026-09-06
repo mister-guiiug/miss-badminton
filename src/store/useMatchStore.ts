@@ -5,7 +5,8 @@ import type {
   PointsCap,
 } from '../react/components/MatchSetupWizard';
 import { storage, type SavedMatch } from '../storage';
-import { ExportBundleSchema } from '../schemas';
+import { ExportBundleSchema, type Player } from '../schemas';
+import { migratePlayers, renameInMatches } from '../players';
 
 export type ServiceSide = 'team1' | 'team2';
 
@@ -168,6 +169,20 @@ interface MatchState {
   /** Le délai a filé (ou un autre geste passe devant) : on écrit. */
   commitPendingRemoval: () => void;
 
+  /** Le registre des profils joueurs (`players.ts`). */
+  players: Player[];
+  /**
+   * Renomme un profil ; l'historique suit. Rend la raison d'un refus —
+   * `'duplicate'` quand un autre profil porte déjà ce nom : une fusion
+   * silencieuse serait bien plus dure à défaire.
+   */
+  renamePlayer: (
+    id: string,
+    name: string
+  ) => 'ok' | 'empty' | 'unknown' | 'duplicate';
+  /** Retire un profil du registre. Les matchs gardent le nom qu'ils portent. */
+  removePlayer: (id: string) => void;
+
   /**
    * Importe un blob d'export (Settings) validé via zod. Renvoie le détail
    * de ce qui a été appliqué ou un message d'erreur si la donnée est
@@ -232,8 +247,16 @@ export const useMatchStore = create<MatchState>()(
       matchHistory: storage.loadHistory(),
       historyHydrated: false,
       pendingDeletion: null,
+      players: storage.loadPlayers(),
 
-      setMatch: config => set({ match: config, history: [] }),
+      // Le wizard vient peut-être de créer des profils (`rememberPlayer` écrit
+      // dans le stockage, pas dans le magasin) : on relit le registre ici, à
+      // l'unique point de passage d'un match qui démarre. Sans ça, un joueur
+      // saisi pour la première fois n'apparaîtrait ni dans les Réglages — donc
+      // impossible à renommer — ni dans les suggestions du filtre, jusqu'au
+      // prochain rechargement de l'application.
+      setMatch: config =>
+        set({ match: config, history: [], players: storage.loadPlayers() }),
 
       score: team => {
         const state = get();
@@ -701,6 +724,26 @@ export const useMatchStore = create<MatchState>()(
         });
       },
 
+      renamePlayer: (id, name) => {
+        const result = storage.renamePlayer(id, name);
+        if (result !== 'ok') return result;
+        const clean =
+          storage.loadPlayers().find(p => p.id === id)?.name ?? name;
+        // Le registre fait foi à l'affichage, mais on recopie aussi le nom
+        // dans la liste en mémoire pour que l'export et le partage soient
+        // justes sans attendre un rechargement.
+        set({
+          players: storage.loadPlayers(),
+          matchHistory: renameInMatches(get().matchHistory, id, clean).matches,
+        });
+        return 'ok';
+      },
+
+      removePlayer: id => {
+        storage.removePlayer(id);
+        set({ players: storage.loadPlayers() });
+      },
+
       importBundle: raw => {
         const parsed = ExportBundleSchema.safeParse(raw);
         if (!parsed.success) {
@@ -710,17 +753,32 @@ export const useMatchStore = create<MatchState>()(
         let historyCount = 0;
         let playersCount = 0;
         let settingsApplied = false;
+
+        // LES DEUX SENS DE L'EXPORT. Un fichier récent porte `playerProfiles`
+        // (identifiants compris) : il fait foi. Un fichier d'AVANT la
+        // migration ne porte que `players`, une liste de noms — on repart
+        // alors d'un registre vide et la migration reconstruit les profils
+        // depuis l'historique importé, exactement comme au premier
+        // chargement d'une installation existante. Un fichier sans aucune
+        // information de joueur laisse le registre en place.
+        const known =
+          data.playerProfiles ?? (data.players ? [] : storage.loadPlayers());
+        const legacyNames = data.playerProfiles ? [] : (data.players ?? []);
+        const migrated = migratePlayers(data.history ?? [], {
+          knownPlayers: known,
+          legacyNames,
+        });
+        storage.savePlayers(migrated.players);
+        playersCount = migrated.players.length;
+
         if (data.history) {
-          const ok = storage.replaceHistory(data.history);
+          const ok = storage.replaceHistory(migrated.matches);
           if (ok) {
             historyCount = data.history.length;
-            set({ matchHistory: storage.loadHistory() });
+            set({ matchHistory: migrated.matches });
           }
         }
-        if (data.players) {
-          storage.replacePlayerNames(data.players);
-          playersCount = data.players.length;
-        }
+        set({ players: storage.loadPlayers() });
         if (data.settings) {
           // L'application effective des réglages reste à la charge du caller
           // (theme, locale, couleurs, sound, haptic) car ils vivent dans des
@@ -773,15 +831,16 @@ export const useMatchStore = create<MatchState>()(
 // retombe sur le cache localStorage — pas d'effet de bord.
 if (typeof window !== 'undefined') {
   void storage.loadHistoryAsync().then(history => {
-    const current = useMatchStore.getState().matchHistory;
-    // Évite un setState inutile si rien n'a changé.
-    if (
-      history.length !== current.length ||
-      history.some((m, i) => m.id !== current[i]?.id)
-    ) {
-      useMatchStore.setState({ matchHistory: history, historyHydrated: true });
-    } else {
-      useMatchStore.setState({ historyHydrated: true });
-    }
+    // On pose l'historique et le registre sans comparer d'abord. Le garde-fou
+    // d'origine (« même longueur, mêmes id → ne rien faire ») ne suffit plus :
+    // `loadHistoryAsync` a pu voir l'historique COMPLET, au-delà des 200
+    // matchs de la copie synchrone, et y POSER des identifiants de joueur.
+    // La liste a la même longueur et les mêmes id de match, et pourtant elle
+    // a changé. Cette hydratation n'a lieu qu'une fois, au démarrage.
+    useMatchStore.setState({
+      matchHistory: history,
+      players: storage.loadPlayers(),
+      historyHydrated: true,
+    });
   });
 }

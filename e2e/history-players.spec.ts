@@ -1,7 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * L'historique dans un vrai navigateur.
+ * Les joueurs et la suppression annulable, dans un vrai navigateur.
+ *
+ * On sème un historique D'AVANT les profils — aucun `primaryId` — donc ces
+ * scénarios éprouvent AUSSI la migration : au chargement, l'app doit fabriquer
+ * les profils, poser les identifiants, et proposer le filtre.
  *
  * Playwright tourne en locale en-US : l'UI i18n rend l'anglais. Les motifs
  * acceptent les trois langues de l'app pour ne pas dépendre de cette locale.
@@ -57,6 +61,58 @@ function cards(page: Page) {
     name: /rejouer ce match|replay this match|repetir este partido/i,
   });
 }
+
+/**
+ * `combobox`, pas `searchbox` : l'input porte un `list=` (la datalist des
+ * joueurs connus), et HTML-AAM fait alors basculer le rôle de `searchbox` à
+ * `combobox`. Constaté sur l'arbre d'accessibilité rendu, pas déduit.
+ */
+function playerFilter(page: Page) {
+  return page.getByRole('combobox', {
+    name: /filtrer par joueur|filter by player|filtrar por jugador/i,
+  });
+}
+
+test.describe('Filtre par joueur @critical', () => {
+  test('un historique d’avant la migration devient filtrable par joueur', async ({
+    page,
+  }) => {
+    await seed(page, HISTORY);
+    await page.goto('/historique');
+    await expect(cards(page)).toHaveCount(3);
+
+    // Le filtre n'existe que parce que la migration a fabriqué des profils
+    // à partir de noms nus.
+    await playerFilter(page).fill('Guillaume');
+    await expect(cards(page)).toHaveCount(2);
+    await expect(
+      page.getByText('Anass', { exact: false }).first()
+    ).toBeVisible();
+
+    // Un joueur qui n'a qu'un match.
+    await playerFilter(page).fill('Zoé');
+    await expect(cards(page)).toHaveCount(2);
+
+    // Accents ignorés à la RECHERCHE : « zoe » trouve « Zoé ».
+    await playerFilter(page).fill('zoe');
+    await expect(cards(page)).toHaveCount(2);
+
+    // Personne de ce nom.
+    await playerFilter(page).fill('Nadia');
+    await expect(cards(page)).toHaveCount(0);
+    await expect(
+      page.getByText(/Aucun match avec|No match with|Ningún partido con/)
+    ).toBeVisible();
+
+    // Le bouton d'effacement rend l'historique complet.
+    await page
+      .getByRole('button', {
+        name: /effacer le filtre joueur|clear player filter|borrar el filtro/i,
+      })
+      .click();
+    await expect(cards(page)).toHaveCount(3);
+  });
+});
 
 test.describe('Suppression annulable @critical', () => {
   test('supprimer puis annuler laisse le match en place', async ({ page }) => {

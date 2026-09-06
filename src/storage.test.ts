@@ -10,6 +10,7 @@ import 'fake-indexeddb/auto';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createIdb } from '@mister-guiiug/dev-pwa-config/idb';
 import { storage, type SavedMatch } from './storage';
+import { must } from './test/must';
 
 const legacyMatch: SavedMatch = {
   id: 'legacy-1',
@@ -69,7 +70,25 @@ describe('compatibilité IndexedDB avec la base du wrapper local supprimé', () 
   });
 
   it("storage.loadHistoryAsync restitue l'historique hérité", async () => {
-    await expect(storage.loadHistoryAsync()).resolves.toEqual([legacyMatch]);
+    const history = await storage.loadHistoryAsync();
+    // Le match hérité revient INTACT — à ceci près que l'hydratation joue
+    // au passage la migration des profils joueurs, qui POSE des
+    // identifiants sur les matchs qui n'en portent pas (cf. `players.ts`).
+    // C'est le seul écart, et il est additif : rien du match d'origine n'a
+    // été perdu ni réécrit.
+    expect(history).toHaveLength(1);
+    const got = must(history[0], 'le match hérité');
+    expect({
+      ...got,
+      config: {
+        ...got.config,
+        team1: { primary: got.config.team1.primary },
+        team2: { primary: got.config.team2.primary },
+      },
+    }).toEqual(legacyMatch);
+    expect(got.config.team1.primaryId).toEqual(expect.any(String));
+    expect(got.config.team2.primaryId).toEqual(expect.any(String));
+    expect(got.config.team1.primaryId).not.toBe(got.config.team2.primaryId);
   });
 
   it('les API blob ne lèvent pas sur une base héritée sans store `blobs`', async () => {

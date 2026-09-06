@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 import {
   FamilyApps,
   useThemeContext,
@@ -30,12 +30,12 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
 import {
   DownloadIcon,
+  PencilIcon,
   RefreshCwIcon,
   Trash2Icon,
   UploadIcon,
   UserIcon,
 } from '../components/icons';
-import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
 import {
   clearErrorLog,
@@ -79,11 +79,15 @@ export function SettingsView() {
     themeCtx?.setTheme(pref);
   };
   const hasKeyboard = useLikelyHasKeyboard();
-  const { matchHistory, importBundle } = useMatchStore();
-  const [playerNames, setPlayerNames] = useState<string[]>(() =>
-    storage.loadPlayerNames()
-  );
+  const { matchHistory, importBundle, players, renamePlayer, removePlayer } =
+    useMatchStore();
   const [importError, setImportError] = useState<string | null>(null);
+  /** Le profil en cours de renommage, et l'erreur éventuelle du dernier essai. */
+  const [renaming, setRenaming] = useState<{
+    id: string;
+    value: string;
+    error: string | null;
+  } | null>(null);
 
   const colorsAreDefault =
     colors.team1.toLowerCase() === DEFAULT_TEAM1_COLOR &&
@@ -113,7 +117,12 @@ export function SettingsView() {
   const handleExport = () => {
     const data = {
       history: matchHistory,
-      players: playerNames,
+      // DEUX CHAMPS, ET C'EST VOULU (cf. `ExportBundleSchema`) : `players`
+      // reste la liste de NOMS, qu'une version d'avant les profils sait
+      // relire ; `playerProfiles` porte les identifiants, que celle-ci
+      // préfère à la relecture.
+      players: players.map(p => p.name),
+      playerProfiles: players,
       settings: {
         theme,
         locale,
@@ -163,15 +172,41 @@ export function SettingsView() {
         feedback.setSound(settings.sound);
       if (typeof settings?.haptic === 'boolean')
         feedback.setHaptic(settings.haptic);
-      // Liste des joueurs : importBundle a déjà mis à jour le storage ;
-      // on rafraîchit l'état local pour refléter le changement sans reload.
-      setPlayerNames(storage.loadPlayerNames());
+      // Les joueurs : `importBundle` a déjà reconstruit le registre dans le
+      // magasin (profils du fichier, ou migration des noms hérités).
     })();
   };
 
-  const handleDeletePlayer = (name: string) => {
-    storage.removePlayerName(name);
-    setPlayerNames(storage.loadPlayerNames());
+  /**
+   * Le champ de renommage prend le focus dès qu'il paraît, et son contenu est
+   * sélectionné : le geste suivant est de RÉÉCRIRE le nom, pas de le compléter.
+   *
+   * Par une ref de rappel plutôt que par `autoFocus` — la prop vaut un
+   * avertissement `jsx-a11y/no-autofocus`, et pour une bonne raison : elle vole
+   * le focus au chargement d'une page. Ici le champ naît d'un clic sur
+   * « Renommer », donc déplacer le focus est exactement ce qu'il faut faire.
+   * `useCallback` garde l'identité stable, sinon React détacherait et
+   * rattacherait la ref à chaque frappe.
+   */
+  const focusRenameField = useCallback((node: HTMLInputElement | null) => {
+    node?.focus();
+    node?.select();
+  }, []);
+
+  const handleRename = () => {
+    if (!renaming) return;
+    const result = renamePlayer(renaming.id, renaming.value);
+    if (result === 'ok') {
+      setRenaming(null);
+      return;
+    }
+    setRenaming({
+      ...renaming,
+      error:
+        result === 'duplicate'
+          ? t('settingsExtra.renameDuplicate')
+          : t('settingsExtra.renameEmpty'),
+    });
   };
 
   return (
@@ -287,33 +322,116 @@ export function SettingsView() {
         title={t('settings.playersLabel')}
         help={t('settings.playersHelp')}
       >
-        {playerNames.length === 0 ? (
+        {players.length === 0 ? (
           <p className="text-sm opacity-50 italic">
             {t('historyExtra.statsNone')}
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {playerNames.map(name => (
-              <span
-                key={name}
-                className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium"
-                style={{
-                  borderColor: 'var(--border)',
-                  background: 'var(--surface-highlight)',
-                }}
-              >
-                <UserIcon size={14} />
-                {name}
-                <button
-                  type="button"
-                  onClick={() => handleDeletePlayer(name)}
-                  className="ml-1 rounded-full p-0.5 hover:bg-black/10"
-                  aria-label={t('history.delete')}
+            {players.map(player =>
+              renaming?.id === player.id ? (
+                <span
+                  key={player.id}
+                  className="inline-flex flex-wrap items-center gap-2 rounded-2xl border px-3 py-2"
+                  style={{
+                    borderColor: 'var(--primary)',
+                    background: 'var(--surface-highlight)',
+                  }}
                 >
-                  <Trash2Icon size={12} />
-                </button>
-              </span>
-            ))}
+                  <input
+                    type="text"
+                    ref={focusRenameField}
+                    value={renaming.value}
+                    aria-label={t('settingsExtra.renameLabel', {
+                      name: player.name,
+                    })}
+                    onChange={e =>
+                      setRenaming({
+                        ...renaming,
+                        value: e.target.value,
+                        error: null,
+                      })
+                    }
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleRename();
+                      if (e.key === 'Escape') setRenaming(null);
+                    }}
+                    className="min-h-9 rounded-lg border px-2 py-1 text-sm"
+                    style={{
+                      borderColor: 'var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--text)',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRename}
+                    className="min-h-9 rounded-lg px-3 py-1 text-sm font-semibold text-white"
+                    style={{ background: 'var(--primary)' }}
+                  >
+                    {t('settingsExtra.renameSave')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRenaming(null)}
+                    className="min-h-9 rounded-lg border px-3 py-1 text-sm font-semibold"
+                    style={{
+                      borderColor: 'var(--border)',
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    {t('settingsExtra.renameCancel')}
+                  </button>
+                  {renaming.error && (
+                    <span
+                      role="alert"
+                      className="w-full text-xs font-semibold"
+                      style={{ color: 'var(--danger, #dc2626)' }}
+                    >
+                      {renaming.error}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span
+                  key={player.id}
+                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium"
+                  style={{
+                    borderColor: 'var(--border)',
+                    background: 'var(--surface-highlight)',
+                  }}
+                >
+                  <UserIcon size={14} />
+                  {player.name}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRenaming({
+                        id: player.id,
+                        value: player.name,
+                        error: null,
+                      })
+                    }
+                    className="ml-1 rounded-full p-0.5 hover:bg-black/10"
+                    aria-label={t('settingsExtra.renameLabel', {
+                      name: player.name,
+                    })}
+                  >
+                    <PencilIcon size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removePlayer(player.id)}
+                    className="rounded-full p-0.5 hover:bg-black/10"
+                    aria-label={t('settingsExtra.playerDelete', {
+                      name: player.name,
+                    })}
+                  >
+                    <Trash2Icon size={12} />
+                  </button>
+                </span>
+              )
+            )}
           </div>
         )}
       </Section>

@@ -10,11 +10,24 @@ import { z } from 'zod';
  * source de vérité reste TS, zod sert de garde runtime.
  */
 
-const TeamSchema = z.object({
+export const TeamSchema = z.object({
   primary: z.string(),
   partner: z.string().optional(),
+  /**
+   * Le CÔTÉ de terrain d'origine de l'équipe, pas un joueur. Voir
+   * `MatchSetupWizard.Team` et `MatchView` (`team1.id === 'B'` après une
+   * permutation). Ne pas confondre avec `primaryId` / `partnerId`.
+   */
   id: z.enum(['A', 'B']).optional(),
+  /**
+   * Identifiants stables des profils joueurs (cf. `players.ts`). Optionnels :
+   * tout match enregistré avant la migration des profils n'en porte pas, et
+   * doit continuer de se lire tel quel.
+   */
+  primaryId: z.string().optional(),
+  partnerId: z.string().optional(),
 });
+export type Team = z.infer<typeof TeamSchema>;
 
 const MatchTypeSchema = z.enum(['singles', 'doubles']);
 const SetCountSchema = z.union([
@@ -80,6 +93,7 @@ export const SavedMatchSchema = z.object({
 });
 
 export const SavedMatchArraySchema = z.array(SavedMatchSchema);
+export type SavedMatch = z.infer<typeof SavedMatchSchema>;
 
 export const PersistedGameStateSchema = z.object({
   score1: z.number().int().min(0),
@@ -103,8 +117,28 @@ export const PersistedGameStateSchema = z.object({
   maxStreak2: z.number().int().min(0),
 });
 
-/** Liste de noms de joueurs mémorisée pour l'autocomplete. */
+/**
+ * Liste de noms de joueurs mémorisée pour l'autocomplete — FORMAT HÉRITÉ.
+ *
+ * Conservé pour deux raisons, et deux seulement : lire la clé
+ * `mb_player_names` d'un utilisateur qui n'a pas encore migré, et lire le
+ * champ `players` d'un fichier exporté avant les profils. Rien n'écrit plus
+ * ce format côté stockage ; l'export, lui, continue de le remplir pour
+ * qu'une version antérieure sache relire un fichier récent.
+ */
 export const PlayerNamesSchema = z.array(z.string());
+
+/**
+ * Un profil joueur : un identifiant qui ne bouge pas, un nom qui peut bouger.
+ * `createdAt` sert d'ordre d'affichage stable, pas d'information métier.
+ */
+export const PlayerSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  createdAt: z.number().int().positive(),
+});
+export const PlayerArraySchema = z.array(PlayerSchema);
+export type Player = z.infer<typeof PlayerSchema>;
 
 /** Modèle de match favori : un MatchConfig nommé, rappelable depuis la home. */
 const MatchTemplateSchema = z.object({
@@ -116,11 +150,22 @@ const MatchTemplateSchema = z.object({
 export const MatchTemplateArraySchema = z.array(MatchTemplateSchema);
 export type MatchTemplate = z.infer<typeof MatchTemplateSchema>;
 
-/** Format du blob d'export complet (Settings → Export). */
+/**
+ * Format du blob d'export complet (Settings → Export).
+ *
+ * DEUX CHAMPS POUR LES JOUEURS, ET C'EST VOULU. `players` reste la liste de
+ * NOMS d'avant les profils : une version antérieure de l'app la valide et
+ * relit donc un fichier exporté par celle-ci sans rien rejeter. Les profils
+ * (identifiants compris) voyagent à côté, sous `playerProfiles` ; une version
+ * antérieure ignore simplement cette clé (zod n'est pas strict ici, elle est
+ * écartée à la lecture). L'import de cette version-ci préfère `playerProfiles`
+ * quand il est présent, et migre `players` sinon.
+ */
 export const ExportBundleSchema = z.object({
   version: z.string().optional(),
   history: SavedMatchArraySchema.optional(),
   players: PlayerNamesSchema.optional(),
+  playerProfiles: PlayerArraySchema.optional(),
   settings: z
     .object({
       theme: z.enum(['light', 'dark', 'system']).optional(),

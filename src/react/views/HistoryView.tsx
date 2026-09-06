@@ -15,9 +15,17 @@ import {
   Share2Icon,
   Trash2Icon,
   TrophyIcon,
+  UserIcon,
+  XIcon,
 } from '../components/icons';
 import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
+import {
+  indexById,
+  matchInvolves,
+  teamDisplayNames,
+  type Player,
+} from '../../players';
 import { UndoToast } from '../components/UndoToast';
 import { shareOrCopy } from '@mister-guiiug/dev-pwa-config/share';
 import { buildShareText } from '../../share';
@@ -25,10 +33,24 @@ import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
 import { Sparkline } from '@mister-guiiug/dev-pwa-config/react/sparkline';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 
-function teamLabel(team: SavedMatch['config']['team1'], fallback: string) {
-  const primary = team.primary || fallback;
+/**
+ * Le libellé d'une équipe, lu DANS LE REGISTRE quand le match porte des
+ * identifiants de joueur : un renommage se voit donc ici sans qu'on ait
+ * touché au match. Sans identifiant (donnée d'avant la migration), on
+ * retombe sur le nom recopié dans le match, comme avant.
+ */
+function teamLabel(
+  team: SavedMatch['config']['team1'],
+  fallback: string,
+  byId: Map<string, Player>
+) {
+  const [primaryName, partnerName] = [
+    byId.get(team.primaryId ?? '')?.name ?? team.primary,
+    byId.get(team.partnerId ?? '')?.name ?? team.partner,
+  ];
+  const primary = primaryName || fallback;
   if (team.partner !== undefined) {
-    const partner = team.partner || '';
+    const partner = partnerName || '';
     return partner ? `${primary} & ${partner}` : primary;
   }
   return primary;
@@ -73,10 +95,15 @@ interface HeadToHead {
   winsB: number;
 }
 
-function namesOfTeam(team: SavedMatch['config']['team1']): string[] {
-  return [team.primary, team.partner].filter(
-    (n): n is string => !!n && n.trim().length > 0
-  );
+/**
+ * Les joueurs d'une équipe, sous leur nom COURANT. Le classement et les
+ * face-à-face regroupent donc sur l'identité, pas sur la frappe du jour.
+ */
+function namesOfTeam(
+  team: SavedMatch['config']['team1'],
+  byId: Map<string, Player>
+): string[] {
+  return teamDisplayNames(team, byId);
 }
 
 type PeriodFilter = 'all' | '7d' | '30d';
@@ -92,7 +119,10 @@ function filterByPeriod(
   return matches.filter(m => m.completedAt >= cutoff);
 }
 
-function computeStats(matches: SavedMatch[]): {
+function computeStats(
+  matches: SavedMatch[],
+  byId: Map<string, Player>
+): {
   total: number;
   topPlayer: PlayerStat | null;
   totalDurationMs: number;
@@ -138,8 +168,8 @@ function computeStats(matches: SavedMatch[]): {
   for (const m of matches) {
     const d = m.durationMs ?? 0;
     totalDurationMs += d;
-    const names1 = namesOfTeam(m.config.team1);
-    const names2 = namesOfTeam(m.config.team2);
+    const names1 = namesOfTeam(m.config.team1, byId);
+    const names2 = namesOfTeam(m.config.team2, byId);
     const winner1 = m.winner === 'team1';
     const streak1 = m.maxStreak?.team1 ?? 0;
     const streak2 = m.maxStreak?.team2 ?? 0;
@@ -150,8 +180,8 @@ function computeStats(matches: SavedMatch[]): {
     // pour éviter de devoir choisir comment compter en double (1 vs équipe
     // de 2 ou 4 paires possibles). En simple, paire = {team1.primary, team2.primary}.
     if (m.config.type === 'singles') {
-      const a = m.config.team1.primary.trim();
-      const b = m.config.team2.primary.trim();
+      const a = (names1[0] ?? '').trim();
+      const b = (names2[0] ?? '').trim();
       if (!a || !b) continue;
       const [low, high] = a.toLowerCase() < b.toLowerCase() ? [a, b] : [b, a];
       const key = `${low.toLowerCase()}|${high.toLowerCase()}`;
@@ -199,10 +229,12 @@ export function HistoryView() {
     requestRemoveFromHistory,
     undoPendingRemoval,
     pendingDeletion,
+    players,
     clearHistory,
     setMatch,
     editHistorySetScore,
   } = useMatchStore();
+  const byId = useMemo(() => indexById(players), [players]);
   /**
    * La ligne en cours de suppression sort de l'écran TOUT DE SUITE, alors
    * que rien n'a encore été écrit : c'est ce décalage qui rend l'annulation
@@ -237,11 +269,26 @@ export function HistoryView() {
   };
 
   const [period, setPeriod] = useState<PeriodFilter>('all');
-  const filteredMatches = useMemo(
-    () => filterByPeriod(matches, period),
-    [matches, period]
+  /**
+   * LE FILTRE PAR JOUEUR — « tous mes matchs contre X ».
+   *
+   * Un fragment de nom, accents et casse ignorés (`matchInvolves`), appliqué
+   * APRÈS la période. Les statistiques se recalculent sur le résultat : le
+   * classement filtré sur un joueur donne son bilan, et les face-à-face ne
+   * montrent plus que les siens.
+   */
+  const [playerQuery, setPlayerQuery] = useState('');
+  const filteredMatches = useMemo(() => {
+    const byPeriod = filterByPeriod(matches, period);
+    if (!playerQuery.trim()) return byPeriod;
+    return byPeriod.filter(m => matchInvolves(m, { text: playerQuery }, byId));
+  }, [matches, period, playerQuery, byId]);
+  const stats = useMemo(
+    () => computeStats(filteredMatches, byId),
+    [filteredMatches, byId]
   );
-  const stats = useMemo(() => computeStats(filteredMatches), [filteredMatches]);
+  /** Les noms proposés à la saisie : ceux du registre, tels quels. */
+  const suggestions = useMemo(() => players.map(p => p.name), [players]);
 
   /**
    * Évolution du winrate du top player sur l'ensemble filtré (ordre
@@ -256,12 +303,12 @@ export function HistoryView() {
     const series: number[] = [];
     // matchHistory est trié anti-chronologiquement → on inverse.
     for (const m of [...filteredMatches].reverse()) {
-      const names1 = [m.config.team1.primary, m.config.team1.partner]
-        .filter((n): n is string => !!n)
-        .map(n => n.trim().toLowerCase());
-      const names2 = [m.config.team2.primary, m.config.team2.partner]
-        .filter((n): n is string => !!n)
-        .map(n => n.trim().toLowerCase());
+      const names1 = namesOfTeam(m.config.team1, byId).map(n =>
+        n.trim().toLowerCase()
+      );
+      const names2 = namesOfTeam(m.config.team2, byId).map(n =>
+        n.trim().toLowerCase()
+      );
       const inT1 = names1.includes(targetKey);
       const inT2 = names2.includes(targetKey);
       if (!inT1 && !inT2) continue;
@@ -272,7 +319,7 @@ export function HistoryView() {
       series.push((wins / total) * 100);
     }
     return series.length >= 2 ? series : null;
-  }, [filteredMatches, stats.topPlayer]);
+  }, [filteredMatches, stats.topPlayer, byId]);
 
   const heatmapTimestamps = useMemo(
     () => filteredMatches.map(m => m.completedAt),
@@ -342,6 +389,48 @@ export function HistoryView() {
                   : t('historyExtra.period7d')}
             </button>
           ))}
+        </div>
+      )}
+
+      {matches.length > 0 && (
+        <div className="flex items-center gap-2">
+          <label
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-full border px-3 py-1.5"
+            style={{
+              borderColor: 'var(--border)',
+              background: 'var(--surface-highlight)',
+            }}
+          >
+            <UserIcon size={15} aria-hidden />
+            <span className="sr-only">
+              {t('historyExtra.playerFilterLabel')}
+            </span>
+            <input
+              type="search"
+              value={playerQuery}
+              onChange={e => setPlayerQuery(e.target.value)}
+              list="mb-history-player-filter"
+              placeholder={t('historyExtra.playerFilterPlaceholder')}
+              className="min-h-9 min-w-0 flex-1 bg-transparent text-sm font-medium outline-none"
+              style={{ color: 'var(--text)' }}
+            />
+          </label>
+          <datalist id="mb-history-player-filter">
+            {suggestions.map(name => (
+              <option key={name} value={name} aria-label={name} />
+            ))}
+          </datalist>
+          {playerQuery.trim().length > 0 && (
+            <button
+              type="button"
+              onClick={() => setPlayerQuery('')}
+              aria-label={t('historyExtra.playerFilterClear')}
+              className="flex touch-target items-center justify-center rounded-full border"
+              style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
+            >
+              <XIcon size={16} />
+            </button>
+          )}
         </div>
       )}
 
@@ -479,7 +568,16 @@ export function HistoryView() {
                 className="flex items-center justify-between gap-3 border-b py-2 last:border-b-0"
                 style={{ borderColor: 'var(--border)' }}
               >
-                <span className="flex items-center gap-3 min-w-0">
+                {/* Le geste évident : on lit un nom au classement, on veut
+                    ses matchs. Le bouton remplit la boîte de recherche. */}
+                <button
+                  type="button"
+                  onClick={() => setPlayerQuery(p.name)}
+                  aria-label={t('historyExtra.playerFilterApply', {
+                    name: p.name,
+                  })}
+                  className="flex items-center gap-3 min-w-0 rounded-lg text-left"
+                >
                   <span
                     className="inline-flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-black"
                     style={{
@@ -491,7 +589,7 @@ export function HistoryView() {
                     {i + 1}
                   </span>
                   <span className="truncate text-sm font-bold">{p.name}</span>
-                </span>
+                </button>
                 <span className="flex items-center gap-3 text-xs tabular-nums opacity-70">
                   <span className="font-medium">
                     {p.wins}/{p.total}
@@ -566,14 +664,26 @@ export function HistoryView() {
           <p className="text-lg font-medium">
             {matches.length === 0
               ? t('history.empty')
-              : t('historyExtra.periodEmpty')}
+              : playerQuery.trim().length > 0
+                ? t('historyExtra.playerFilterEmpty', {
+                    name: playerQuery.trim(),
+                  })
+                : t('historyExtra.periodEmpty')}
           </p>
         </div>
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">
           {filteredMatches.map(match => {
-            const t1 = teamLabel(match.config.team1, t('players.player1'));
-            const t2 = teamLabel(match.config.team2, t('players.player2'));
+            const t1 = teamLabel(
+              match.config.team1,
+              t('players.player1'),
+              byId
+            );
+            const t2 = teamLabel(
+              match.config.team2,
+              t('players.player2'),
+              byId
+            );
             const winnerName = match.winner === 'team1' ? t1 : t2;
             return (
               <li
