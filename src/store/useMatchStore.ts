@@ -9,6 +9,34 @@ import { ExportBundleSchema } from '../schemas';
 
 export type ServiceSide = 'team1' | 'team2';
 
+/**
+ * Le délai d'annulation d'une suppression d'historique.
+ *
+ * ANNULER REMPLACE CONFIRMER. Supprimer une ligne d'historique ne demandait
+ * rien et ne se rattrapait pas ; ça ne demande toujours rien, mais la ligne
+ * ne quitte le stockage qu'à l'expiration de ce délai. Huit secondes : le
+ * temps de lire « Match supprimé », de comprendre l'erreur et de viser
+ * « Annuler », sans que le bandeau ne s'installe.
+ *
+ * `clearHistory` garde sa confirmation : effacer TOUT n'est pas le même
+ * geste, et une seule annulation ne rendrait pas une décision de cette taille.
+ */
+export const UNDO_DELETE_MS = 8000;
+
+/**
+ * Le minuteur vit au niveau du module, pas dans un composant : quitter
+ * l'écran Historique pendant le délai ne doit ni annuler la suppression ni
+ * la figer en attente pour toujours.
+ */
+let undoTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearUndoTimer(): void {
+  if (undoTimer !== null) {
+    clearTimeout(undoTimer);
+    undoTimer = null;
+  }
+}
+
 export interface HistoryEntry {
   score1: number;
   score2: number;
@@ -123,8 +151,22 @@ interface MatchState {
     team1: number,
     team2: number
   ) => boolean;
+  /** Suppression immédiate et définitive. Le chemin de l'UI est `requestRemoveFromHistory`. */
   removeFromHistory: (id: string) => void;
   clearHistory: () => void;
+
+  /**
+   * La suppression en attente d'annulation. La ligne disparaît de l'écran
+   * tout de suite, mais rien n'est encore écrit : le stockage n'est touché
+   * qu'à l'expiration (`commitPendingRemoval`).
+   */
+  pendingDeletion: { id: string; expiresAt: number } | null;
+  /** Amorce la suppression annulable et arme le minuteur. */
+  requestRemoveFromHistory: (id: string) => void;
+  /** L'utilisateur a cliqué « Annuler » : rien n'aura été écrit. */
+  undoPendingRemoval: () => void;
+  /** Le délai a filé (ou un autre geste passe devant) : on écrit. */
+  commitPendingRemoval: () => void;
 
   /**
    * Importe un blob d'export (Settings) validé via zod. Renvoie le détail
@@ -189,6 +231,7 @@ export const useMatchStore = create<MatchState>()(
       lastSetSummary: null,
       matchHistory: storage.loadHistory(),
       historyHydrated: false,
+      pendingDeletion: null,
 
       setMatch: config => set({ match: config, history: [] }),
 
@@ -613,12 +656,49 @@ export const useMatchStore = create<MatchState>()(
 
       removeFromHistory: id => {
         storage.removeMatchFromHistory(id);
-        set({ matchHistory: storage.loadHistory() });
+        // On filtre la liste en mémoire au lieu de relire `storage` : la
+        // relecture rend la copie plafonnée à 200 matchs et tronquerait
+        // l'historique complet hydraté depuis IndexedDB.
+        set({ matchHistory: get().matchHistory.filter(m => m.id !== id) });
       },
 
       clearHistory: () => {
+        clearUndoTimer();
         storage.clearHistory();
-        set({ matchHistory: [] });
+        set({ matchHistory: [], pendingDeletion: null });
+      },
+
+      requestRemoveFromHistory: id => {
+        const state = get();
+        if (!state.matchHistory.some(m => m.id === id)) return;
+        // Une seconde suppression valide la première : le bandeau ne parle
+        // que du dernier geste, et empiler deux annulations derrière un seul
+        // bouton mentirait sur ce qu'« Annuler » veut dire.
+        if (state.pendingDeletion) get().commitPendingRemoval();
+        clearUndoTimer();
+        undoTimer = setTimeout(() => {
+          useMatchStore.getState().commitPendingRemoval();
+        }, UNDO_DELETE_MS);
+        set({
+          pendingDeletion: { id, expiresAt: Date.now() + UNDO_DELETE_MS },
+        });
+      },
+
+      undoPendingRemoval: () => {
+        clearUndoTimer();
+        // Rien à restaurer : rien n'a été écrit. C'est tout l'intérêt.
+        set({ pendingDeletion: null });
+      },
+
+      commitPendingRemoval: () => {
+        const pending = get().pendingDeletion;
+        clearUndoTimer();
+        if (!pending) return;
+        storage.removeMatchFromHistory(pending.id);
+        set({
+          matchHistory: get().matchHistory.filter(m => m.id !== pending.id),
+          pendingDeletion: null,
+        });
       },
 
       importBundle: raw => {

@@ -272,6 +272,8 @@ export interface Messages {
     sparklineAria: string;
     heatmapTitle: string;
     heatmapAria: string;
+    deleted: string;
+    undoDelete: string;
   };
   matchOverExtra: {
     rematch: string;
@@ -547,6 +549,8 @@ const fr: Messages = {
     sparklineAria: 'Évolution du winrate de {name}',
     heatmapTitle: 'Activité (12 dernières semaines)',
     heatmapAria: "Heatmap d'activité par jour",
+    deleted: 'Match supprimé',
+    undoDelete: 'Annuler',
   },
   matchOverExtra: {
     rematch: 'Rejouer',
@@ -817,6 +821,8 @@ const en: Messages = {
     sparklineAria: 'Winrate trend for {name}',
     heatmapTitle: 'Activity (last 12 weeks)',
     heatmapAria: 'Daily activity heatmap',
+    deleted: 'Match deleted',
+    undoDelete: 'Undo',
   },
   matchOverExtra: {
     rematch: 'Rematch',
@@ -1090,6 +1096,8 @@ const es: Messages = {
     sparklineAria: 'Tendencia de winrate de {name}',
     heatmapTitle: 'Actividad (últimas 12 semanas)',
     heatmapAria: 'Mapa de actividad diaria',
+    deleted: 'Partido eliminado',
+    undoDelete: 'Deshacer',
   },
   matchOverExtra: {
     rematch: 'Revancha',

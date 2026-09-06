@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { useMatchStore } from './useMatchStore';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { UNDO_DELETE_MS, useMatchStore } from './useMatchStore';
 import type { MatchConfig } from '../react/components/MatchSetupWizard';
 
 function resetStore() {
@@ -30,6 +30,7 @@ function resetStore() {
     pendingFeedback: null,
     lastSetSummary: null,
     matchHistory: [],
+    pendingDeletion: null,
   });
 }
 
@@ -353,6 +354,92 @@ describe('useMatchStore', () => {
       const res = useMatchStore.getState().importBundle(bundle);
       expect(res.ok).toBe(true);
       expect(res.applied?.players).toBe(2);
+    });
+  });
+
+  /**
+   * V12 — ANNULER REMPLACE CONFIRMER. Supprimer une ligne d'historique ne
+   * demande toujours rien, mais la ligne ne quitte le stockage qu'à
+   * l'expiration du délai.
+   */
+  describe('suppression annulable', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    function saveOne(id: string) {
+      useMatchStore.getState().saveToHistory({
+        id,
+        completedAt: Date.now(),
+        config: standardConfig(),
+        setScores: [{ team1: 21, team2: 18 }],
+        finalSetWins: { team1: 1, team2: 0 },
+        winner: 'team1',
+      });
+    }
+
+    it('supprimer, annuler → le match est là', () => {
+      saveOne('m1');
+      useMatchStore.getState().requestRemoveFromHistory('m1');
+      // Rien n'a encore été écrit : le match est seulement « en attente ».
+      expect(useMatchStore.getState().pendingDeletion?.id).toBe('m1');
+      expect(localStorage.getItem('mb_match_history')).toContain('m1');
+
+      useMatchStore.getState().undoPendingRemoval();
+      vi.advanceTimersByTime(UNDO_DELETE_MS * 2);
+
+      expect(useMatchStore.getState().pendingDeletion).toBeNull();
+      expect(useMatchStore.getState().matchHistory.map(m => m.id)).toEqual([
+        'm1',
+      ]);
+      expect(localStorage.getItem('mb_match_history')).toContain('m1');
+    });
+
+    it("supprimer, laisser filer → il n'y est plus", () => {
+      saveOne('m1');
+      useMatchStore.getState().requestRemoveFromHistory('m1');
+      expect(useMatchStore.getState().matchHistory).toHaveLength(1);
+
+      vi.advanceTimersByTime(UNDO_DELETE_MS);
+
+      expect(useMatchStore.getState().pendingDeletion).toBeNull();
+      expect(useMatchStore.getState().matchHistory).toHaveLength(0);
+      expect(localStorage.getItem('mb_match_history')).not.toContain('m1');
+    });
+
+    it('une seconde suppression valide la première', () => {
+      saveOne('m1');
+      saveOne('m2');
+      useMatchStore.getState().requestRemoveFromHistory('m2');
+      useMatchStore.getState().requestRemoveFromHistory('m1');
+      // m2 est parti pour de bon, m1 est encore rattrapable.
+      expect(useMatchStore.getState().matchHistory.map(m => m.id)).toEqual([
+        'm1',
+      ]);
+      expect(useMatchStore.getState().pendingDeletion?.id).toBe('m1');
+      useMatchStore.getState().undoPendingRemoval();
+      vi.advanceTimersByTime(UNDO_DELETE_MS * 2);
+      expect(useMatchStore.getState().matchHistory.map(m => m.id)).toEqual([
+        'm1',
+      ]);
+    });
+
+    it('effacer tout annule la suppression en attente sans la rejouer', () => {
+      saveOne('m1');
+      useMatchStore.getState().requestRemoveFromHistory('m1');
+      useMatchStore.getState().clearHistory();
+      expect(useMatchStore.getState().pendingDeletion).toBeNull();
+      // Le minuteur ne doit plus rien écrire après coup.
+      expect(() => vi.advanceTimersByTime(UNDO_DELETE_MS * 2)).not.toThrow();
+      expect(useMatchStore.getState().matchHistory).toHaveLength(0);
+    });
+
+    it('ignore une demande sur un match absent', () => {
+      useMatchStore.getState().requestRemoveFromHistory('fantome');
+      expect(useMatchStore.getState().pendingDeletion).toBeNull();
     });
   });
 });

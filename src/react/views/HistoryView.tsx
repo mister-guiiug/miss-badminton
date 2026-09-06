@@ -18,6 +18,7 @@ import {
 } from '../components/icons';
 import { storage } from '../../storage';
 import { useMatchStore } from '../../store/useMatchStore';
+import { UndoToast } from '../components/UndoToast';
 import { shareOrCopy } from '@mister-guiiug/dev-pwa-config/share';
 import { buildShareText } from '../../share';
 import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
@@ -193,13 +194,27 @@ export function HistoryView() {
   const navigate = useNavigate();
   const colors = useTeamColors();
   const {
-    matchHistory: matches,
+    matchHistory: allMatches,
     historyHydrated,
-    removeFromHistory,
+    requestRemoveFromHistory,
+    undoPendingRemoval,
+    pendingDeletion,
     clearHistory,
     setMatch,
     editHistorySetScore,
   } = useMatchStore();
+  /**
+   * La ligne en cours de suppression sort de l'écran TOUT DE SUITE, alors
+   * que rien n'a encore été écrit : c'est ce décalage qui rend l'annulation
+   * possible sans dialogue préalable.
+   */
+  const matches = useMemo(
+    () =>
+      pendingDeletion
+        ? allMatches.filter(m => m.id !== pendingDeletion.id)
+        : allMatches,
+    [allMatches, pendingDeletion]
+  );
   const [clearOpen, setClearOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<{
     matchId: string;
@@ -624,7 +639,7 @@ export function HistoryView() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => removeFromHistory(match.id)}
+                      onClick={() => requestRemoveFromHistory(match.id)}
                       aria-label={t('history.delete')}
                       className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--muted)' }}
@@ -724,6 +739,17 @@ export function HistoryView() {
           navigation (70) et des bandeaux (55-75), comme l'ancienne copie
           locale. Libellés explicites : le dictionnaire du socle ne couvre
           pas l'espagnol. */}
+      {/* ANNULER REMPLACE CONFIRMER sur la suppression d'une ligne : le
+          match a quitté l'écran, il ne quittera le stockage qu'à
+          l'expiration du délai porté par le magasin. */}
+      {pendingDeletion && (
+        <UndoToast
+          message={t('historyExtra.deleted')}
+          actionLabel={t('historyExtra.undoDelete')}
+          onUndo={undoPendingRemoval}
+        />
+      )}
+
       <ConfirmDialog
         open={clearOpen}
         className="z-[80]"
