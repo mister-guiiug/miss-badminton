@@ -35,6 +35,16 @@ test.describe('Navigation @smoke', () => {
 
   test("navigation vers l'historique @smoke", async ({ page }) => {
     await page.goto('/');
+    // SUR MOBILE, LE MENU EST FERMÉ. La barre latérale permanente n'existe
+    // qu'au-dessus du seuil `md` : sur Pixel 5 et iPhone 12, aucun lien
+    // « Historique » n'est dans le document tant que le tiroir n'est pas
+    // ouvert, et ce test attendait donc 30 s avant d'échouer — sur deux des
+    // cinq navigateurs de la matrice, depuis toujours et sans que personne le
+    // voie (la CI de ce dépôt ne joue pas les e2e : `run-e2e: false`).
+    const opener = page.getByRole('button', {
+      name: /ouvrir le menu|open menu|abrir el menú/i,
+    });
+    if (await opener.isVisible()) await opener.click();
     await page
       .getByRole('link', { name: /historique|history/i })
       .first()
