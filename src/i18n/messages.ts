@@ -272,6 +272,13 @@ export interface Messages {
     sparklineAria: string;
     heatmapTitle: string;
     heatmapAria: string;
+    playerFilterLabel: string;
+    playerFilterPlaceholder: string;
+    playerFilterClear: string;
+    playerFilterApply: string;
+    playerFilterEmpty: string;
+    deleted: string;
+    undoDelete: string;
   };
   matchOverExtra: {
     rematch: string;
@@ -283,6 +290,12 @@ export interface Messages {
   };
   settingsExtra: {
     contrastWarning: string;
+    renameLabel: string;
+    renameSave: string;
+    renameCancel: string;
+    renameEmpty: string;
+    renameDuplicate: string;
+    playerDelete: string;
   };
 }
 
@@ -547,6 +560,13 @@ const fr: Messages = {
     sparklineAria: 'Évolution du winrate de {name}',
     heatmapTitle: 'Activité (12 dernières semaines)',
     heatmapAria: "Heatmap d'activité par jour",
+    playerFilterLabel: 'Filtrer par joueur',
+    playerFilterPlaceholder: 'Chercher un joueur…',
+    playerFilterClear: 'Effacer le filtre joueur',
+    playerFilterApply: 'Voir les matchs de {name}',
+    playerFilterEmpty: 'Aucun match avec « {name} » sur cette période.',
+    deleted: 'Match supprimé',
+    undoDelete: 'Annuler',
   },
   matchOverExtra: {
     rematch: 'Rejouer',
@@ -559,6 +579,12 @@ const fr: Messages = {
   settingsExtra: {
     contrastWarning:
       'Les deux couleurs choisies sont très proches : difficile de distinguer les équipes.',
+    renameLabel: 'Renommer {name}',
+    renameSave: 'Enregistrer',
+    renameCancel: 'Annuler',
+    renameEmpty: 'Le nom ne peut pas être vide.',
+    renameDuplicate: 'Un autre joueur porte déjà ce nom.',
+    playerDelete: 'Supprimer le joueur {name}',
   },
 };
 
@@ -817,6 +843,13 @@ const en: Messages = {
     sparklineAria: 'Winrate trend for {name}',
     heatmapTitle: 'Activity (last 12 weeks)',
     heatmapAria: 'Daily activity heatmap',
+    playerFilterLabel: 'Filter by player',
+    playerFilterPlaceholder: 'Search a player…',
+    playerFilterClear: 'Clear player filter',
+    playerFilterApply: "See {name}'s matches",
+    playerFilterEmpty: 'No match with “{name}” in this period.',
+    deleted: 'Match deleted',
+    undoDelete: 'Undo',
   },
   matchOverExtra: {
     rematch: 'Rematch',
@@ -829,6 +862,12 @@ const en: Messages = {
   settingsExtra: {
     contrastWarning:
       'The two chosen colours are very close: it will be hard to tell the teams apart.',
+    renameLabel: 'Rename {name}',
+    renameSave: 'Save',
+    renameCancel: 'Cancel',
+    renameEmpty: 'The name cannot be empty.',
+    renameDuplicate: 'Another player already has this name.',
+    playerDelete: 'Delete player {name}',
   },
 };
 
@@ -1090,6 +1129,13 @@ const es: Messages = {
     sparklineAria: 'Tendencia de winrate de {name}',
     heatmapTitle: 'Actividad (últimas 12 semanas)',
     heatmapAria: 'Mapa de actividad diaria',
+    playerFilterLabel: 'Filtrar por jugador',
+    playerFilterPlaceholder: 'Buscar un jugador…',
+    playerFilterClear: 'Borrar el filtro de jugador',
+    playerFilterApply: 'Ver los partidos de {name}',
+    playerFilterEmpty: 'Ningún partido con «{name}» en este periodo.',
+    deleted: 'Partido eliminado',
+    undoDelete: 'Deshacer',
   },
   matchOverExtra: {
     rematch: 'Revancha',
@@ -1102,6 +1148,12 @@ const es: Messages = {
   settingsExtra: {
     contrastWarning:
       'Los dos colores elegidos son muy parecidos: será difícil distinguir los equipos.',
+    renameLabel: 'Renombrar a {name}',
+    renameSave: 'Guardar',
+    renameCancel: 'Cancelar',
+    renameEmpty: 'El nombre no puede estar vacío.',
+    renameDuplicate: 'Otro jugador ya tiene ese nombre.',
+    playerDelete: 'Eliminar al jugador {name}',
   },
 };
 

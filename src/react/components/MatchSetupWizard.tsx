@@ -30,13 +30,19 @@ export interface Team {
   primary: string;
   partner?: string;
   /**
-   * Identifiant d'origine de l'équipe ('A' = équipe créée à gauche du wizard,
+   * Identifiant d'origine de l'ÉQUIPE ('A' = équipe créée à gauche du wizard,
    * 'B' = équipe créée à droite). Sert de fallback stable pour l'affichage :
    * quand l'utilisateur permute les côtés, l'id suit l'équipe et permet aux
    * libellés par défaut ("Joueur A" / "Joueur B") de changer visiblement
    * même si l'utilisateur n'a pas saisi de nom.
+   *
+   * CE N'EST PAS L'IDENTIFIANT D'UN JOUEUR : voir `primaryId` / `partnerId`.
    */
   id?: 'A' | 'B';
+  /** Identifiant stable du profil du joueur principal (cf. `players.ts`). */
+  primaryId?: string;
+  /** Identifiant stable du profil du partenaire (double uniquement). */
+  partnerId?: string;
 }
 
 export interface MatchConfig {
@@ -137,18 +143,22 @@ export function MatchSetupWizard({
   const finish = () => {
     if (!draft.type) return;
     const isDoubles = draft.type === 'doubles';
-    const remember = (s: string) => {
-      const v = s.trim();
-      if (v) storage.addPlayerName(v);
-    };
-    remember(draft.team1.primary);
-    remember(draft.team2.primary);
-    if (isDoubles) {
-      remember(draft.team1.partner);
-      remember(draft.team2.partner);
-    }
-    // Conserve les id si on édite un match existant (pour ne pas casser le
-    // sens "A/B" déjà associé aux équipes après un éventuel swap).
+    // Un nom saisi devient un PROFIL, et le match portera son identifiant :
+    // c'est ce qui rend « tous mes matchs contre X » et le renommage
+    // possibles. `rememberPlayer` réutilise le profil existant quand le nom
+    // est déjà connu (règle des homonymes, cf. `players.ts`).
+    const remember = (s: string): string | undefined =>
+      storage.rememberPlayer(s)?.id;
+    const team1PrimaryId = remember(draft.team1.primary);
+    const team2PrimaryId = remember(draft.team2.primary);
+    const team1PartnerId = isDoubles
+      ? remember(draft.team1.partner)
+      : undefined;
+    const team2PartnerId = isDoubles
+      ? remember(draft.team2.partner)
+      : undefined;
+    // Conserve les id de CÔTÉ si on édite un match existant (pour ne pas
+    // casser le sens "A/B" déjà associé aux équipes après un éventuel swap).
     const team1Id = initial?.team1.id ?? 'A';
     const team2Id = initial?.team2.id ?? 'B';
     onComplete({
@@ -163,11 +173,15 @@ export function MatchSetupWizard({
         primary: draft.team1.primary.trim(),
         partner: isDoubles ? draft.team1.partner.trim() : undefined,
         id: team1Id,
+        primaryId: team1PrimaryId,
+        partnerId: team1PartnerId,
       },
       team2: {
         primary: draft.team2.primary.trim(),
         partner: isDoubles ? draft.team2.partner.trim() : undefined,
         id: team2Id,
+        primaryId: team2PrimaryId,
+        partnerId: team2PartnerId,
       },
     });
   };

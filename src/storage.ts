@@ -3,11 +3,20 @@ import {
   MatchConfigSchema,
   MatchTemplateArraySchema,
   PersistedGameStateSchema,
+  PlayerArraySchema,
   PlayerNamesSchema,
   SavedMatchArraySchema,
-  SavedMatchSchema,
   type MatchTemplate,
+  type Player,
+  type SavedMatch,
 } from './schemas';
+import {
+  migratePlayers,
+  normalizeName,
+  playerKey,
+  renameInMatches,
+  upsertPlayer,
+} from './players';
 import type { z } from 'zod';
 import { createIdb } from '@mister-guiiug/dev-pwa-config/idb';
 
@@ -29,14 +38,27 @@ const LS = {
   match: 'mb_active_match',
   game: 'mb_active_game',
   history: 'mb_match_history',
-  players: 'mb_player_names',
+  /** Format hérité : la liste de NOMS d'avant les profils. */
+  legacyPlayers: 'mb_player_names',
+  /** Les profils joueurs (`players.ts`). */
+  players: 'mb_players',
+  /** Marqueur de la migration noms → profils, indépendant de `dataVersion`. */
+  playersVersion: 'mb_players_version',
   templates: 'mb_match_templates',
   sound: 'mb_sound_enabled',
   haptic: 'mb_haptic_enabled',
   dataVersion: 'mb_data_version',
 } as const;
 
-const MAX_PLAYERS = 24;
+/**
+ * Plafond du registre des joueurs. L'ancienne liste de noms plafonnait à 24
+ * — c'était une liste de SUGGESTIONS, la tronquer ne coûtait qu'une frappe.
+ * Un profil est maintenant une identité que l'historique désigne : le perdre
+ * coûte la possibilité de renommer ce joueur et de filtrer sur lui. D'où un
+ * plafond qui ne peut pas mordre en pratique, gardé uniquement pour qu'une
+ * donnée aberrante ne remplisse pas `localStorage`.
+ */
+const MAX_PLAYERS = 200;
 const MAX_HISTORY = 200;
 const MAX_TEMPLATES = 12;
 
@@ -55,8 +77,20 @@ const MAX_TEMPLATES = 12;
  */
 const CURRENT_DATA_VERSION = '2';
 
+/**
+ * Version du registre des joueurs — DÉLIBÉRÉMENT séparée de
+ * `CURRENT_DATA_VERSION`.
+ *
+ * Bumper `mb_data_version` déclenche `runMigrations`, qui SAUVEGARDE PUIS
+ * EFFACE l'historique. Passer des noms aux profils n'efface rien : c'est une
+ * transformation additive (on pose des identifiants sur des matchs qu'on
+ * garde). Elle a donc son propre marqueur, sous sa propre clé, et le
+ * mécanisme existant reste ce qu'il est.
+ */
+const PLAYERS_VERSION = '1';
+
 export type PersistedGameState = z.infer<typeof PersistedGameStateSchema>;
-export type SavedMatch = z.infer<typeof SavedMatchSchema>;
+export type { Player, SavedMatch } from './schemas';
 
 function safeReadValidated<T>(
   key: string,
@@ -130,7 +164,43 @@ function runMigrations(): void {
   }
 }
 
+/**
+ * La migration noms → profils, jouée une fois, à la lecture synchrone.
+ *
+ * Elle ne voit ici que la copie plafonnée de `localStorage` (200 matchs) :
+ * l'historique complet vit dans IndexedDB et n'est lisible qu'en asynchrone.
+ * `loadHistoryAsync` rejoue donc la même migration sur la version complète —
+ * elle est additive, donc rejouable sans dupliquer un profil.
+ *
+ * Rien n'est effacé : l'ancienne liste de noms part en sauvegarde
+ * (`mb_backup_vplayers_mb_player_names`) avant d'être retirée, comme le fait
+ * déjà `backupAndRemove` pour les bumps de version.
+ */
+function runPlayersMigration(): void {
+  try {
+    if (localStorage.getItem(LS.playersVersion) === PLAYERS_VERSION) return;
+    const legacyNames =
+      safeReadValidated(LS.legacyPlayers, PlayerNamesSchema, []) ?? [];
+    const known = safeReadValidated(LS.players, PlayerArraySchema, []) ?? [];
+    const history =
+      safeReadValidated(LS.history, SavedMatchArraySchema, []) ?? [];
+    const result = migratePlayers(history, {
+      knownPlayers: known,
+      legacyNames,
+    });
+    safeWrite(LS.players, result.players.slice(0, MAX_PLAYERS));
+    if (result.changed) {
+      safeWrite(LS.history, result.matches.slice(0, MAX_HISTORY));
+    }
+    backupAndRemove(LS.legacyPlayers, 'players');
+    localStorage.setItem(LS.playersVersion, PLAYERS_VERSION);
+  } catch {
+    /* localStorage indisponible — la migration se rejouera au prochain accès */
+  }
+}
+
 runMigrations();
+runPlayersMigration();
 
 export const storage = {
   loadActiveMatch: (): MatchConfig | null =>
@@ -147,25 +217,78 @@ export const storage = {
     else safeRemove(LS.game);
   },
 
-  loadPlayerNames: (): string[] =>
-    safeReadValidated(LS.players, PlayerNamesSchema, []) ?? [],
-  addPlayerName: (name: string): void => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const current = storage.loadPlayerNames();
-    const next = [trimmed, ...current.filter(n => n !== trimmed)].slice(
-      0,
-      MAX_PLAYERS
+  /** Le registre des profils, du plus récemment créé au plus ancien. */
+  loadPlayers: (): Player[] =>
+    safeReadValidated(LS.players, PlayerArraySchema, []) ?? [],
+  savePlayers: (players: Player[]): void => {
+    safeWrite(LS.players, players.slice(0, MAX_PLAYERS));
+  },
+  /** Les noms seuls — pour l'autocomplétion et l'export lisible par l'ancien. */
+  loadPlayerNames: (): string[] => storage.loadPlayers().map(p => p.name),
+  /**
+   * Rend le profil de ce nom, en le créant au besoin. C'est le point d'entrée
+   * du wizard : un nom saisi devient un joueur, et le match qui suit portera
+   * son identifiant.
+   */
+  rememberPlayer: (name: string): Player | null => {
+    if (!normalizeName(name)) return null;
+    const result = upsertPlayer(storage.loadPlayers(), name);
+    if (result.changed) storage.savePlayers(result.players);
+    return result.player;
+  },
+  removePlayer: (id: string): void => {
+    storage.savePlayers(storage.loadPlayers().filter(p => p.id !== id));
+  },
+  /**
+   * Renomme un profil. L'historique suit : le registre fait foi à
+   * l'affichage, et le nom recopié dans chaque match est réécrit pour que
+   * l'export reste juste. Refuse un nom vide ou déjà porté par un autre
+   * profil — une fusion silencieuse serait bien plus dure à défaire qu'un
+   * refus.
+   */
+  renamePlayer: (
+    id: string,
+    name: string
+  ): 'ok' | 'empty' | 'unknown' | 'duplicate' => {
+    const clean = normalizeName(name);
+    if (!clean) return 'empty';
+    const players = storage.loadPlayers();
+    if (!players.some(p => p.id === id)) return 'unknown';
+    const key = playerKey(clean);
+    if (players.some(p => p.id !== id && playerKey(p.name) === key)) {
+      return 'duplicate';
+    }
+    storage.savePlayers(
+      players.map(p => (p.id === id ? { ...p, name: clean } : p))
     );
-    safeWrite(LS.players, next);
+    const local = renameInMatches(storage.loadHistory(), id, clean);
+    if (local.changed) safeWrite(LS.history, local.matches);
+    void idb.get('history').then(raw => {
+      const parsed = SavedMatchArraySchema.safeParse(raw ?? []);
+      if (!parsed.success) return;
+      const full = renameInMatches(parsed.data, id, clean);
+      if (full.changed) void idb.set('history', full.matches);
+    });
+    return 'ok';
   },
-  removePlayerName: (name: string): void => {
-    const current = storage.loadPlayerNames();
-    const next = current.filter(n => n !== name);
-    safeWrite(LS.players, next);
+  replacePlayers: (players: unknown): boolean => {
+    const result = PlayerArraySchema.safeParse(players);
+    if (!result.success) return false;
+    storage.savePlayers(result.data);
+    return true;
   },
-  replacePlayerNames: (names: string[]): void => {
-    safeWrite(LS.players, names.slice(0, MAX_PLAYERS));
+  /**
+   * Joue la migration des profils sur un historique quelconque — celui
+   * d'IndexedDB à l'hydratation, celui d'un fichier importé — et persiste ce
+   * qu'elle a découvert. Rend l'historique estampillé.
+   */
+  absorbHistory: (matches: SavedMatch[]): SavedMatch[] => {
+    const result = migratePlayers(matches, {
+      knownPlayers: storage.loadPlayers(),
+    });
+    if (!result.changed) return matches;
+    storage.savePlayers(result.players);
+    return result.matches;
   },
 
   /**
@@ -183,7 +306,18 @@ export const storage = {
     const raw = await idb.get('history');
     if (raw !== undefined) {
       const result = SavedMatchArraySchema.safeParse(raw);
-      if (result.success) return result.data;
+      if (result.success) {
+        // C'est ICI que la migration des profils voit l'historique COMPLET :
+        // la passe synchrone n'a lu que la copie plafonnée à 200 matchs, donc
+        // un joueur qui n'apparaît qu'au 201e match n'aurait jamais eu de
+        // profil. La migration est additive, la rejouer ne duplique rien.
+        const absorbed = storage.absorbHistory(result.data);
+        if (absorbed !== result.data) {
+          await idb.set('history', absorbed);
+          safeWrite(LS.history, absorbed.slice(0, MAX_HISTORY));
+        }
+        return absorbed;
+      }
     }
     // IDB vide : seed depuis localStorage si présent (migration douce).
     const fromLs = storage.loadHistory();

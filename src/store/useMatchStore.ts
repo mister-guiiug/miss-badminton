@@ -5,9 +5,38 @@ import type {
   PointsCap,
 } from '../react/components/MatchSetupWizard';
 import { storage, type SavedMatch } from '../storage';
-import { ExportBundleSchema } from '../schemas';
+import { ExportBundleSchema, type Player } from '../schemas';
+import { migratePlayers, renameInMatches } from '../players';
 
 export type ServiceSide = 'team1' | 'team2';
+
+/**
+ * Le délai d'annulation d'une suppression d'historique.
+ *
+ * ANNULER REMPLACE CONFIRMER. Supprimer une ligne d'historique ne demandait
+ * rien et ne se rattrapait pas ; ça ne demande toujours rien, mais la ligne
+ * ne quitte le stockage qu'à l'expiration de ce délai. Huit secondes : le
+ * temps de lire « Match supprimé », de comprendre l'erreur et de viser
+ * « Annuler », sans que le bandeau ne s'installe.
+ *
+ * `clearHistory` garde sa confirmation : effacer TOUT n'est pas le même
+ * geste, et une seule annulation ne rendrait pas une décision de cette taille.
+ */
+export const UNDO_DELETE_MS = 8000;
+
+/**
+ * Le minuteur vit au niveau du module, pas dans un composant : quitter
+ * l'écran Historique pendant le délai ne doit ni annuler la suppression ni
+ * la figer en attente pour toujours.
+ */
+let undoTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearUndoTimer(): void {
+  if (undoTimer !== null) {
+    clearTimeout(undoTimer);
+    undoTimer = null;
+  }
+}
 
 export interface HistoryEntry {
   score1: number;
@@ -123,8 +152,36 @@ interface MatchState {
     team1: number,
     team2: number
   ) => boolean;
+  /** Suppression immédiate et définitive. Le chemin de l'UI est `requestRemoveFromHistory`. */
   removeFromHistory: (id: string) => void;
   clearHistory: () => void;
+
+  /**
+   * La suppression en attente d'annulation. La ligne disparaît de l'écran
+   * tout de suite, mais rien n'est encore écrit : le stockage n'est touché
+   * qu'à l'expiration (`commitPendingRemoval`).
+   */
+  pendingDeletion: { id: string; expiresAt: number } | null;
+  /** Amorce la suppression annulable et arme le minuteur. */
+  requestRemoveFromHistory: (id: string) => void;
+  /** L'utilisateur a cliqué « Annuler » : rien n'aura été écrit. */
+  undoPendingRemoval: () => void;
+  /** Le délai a filé (ou un autre geste passe devant) : on écrit. */
+  commitPendingRemoval: () => void;
+
+  /** Le registre des profils joueurs (`players.ts`). */
+  players: Player[];
+  /**
+   * Renomme un profil ; l'historique suit. Rend la raison d'un refus —
+   * `'duplicate'` quand un autre profil porte déjà ce nom : une fusion
+   * silencieuse serait bien plus dure à défaire.
+   */
+  renamePlayer: (
+    id: string,
+    name: string
+  ) => 'ok' | 'empty' | 'unknown' | 'duplicate';
+  /** Retire un profil du registre. Les matchs gardent le nom qu'ils portent. */
+  removePlayer: (id: string) => void;
 
   /**
    * Importe un blob d'export (Settings) validé via zod. Renvoie le détail
@@ -189,8 +246,17 @@ export const useMatchStore = create<MatchState>()(
       lastSetSummary: null,
       matchHistory: storage.loadHistory(),
       historyHydrated: false,
+      pendingDeletion: null,
+      players: storage.loadPlayers(),
 
-      setMatch: config => set({ match: config, history: [] }),
+      // Le wizard vient peut-être de créer des profils (`rememberPlayer` écrit
+      // dans le stockage, pas dans le magasin) : on relit le registre ici, à
+      // l'unique point de passage d'un match qui démarre. Sans ça, un joueur
+      // saisi pour la première fois n'apparaîtrait ni dans les Réglages — donc
+      // impossible à renommer — ni dans les suggestions du filtre, jusqu'au
+      // prochain rechargement de l'application.
+      setMatch: config =>
+        set({ match: config, history: [], players: storage.loadPlayers() }),
 
       score: team => {
         const state = get();
@@ -613,12 +679,69 @@ export const useMatchStore = create<MatchState>()(
 
       removeFromHistory: id => {
         storage.removeMatchFromHistory(id);
-        set({ matchHistory: storage.loadHistory() });
+        // On filtre la liste en mémoire au lieu de relire `storage` : la
+        // relecture rend la copie plafonnée à 200 matchs et tronquerait
+        // l'historique complet hydraté depuis IndexedDB.
+        set({ matchHistory: get().matchHistory.filter(m => m.id !== id) });
       },
 
       clearHistory: () => {
+        clearUndoTimer();
         storage.clearHistory();
-        set({ matchHistory: [] });
+        set({ matchHistory: [], pendingDeletion: null });
+      },
+
+      requestRemoveFromHistory: id => {
+        const state = get();
+        if (!state.matchHistory.some(m => m.id === id)) return;
+        // Une seconde suppression valide la première : le bandeau ne parle
+        // que du dernier geste, et empiler deux annulations derrière un seul
+        // bouton mentirait sur ce qu'« Annuler » veut dire.
+        if (state.pendingDeletion) get().commitPendingRemoval();
+        clearUndoTimer();
+        undoTimer = setTimeout(() => {
+          useMatchStore.getState().commitPendingRemoval();
+        }, UNDO_DELETE_MS);
+        set({
+          pendingDeletion: { id, expiresAt: Date.now() + UNDO_DELETE_MS },
+        });
+      },
+
+      undoPendingRemoval: () => {
+        clearUndoTimer();
+        // Rien à restaurer : rien n'a été écrit. C'est tout l'intérêt.
+        set({ pendingDeletion: null });
+      },
+
+      commitPendingRemoval: () => {
+        const pending = get().pendingDeletion;
+        clearUndoTimer();
+        if (!pending) return;
+        storage.removeMatchFromHistory(pending.id);
+        set({
+          matchHistory: get().matchHistory.filter(m => m.id !== pending.id),
+          pendingDeletion: null,
+        });
+      },
+
+      renamePlayer: (id, name) => {
+        const result = storage.renamePlayer(id, name);
+        if (result !== 'ok') return result;
+        const clean =
+          storage.loadPlayers().find(p => p.id === id)?.name ?? name;
+        // Le registre fait foi à l'affichage, mais on recopie aussi le nom
+        // dans la liste en mémoire pour que l'export et le partage soient
+        // justes sans attendre un rechargement.
+        set({
+          players: storage.loadPlayers(),
+          matchHistory: renameInMatches(get().matchHistory, id, clean).matches,
+        });
+        return 'ok';
+      },
+
+      removePlayer: id => {
+        storage.removePlayer(id);
+        set({ players: storage.loadPlayers() });
       },
 
       importBundle: raw => {
@@ -630,17 +753,32 @@ export const useMatchStore = create<MatchState>()(
         let historyCount = 0;
         let playersCount = 0;
         let settingsApplied = false;
+
+        // LES DEUX SENS DE L'EXPORT. Un fichier récent porte `playerProfiles`
+        // (identifiants compris) : il fait foi. Un fichier d'AVANT la
+        // migration ne porte que `players`, une liste de noms — on repart
+        // alors d'un registre vide et la migration reconstruit les profils
+        // depuis l'historique importé, exactement comme au premier
+        // chargement d'une installation existante. Un fichier sans aucune
+        // information de joueur laisse le registre en place.
+        const known =
+          data.playerProfiles ?? (data.players ? [] : storage.loadPlayers());
+        const legacyNames = data.playerProfiles ? [] : (data.players ?? []);
+        const migrated = migratePlayers(data.history ?? [], {
+          knownPlayers: known,
+          legacyNames,
+        });
+        storage.savePlayers(migrated.players);
+        playersCount = migrated.players.length;
+
         if (data.history) {
-          const ok = storage.replaceHistory(data.history);
+          const ok = storage.replaceHistory(migrated.matches);
           if (ok) {
             historyCount = data.history.length;
-            set({ matchHistory: storage.loadHistory() });
+            set({ matchHistory: migrated.matches });
           }
         }
-        if (data.players) {
-          storage.replacePlayerNames(data.players);
-          playersCount = data.players.length;
-        }
+        set({ players: storage.loadPlayers() });
         if (data.settings) {
           // L'application effective des réglages reste à la charge du caller
           // (theme, locale, couleurs, sound, haptic) car ils vivent dans des
@@ -693,15 +831,16 @@ export const useMatchStore = create<MatchState>()(
 // retombe sur le cache localStorage — pas d'effet de bord.
 if (typeof window !== 'undefined') {
   void storage.loadHistoryAsync().then(history => {
-    const current = useMatchStore.getState().matchHistory;
-    // Évite un setState inutile si rien n'a changé.
-    if (
-      history.length !== current.length ||
-      history.some((m, i) => m.id !== current[i]?.id)
-    ) {
-      useMatchStore.setState({ matchHistory: history, historyHydrated: true });
-    } else {
-      useMatchStore.setState({ historyHydrated: true });
-    }
+    // On pose l'historique et le registre sans comparer d'abord. Le garde-fou
+    // d'origine (« même longueur, mêmes id → ne rien faire ») ne suffit plus :
+    // `loadHistoryAsync` a pu voir l'historique COMPLET, au-delà des 200
+    // matchs de la copie synchrone, et y POSER des identifiants de joueur.
+    // La liste a la même longueur et les mêmes id de match, et pourtant elle
+    // a changé. Cette hydratation n'a lieu qu'une fois, au démarrage.
+    useMatchStore.setState({
+      matchHistory: history,
+      players: storage.loadPlayers(),
+      historyHydrated: true,
+    });
   });
 }
