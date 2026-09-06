@@ -52,3 +52,24 @@ test.describe('Navigation @smoke', () => {
     await expect(page).toHaveURL(/\/historique/);
   });
 });
+
+/**
+ * Le pied de page est rendu par la COQUILLE, hors des routes : ce qu'il porte
+ * est visible sur tous les écrans. C'est pour ça que ce test vit ici et pas
+ * dans le spec d'un écran.
+ */
+test.describe('Signaler un problème @smoke', () => {
+  test('le pied de page porte le lien vers le gabarit d’anomalie', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const link = page.getByRole('link', {
+      name: /signaler un problème/i,
+    });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute(
+      'href',
+      /github\.com\/mister-guiiug\/miss-badminton\/issues\/new\?template=bug\.yml/
+    );
+  });
+});
