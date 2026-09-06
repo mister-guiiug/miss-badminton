@@ -17,4 +17,23 @@ jobs:
     secrets: inherit
     with:
       run-doctor: true # la checklist du parc, lue sur le dépôt et sur dist/ (AMELIORATIONS.md, T2)
-      run-e2e: false
+      run-e2e: true
+      # TOUTE la suite, pas un sous-ensemble. Mesuré le 06/09/2026 : le défaut
+      # du socle (`@critical|@a11y`) retient 8 des 11 tests et écarte les trois
+      # `@smoke` — dont « navigation vers l'historique », celui qui échouait
+      # depuis toujours sur mobile sans que personne le voie. Ce que le filtre
+      # ferait gagner : 1,2 s sur un job qui en coûte ~60 (checkout, npm ci,
+      # `playwright install --with-deps`, build). Un filtre qui coûte de la
+      # couverture et ne rend rien, c'est le mécanisme de pourrissement
+      # lui-même : on ne filtre pas.
+      e2e-grep: '.*'
+      # Un seul projet, et ce ne peut pas être un mobile : le réutilisable
+      # passe `e2e-project` À LA FOIS à `--project=` et à `playwright install`,
+      # qui refuse « mobile-chrome » (« Invalid installation targets »). La
+      # matrice locale reste la seule à jouer Pixel 5 / iPhone 12 —
+      # `npm run test:e2e` avant d'ouvrir une PR qui touche la coquille ou la
+      # navigation. Coût mesuré des cinq projets : 71 s de tests en tout, dont
+      # 7 s pour mobile-chrome, qui ne demande aucun navigateur de plus (Pixel
+      # 5 tourne sur le chromium déjà installé) — le jour où le socle sait
+      # nommer plusieurs projets, l'angle mort se ferme pour sept secondes.
+      e2e-project: chromium
