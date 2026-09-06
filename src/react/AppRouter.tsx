@@ -7,6 +7,7 @@ import {
   useLocation,
 } from 'react-router-dom';
 import { Shell } from './components/layout/Shell';
+import { FamilyLinks } from './components/FamilyLinks';
 import { HomeView } from './views/HomeView';
 import { useI18n } from '../i18n';
 
@@ -75,6 +76,10 @@ function AppRoutes() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      {/* HORS des routes : le code source et le soutien sont ainsi sur le
+          premier écran comme sur les Paramètres — la règle famille. Rendus
+          depuis `SettingsView`, ils ne valaient que pour cet écran-là. */}
+      <FamilyLinks />
     </Shell>
   );
 }
