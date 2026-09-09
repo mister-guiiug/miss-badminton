@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 interface LogoProps {
   /** Taille en px (largeur = hauteur, pour préserver le ratio 1:1). */
   size?: number;
@@ -7,12 +9,30 @@ interface LogoProps {
 }
 
 /**
- * Logo "Miss Badminton" — volant en éventail sur fond indigo dégradé.
- * Réutilise le même tracé que `public/logo.svg` mais inline pour pouvoir
- * être posé dans des en-têtes sans requête HTTP.
+ * Logo « Miss Badminton » — la raquette, le cordage, et le volant à l'impact.
+ *
+ * LE MÊME TRACÉ QUE `public/logo.svg`, inline pour être posé dans un en-tête
+ * sans requête HTTP. Les deux fichiers doivent bouger ensemble : celui-ci pour
+ * l'écran, l'autre pour les icônes du manifeste (`npm run icons`).
+ *
+ * DEUX DENSITÉS, UN SEUL DESSIN. Sous 32 px, le cordage — dix traits d'un
+ * pixel — ne fait plus qu'un gris sale au milieu du tamis : il disparaît, le
+ * trait épaissit et le volant grossit d'un tiers. C'est la même règle que
+ * `public/favicon.svg` applique pour l'onglet, appliquée ici à l'en-tête et au
+ * tiroir, qui demandent 24 à 32 px.
+ *
+ * LES `id` VIENNENT DE `useId`, PAS DE `size`. Deux logos de même taille sur
+ * une page — l'en-tête et le tiroir en portent un chacun — produisaient deux
+ * dégradés du même identifiant : le navigateur garde le premier, et le second
+ * logo héritait silencieusement des couleurs de son voisin. Avec `useId`,
+ * chaque instance a les siennes.
  */
 export function Logo({ size = 32, ariaLabel, className }: LogoProps) {
   const decorative = !ariaLabel;
+  const uid = useId().replace(/:/g, '');
+  const dense = size >= 32;
+  const fond = `mb-logo-bg-${uid}`;
+  const tamis = `mb-logo-tamis-${uid}`;
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -25,72 +45,65 @@ export function Logo({ size = 32, ariaLabel, className }: LogoProps) {
       className={className}
     >
       <defs>
-        <linearGradient id={`mb-logo-bg-${size}`} x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={fond} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#4f46e5" />
           <stop offset="100%" stopColor="#7c3aed" />
         </linearGradient>
-        <linearGradient
-          id={`mb-logo-feath-${size}`}
-          x1="0"
-          y1="0"
-          x2="0"
-          y2="1"
-        >
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#e2e8f0" />
-        </linearGradient>
-        <radialGradient id={`mb-logo-cork-${size}`} cx="0.4" cy="0.35" r="0.7">
-          <stop offset="0%" stopColor="#fef3c7" />
-          <stop offset="100%" stopColor="#f59e0b" />
-        </radialGradient>
+        <clipPath id={tamis}>
+          <ellipse cx="32" cy="24" rx="11" ry="13.5" />
+        </clipPath>
       </defs>
-      <rect width="64" height="64" rx="14" fill={`url(#mb-logo-bg-${size})`} />
-      <path
-        d="M 6 52 Q 24 12 58 10"
-        stroke="rgba(255,255,255,0.18)"
-        strokeWidth="2"
-        fill="none"
-        strokeLinecap="round"
-        strokeDasharray="1.5 4"
-      />
-      <g transform="rotate(-22 32 34)">
-        <g
-          fill={`url(#mb-logo-feath-${size})`}
-          stroke="#94a3b8"
-          strokeWidth="0.7"
-          strokeLinejoin="round"
-        >
-          <path d="M 32 40 L 18 16 L 23 14 Z" />
-          <path d="M 32 40 L 25 12 L 30 11 Z" />
-          <path d="M 32 40 L 30 10 L 34 10 Z" />
-          <path d="M 32 40 L 34 11 L 39 12 Z" />
-          <path d="M 32 40 L 41 14 L 46 16 Z" />
-        </g>
+
+      <rect width="64" height="64" rx="16" fill={`url(#${fond})`} />
+
+      <g transform="rotate(-20 32 32)">
         <ellipse
           cx="32"
-          cy="40"
-          rx="9"
-          ry="2.5"
+          cy="25"
+          rx="13.5"
+          ry="15.5"
           fill="none"
-          stroke="rgba(100,116,139,0.6)"
-          strokeWidth="0.7"
+          stroke="#ffffff"
+          strokeWidth={dense ? 4 : 5}
         />
-        <ellipse
-          cx="32"
-          cy="46"
-          rx="7"
-          ry="6"
-          fill={`url(#mb-logo-cork-${size})`}
-          stroke="#b45309"
-          strokeWidth="1.2"
+        {dense ? (
+          <g
+            stroke="#ffffff"
+            strokeOpacity="0.45"
+            strokeWidth="1"
+            clipPath={`url(#${tamis})`}
+          >
+            <path d="M 24 9 V 39" />
+            <path d="M 28 9 V 39" />
+            <path d="M 32 9 V 39" />
+            <path d="M 36 9 V 39" />
+            <path d="M 40 9 V 39" />
+            <path d="M 19 14 H 45" />
+            <path d="M 19 19 H 45" />
+            <path d="M 19 24 H 45" />
+            <path d="M 19 29 H 45" />
+            <path d="M 19 34 H 45" />
+          </g>
+        ) : null}
+        <path
+          d="M 32 40 V 49"
+          stroke="#ffffff"
+          strokeWidth={dense ? 6 : 7}
+          strokeLinecap="round"
         />
-        <ellipse
-          cx="29"
-          cy="43"
-          rx="2.5"
-          ry="1.4"
-          fill="rgba(255,255,255,0.65)"
-        />
+
+        <g transform={`translate(32 24) scale(${dense ? 0.4 : 0.55})`}>
+          <path
+            d="M -0.74 -4.32 L -10.1 -22.13 L -16.74 -17.66 L -3.73 -2.31 Z"
+            fill="#ffffff"
+          />
+          <path d="M 1.8 -4 L 4 -24 L -4 -24 L -1.8 -4 Z" fill="#ffffff" />
+          <path
+            d="M 3.73 -2.31 L 16.74 -17.66 L 10.1 -22.13 L 0.74 -4.32 Z"
+            fill="#ffffff"
+          />
+          <circle cx="0" cy="4" r="8" fill="#fbbf24" />
+        </g>
       </g>
     </svg>
   );

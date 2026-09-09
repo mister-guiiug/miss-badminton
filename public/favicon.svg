@@ -4,6 +4,14 @@
   role="img"
   aria-label="Miss Badminton"
 >
+  <!--
+    LA MÊME RAQUETTE, ALLÉGÉE POUR 16 PIXELS. Ce fichier n'est pas une autre
+    marque : c'est `logo.svg` moins ce qui ne survit pas à l'onglet. Le
+    cordage disparaît (dix traits d'un pixel deviennent un gris sale), le
+    tamis épaissit, le volant grossit d'un tiers. À 128 px on ne verrait
+    presque pas la différence ; à 16, c'est celle entre une raquette et une
+    tache.
+  -->
   <defs>
     <linearGradient id="fav-bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#4f46e5" />
@@ -13,15 +21,27 @@
 
   <rect width="64" height="64" rx="16" fill="url(#fav-bg)" />
 
-  <!-- Version simplifiée pour petites tailles (favicons 16/32 px) -->
-  <g transform="rotate(-22 32 34)">
-    <g fill="#ffffff" stroke="#e2e8f0" stroke-width="0.6">
-      <path d="M 32 40 L 18 16 L 23 14 Z" />
-      <path d="M 32 40 L 25 12 L 30 11 Z" />
-      <path d="M 32 40 L 30 10 L 34 10 Z" />
-      <path d="M 32 40 L 34 11 L 39 12 Z" />
-      <path d="M 32 40 L 41 14 L 46 16 Z" />
+  <g transform="rotate(-20 32 32)">
+    <ellipse
+      cx="32"
+      cy="25"
+      rx="13.5"
+      ry="15.5"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="5"
+    />
+    <path
+      d="M 32 40 V 49"
+      stroke="#ffffff"
+      stroke-width="7"
+      stroke-linecap="round"
+    />
+    <g transform="translate(32 24) scale(0.55)">
+      <path d="M -0.74 -4.32 L -10.1 -22.13 L -16.74 -17.66 L -3.73 -2.31 Z" fill="#ffffff" />
+      <path d="M 1.8 -4 L 4 -24 L -4 -24 L -1.8 -4 Z" fill="#ffffff" />
+      <path d="M 3.73 -2.31 L 16.74 -17.66 L 10.1 -22.13 L 0.74 -4.32 Z" fill="#ffffff" />
+      <circle cx="0" cy="4" r="8" fill="#fbbf24" />
     </g>
-    <ellipse cx="32" cy="46" rx="7" ry="6" fill="#fde68a" stroke="#b45309" stroke-width="1.4" />
   </g>
 </svg>
