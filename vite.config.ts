@@ -121,6 +121,7 @@ export default defineConfig(({ command }) => {
         includeAssets: [
           'icons/icon-192.png',
           'icons/icon-512.png',
+          'icons/icon-maskable-512.png',
           'icons/apple-touch-icon.png',
         ],
         workbox: {
@@ -140,18 +141,30 @@ export default defineConfig(({ command }) => {
           start_url: basePath,
           scope: basePath,
           lang: 'fr',
+          // DEUX RÔLES, DEUX IMAGES. `any` reçoit la marque telle quelle,
+          // coins arrondis compris ; `maskable` reçoit une version réduite
+          // sur fond plein bord à bord, parce qu'Android applique son propre
+          // masque et ne garantit que les 80 % centraux. Les déclarer sur le
+          // MÊME fichier — ce que faisait ce manifeste — donne une icône
+          // installée aux coins coupés et au dessin rogné.
           icons: [
             {
               src: 'icons/icon-192.png',
               sizes: '192x192',
               type: 'image/png',
-              purpose: 'any maskable',
+              purpose: 'any',
             },
             {
               src: 'icons/icon-512.png',
               sizes: '512x512',
               type: 'image/png',
-              purpose: 'any maskable',
+              purpose: 'any',
+            },
+            {
+              src: 'icons/icon-maskable-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
             },
           ],
           screenshots: [

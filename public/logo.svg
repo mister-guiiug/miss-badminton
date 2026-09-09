@@ -4,77 +4,77 @@
   role="img"
   aria-label="Miss Badminton"
 >
+  <!--
+    LA SOURCE DE LA MARQUE. `npm run icons` en tire les PNG du manifeste
+    (192, 512, apple-touch 180) et la version maskable ; `favicon.svg` en est
+    la réduction pour les toutes petites tailles, et `src/react/components/
+    Logo.tsx` en porte la copie inline pour les en-têtes. Modifier ce fichier
+    demande donc de relancer la génération ET de reporter le tracé dans le
+    composant — c'est écrit dans les deux.
+
+    LA RAQUETTE PLUTÔT QUE LE VOLANT SEUL. Choisie parmi huit propositions le
+    10/09/2026 : le volant est l'objet que toutes les icônes de badminton
+    dessinent, la raquette celui qu'on tient. Le volant reste, minuscule, dans
+    les cordes — il donne l'échelle et rappelle le sport d'un coup d'œil.
+
+    ET ELLE TIENT DANS LA ZONE SÛRE. L'icône précédente touchait les bords
+    alors que le manifeste la déclarait `maskable` : sur Android, le masque
+    circulaire rognait sa trajectoire pointillée. Tout ce qui suit vit dans le
+    cercle central des 80 % (rayon 25,6 sur 64), vérifié image à l'appui.
+  -->
   <defs>
-    <linearGradient id="mb-bg" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="mb-logo-bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#4f46e5" />
       <stop offset="100%" stop-color="#7c3aed" />
     </linearGradient>
-    <linearGradient id="mb-feath" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="100%" stop-color="#e2e8f0" />
-    </linearGradient>
-    <radialGradient id="mb-cork" cx="0.4" cy="0.35" r="0.7">
-      <stop offset="0%" stop-color="#fef3c7" />
-      <stop offset="100%" stop-color="#f59e0b" />
-    </radialGradient>
+    <clipPath id="mb-logo-tamis">
+      <ellipse cx="32" cy="24" rx="11" ry="13.5" />
+    </clipPath>
   </defs>
 
-  <rect width="64" height="64" rx="14" fill="url(#mb-bg)" />
+  <rect width="64" height="64" rx="16" fill="url(#mb-logo-bg)" />
 
-  <!-- Sillage du volant : arc subtil -->
-  <path
-    d="M 6 52 Q 24 12 58 10"
-    stroke="rgba(255,255,255,0.18)"
-    stroke-width="2"
-    fill="none"
-    stroke-linecap="round"
-    stroke-dasharray="1.5 4"
-  />
-
-  <!-- Volant orienté en diagonale -->
-  <g transform="rotate(-22 32 34)">
-    <!-- Plumes en éventail (5 plumes) -->
-    <g
-      fill="url(#mb-feath)"
-      stroke="#94a3b8"
-      stroke-width="0.7"
-      stroke-linejoin="round"
-    >
-      <path d="M 32 40 L 18 16 L 23 14 Z" />
-      <path d="M 32 40 L 25 12 L 30 11 Z" />
-      <path d="M 32 40 L 30 10 L 34 10 Z" />
-      <path d="M 32 40 L 34 11 L 39 12 Z" />
-      <path d="M 32 40 L 41 14 L 46 16 Z" />
-    </g>
-
-    <!-- Anneau jupe (suggère la couture du volant) -->
+  <g transform="rotate(-20 32 32)">
+    <!-- Le tamis, le cordage, le manche : trois formes, aucune ombre. -->
     <ellipse
       cx="32"
-      cy="40"
-      rx="9"
-      ry="2.5"
+      cy="25"
+      rx="13.5"
+      ry="15.5"
       fill="none"
-      stroke="rgba(100,116,139,0.6)"
-      stroke-width="0.7"
+      stroke="#ffffff"
+      stroke-width="4"
+    />
+    <g
+      stroke="#ffffff"
+      stroke-opacity="0.45"
+      stroke-width="1"
+      clip-path="url(#mb-logo-tamis)"
+    >
+      <path d="M 24 9 V 39" />
+      <path d="M 28 9 V 39" />
+      <path d="M 32 9 V 39" />
+      <path d="M 36 9 V 39" />
+      <path d="M 40 9 V 39" />
+      <path d="M 19 14 H 45" />
+      <path d="M 19 19 H 45" />
+      <path d="M 19 24 H 45" />
+      <path d="M 19 29 H 45" />
+      <path d="M 19 34 H 45" />
+    </g>
+    <path
+      d="M 32 40 V 49"
+      stroke="#ffffff"
+      stroke-width="6"
+      stroke-linecap="round"
     />
 
-    <!-- Tête (cork ball) -->
-    <ellipse
-      cx="32"
-      cy="46"
-      rx="7"
-      ry="6"
-      fill="url(#mb-cork)"
-      stroke="#b45309"
-      stroke-width="1.2"
-    />
-    <!-- Reflet -->
-    <ellipse
-      cx="29"
-      cy="43"
-      rx="2.5"
-      ry="1.4"
-      fill="rgba(255,255,255,0.65)"
-    />
+    <!-- Le volant à l'impact : trois plumes et le bouchon ambre. -->
+    <g transform="translate(32 24) scale(0.4)">
+      <path d="M -0.74 -4.32 L -10.1 -22.13 L -16.74 -17.66 L -3.73 -2.31 Z" fill="#ffffff" />
+      <path d="M 1.8 -4 L 4 -24 L -4 -24 L -1.8 -4 Z" fill="#ffffff" />
+      <path d="M 3.73 -2.31 L 16.74 -17.66 L 10.1 -22.13 L 0.74 -4.32 Z" fill="#ffffff" />
+      <circle cx="0" cy="4" r="8" fill="#fbbf24" />
+    </g>
   </g>
 </svg>
