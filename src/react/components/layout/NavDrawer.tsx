@@ -1,51 +1,45 @@
-import { useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useRef } from 'react';
+import {
+  useEscape,
+  useFocusTrap,
+  useScrollLock,
+} from '@mister-guiiug/dev-pwa-config/react/a11y';
 import { useI18n } from '../../../i18n';
-import { LOCALES, LOCALE_FLAGS, LOCALE_LABELS } from '../../../i18n/messages';
 import { Logo } from '../Logo';
-import { HistoryIcon, HomeIcon, SettingsIcon, XIcon } from '../icons';
+import { XIcon } from '../icons';
+import { MenuContent } from './MenuContent';
 
 interface NavDrawerProps {
   onClose: () => void;
 }
 
-const ROUTES = [
-  { to: '/', end: true, key: 'nav.home' as const, Icon: HomeIcon },
-  {
-    to: '/historique',
-    end: false,
-    key: 'nav.history' as const,
-    Icon: HistoryIcon,
-  },
-  {
-    to: '/parametres',
-    end: false,
-    key: 'nav.settings' as const,
-    Icon: SettingsIcon,
-  },
-];
-
+/**
+ * LE TIROIR, SUR LES ÉCRANS ÉTROITS.
+ *
+ * TROIS DÉFAUTS D'ACCESSIBILITÉ CORRIGÉS, tous invisibles à la souris :
+ *
+ *   - le focus SORTAIT du tiroir. Il recevait bien le focus à l'ouverture,
+ *     mais rien ne le retenait : deux tabulations et l'on pilotait la page
+ *     dessous, sans la voir, pendant qu'un voile noir la recouvrait ;
+ *   - la page DÉFILAIT derrière le voile, au doigt comme à la molette ;
+ *   - la touche Échap n'était écoutée que par une fenêtre, donc pas quand le
+ *     focus se trouvait dans un champ.
+ *
+ * Les trois hooks du socle (`react/a11y`) font ce travail — ils existaient
+ * déjà, cette app ne les avait simplement jamais pris.
+ */
 export function NavDrawer({ onClose }: NavDrawerProps) {
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const previousActive = document.activeElement as HTMLElement | null;
-    drawerRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      previousActive?.focus?.();
-    };
-  }, [onClose]);
+  useFocusTrap(drawerRef, { restoreFocus: true });
+  useScrollLock();
+  useEscape(onClose);
 
   return (
     <div className="fixed inset-0 z-[70]">
       <div
-        className="absolute inset-0 bg-black/55"
+        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden
       />
@@ -55,7 +49,7 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
         aria-modal="true"
         aria-label={t('nav.menuLabel')}
         tabIndex={-1}
-        className="relative z-10 flex h-full w-80 max-w-[85vw] flex-col gap-4 p-5 pt-safe pb-safe pl-safe shadow-2xl outline-none"
+        className="menu-tiroir relative z-10 flex h-full w-80 max-w-[85vw] flex-col gap-4 p-5 pt-safe pb-safe pl-safe shadow-2xl outline-none"
         style={{ background: 'var(--surface)', color: 'var(--text)' }}
       >
         <header className="flex items-center justify-between">
@@ -70,73 +64,14 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
             type="button"
             onClick={onClose}
             aria-label={t('nav.closeMenu')}
-            className="flex touch-target items-center justify-center rounded-md hover:bg-black/5"
+            className="flex touch-target items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text)_8%,transparent)]"
             style={{ color: 'var(--muted)' }}
           >
             <XIcon size={22} />
           </button>
         </header>
 
-        <nav className="flex flex-col gap-1">
-          {ROUTES.map(route => {
-            const RouteIcon = route.Icon;
-            return (
-              <NavLink
-                key={route.to}
-                to={route.to}
-                end={route.end}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive ? '' : 'hover:bg-black/5'
-                  }`
-                }
-                style={({ isActive }) => ({
-                  background: isActive ? 'var(--primary)' : 'transparent',
-                  color: isActive ? '#fff' : 'var(--text)',
-                })}
-              >
-                <RouteIcon size={18} />
-                <span>{t(route.key)}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <div
-          className="mt-auto flex flex-col gap-2 border-t pt-3"
-          style={{ borderColor: 'var(--border)' }}
-        >
-          <span
-            className="text-xs font-medium uppercase tracking-wide"
-            style={{ color: 'var(--muted)' }}
-          >
-            {t('settings.languageLabel')}
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {LOCALES.map(l => {
-              const selected = l === locale;
-              return (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => setLocale(l)}
-                  aria-pressed={selected}
-                  aria-label={LOCALE_LABELS[l]}
-                  title={LOCALE_LABELS[l]}
-                  className="inline-flex min-h-9 min-w-11 items-center justify-center rounded-full border px-3 py-1 text-lg leading-none transition-colors"
-                  style={{
-                    borderColor: selected ? 'var(--primary)' : 'var(--border)',
-                    background: selected ? 'var(--primary)' : 'transparent',
-                    color: selected ? '#fff' : 'var(--text)',
-                  }}
-                >
-                  <span aria-hidden>{LOCALE_FLAGS[l]}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <MenuContent onNavigate={onClose} />
       </aside>
     </div>
   );
