@@ -45,13 +45,20 @@ async function attendreLeServiceWorker(page: import('@playwright/test').Page) {
  * Le menu est une barre latérale au-dessus de `lg:` et un tiroir en dessous :
  * sur Pixel 5 ou iPhone 12, rien n'est visible tant qu'on n'a pas appuyé sur
  * ☰. Ce helper rend le parcours identique sur les cinq navigateurs de la
- * matrice.
+ * matrice, ET RETOURNE LE MENU OUVERT — les deux existent dans le document
+ * (la barre latérale est masquée par le CSS, pas retirée), donc chercher un
+ * texte dans la page entière en trouve DEUX. C'est la matrice mobile qui l'a
+ * dit, et elle avait raison : une assertion doit viser le menu qu'on regarde.
  */
 async function ouvrirLeMenu(page: import('@playwright/test').Page) {
   const bouton = page.getByRole('button', {
     name: /ouvrir le menu|open menu/i,
   });
-  if (await bouton.isVisible()) await bouton.click();
+  if (await bouton.isVisible()) {
+    await bouton.click();
+    return page.getByRole('dialog');
+  }
+  return page.getByRole('complementary');
 }
 
 test.describe('Hors ligne @critical', () => {
@@ -113,14 +120,14 @@ test.describe('Hors ligne @critical', () => {
     // EN LIGNE, la promesse est déjà tenue : le worker contrôle la page, donc
     // le menu peut le dire sans mentir — c'est ce que l'app ne disait nulle
     // part, alors qu'elle n'a jamais eu besoin de réseau.
-    await ouvrirLeMenu(page);
+    const menu = await ouvrirLeMenu(page);
     await expect(
-      page.getByText(/prêt hors ligne|ready offline|listo sin conexión/i)
+      menu.getByText(/prêt hors ligne|ready offline|listo sin conexión/i)
     ).toBeVisible();
 
     await context.setOffline(true);
     await expect(
-      page.getByText(
+      menu.getByText(
         /tout fonctionne quand même|everything still works|todo sigue funcionando/i
       )
     ).toBeVisible();
