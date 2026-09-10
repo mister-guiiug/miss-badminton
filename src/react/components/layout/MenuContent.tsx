@@ -1,8 +1,7 @@
+import { useId } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useOnline } from '@mister-guiiug/dev-pwa-config/react/use-online';
 import { useI18n } from '../../../i18n';
 import { LOCALES, LOCALE_FLAGS, LOCALE_LABELS } from '../../../i18n/messages';
-import { useOfflineReady } from '../../hooks/useOfflineReady';
 import { NAV_ITEMS } from './nav-items';
 
 /**
@@ -15,20 +14,20 @@ import { NAV_ITEMS } from './nav-items';
  *
  * Ce composant ne décide de rien : ni de sa largeur, ni de sa position, ni de
  * son fond. Le tiroir le glisse par-dessus la page, la barre le pose à côté.
+ *
+ * IL NE PARLE PLUS DU RÉSEAU. Cette application n'a pas de serveur : les
+ * matchs vivent dans le navigateur, et rien de ce qu'on y fait n'attend une
+ * réponse. Un état « en ligne / hors ligne » n'y décrit donc AUCUNE
+ * différence de comportement — c'était une ligne à lire pour apprendre qu'il
+ * n'y avait rien à savoir.
  */
 export function MenuContent({ onNavigate }: { onNavigate?: () => void }) {
   const { t, locale, setLocale } = useI18n();
-  const online = useOnline();
-  const offline = useOfflineReady();
-  // Sans worker et avec le réseau, il n'y a rien à dire : c'est le cas du
-  // développement, et une ligne « bientôt hors ligne » y serait fausse.
-  const etat = !online
-    ? 'now'
-    : offline === 'ready'
-      ? 'ready'
-      : offline === 'preparing'
-        ? 'preparing'
-        : null;
+  // LE TIROIR ET LA BARRE COEXISTENT DANS LE DOCUMENT — la barre est masquée
+  // par le CSS, pas retirée. Un `id` écrit en dur se retrouvait donc DEUX
+  // fois, et l'`aria-labelledby` du tiroir désignait le libellé de la barre,
+  // celui d'un élément caché. `useId` en donne un par instance.
+  const langueId = useId();
 
   return (
     <>
@@ -46,13 +45,14 @@ export function MenuContent({ onNavigate }: { onNavigate?: () => void }) {
                   L'ACTIF SE MONTRE PAR UN REPÈRE, PAS PAR UN APLAT. Le pavé
                   plein de couleur primaire écrasait le reste du menu et
                   faisait passer le libellé en blanc sur un fond qui change
-                  avec le thème. Une barre à gauche et un fond très léger
-                  disent la même chose, et laissent l'encre du texte tranquille.
+                  avec le thème. Une pastille très légère et une puce d'icône
+                  teintée disent la même chose, et laissent l'encre du texte
+                  tranquille.
                 */
-                `relative flex min-h-11 items-center gap-3 rounded-lg py-2.5 pl-4 pr-3 text-sm font-medium transition-colors ${
+                `flex min-h-12 items-center gap-3 rounded-2xl py-2 pl-2 pr-4 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-[color-mix(in_srgb,var(--primary)_14%,transparent)]'
-                    : 'hover:bg-[color-mix(in_srgb,var(--text)_8%,transparent)]'
+                    ? 'bg-[color-mix(in_srgb,var(--primary)_12%,transparent)]'
+                    : 'hover:bg-[color-mix(in_srgb,var(--text)_7%,transparent)]'
                 }`
               }
               style={({ isActive }) => ({
@@ -63,13 +63,15 @@ export function MenuContent({ onNavigate }: { onNavigate?: () => void }) {
                 <>
                   <span
                     aria-hidden
-                    className="absolute inset-y-1.5 left-0 w-1 rounded-full transition-opacity"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors"
                     style={{
-                      background: 'var(--primary)',
-                      opacity: isActive ? 1 : 0,
+                      background: isActive
+                        ? 'color-mix(in srgb, var(--primary) 20%, transparent)'
+                        : 'color-mix(in srgb, var(--text) 6%, transparent)',
                     }}
-                  />
-                  <ItemIcon size={18} />
+                  >
+                    <ItemIcon size={18} />
+                  </span>
                   <span>{t(item.key)}</span>
                 </>
               )}
@@ -78,72 +80,58 @@ export function MenuContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      <div
-        className="mt-auto flex flex-col gap-3 border-t pt-3"
-        style={{ borderColor: 'var(--border)' }}
-      >
-        <div className="flex flex-col gap-2">
-          <span
-            id="menu-langue"
-            className="text-xs font-medium uppercase tracking-wide"
-            style={{ color: 'var(--muted)' }}
-          >
-            {t('settings.languageLabel')}
-          </span>
-          <div
-            role="group"
-            aria-labelledby="menu-langue"
-            className="flex flex-wrap gap-2"
-          >
-            {LOCALES.map(l => {
-              const selected = l === locale;
-              return (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => setLocale(l)}
-                  aria-pressed={selected}
-                  aria-label={LOCALE_LABELS[l]}
-                  title={LOCALE_LABELS[l]}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border text-lg leading-none transition-colors"
-                  style={{
-                    borderColor: selected ? 'var(--primary)' : 'var(--border)',
-                    background: selected
-                      ? 'color-mix(in srgb, var(--primary) 16%, transparent)'
-                      : 'transparent',
-                    color: 'var(--text)',
-                  }}
-                >
-                  <span aria-hidden>{LOCALE_FLAGS[l]}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      <div className="mt-auto flex flex-col gap-2 pt-4">
+        <span
+          id={langueId}
+          className="px-1 text-xs font-medium uppercase tracking-wide"
+          style={{ color: 'var(--muted)' }}
+        >
+          {t('settings.languageLabel')}
+        </span>
 
         {/*
-          CE QUE LE MENU DIT DU RÉSEAU. L'application n'a pas de serveur : elle
-          marche sans connexion, et personne ne le savait — la seule mention
-          était une pastille noire qui n'apparaît QUE hors ligne, une fois le
-          mal fait. Ici l'état est permanent, et il ne promet le hors-ligne que
-          lorsqu'un service worker contrôle vraiment la page.
+          UN INTERRUPTEUR SEGMENTÉ, PLUS TROIS PASTILLES LIBRES. Les ronds
+          bordés flottaient au ras du bord du tiroir : le premier avait son
+          anneau COUPÉ par l'arête du panneau — un défaut que la marge seule
+          ne corrigeait pas, puisque `pl-safe` remettait la marge gauche à zéro
+          sur tout appareil sans encoche. Un rail unique, large comme la
+          colonne, ne peut plus toucher le bord : c'est le conteneur qui porte
+          la forme, et le choix courant n'est qu'un fond à l'intérieur.
         */}
-        {etat ? (
-          <p
-            className="m-0 flex items-start gap-2 text-xs leading-snug"
-            style={{ color: 'var(--muted)' }}
-          >
-            <span
-              aria-hidden
-              className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full"
-              style={{
-                background:
-                  etat === 'ready' ? 'var(--primary)' : 'var(--muted)',
-              }}
-            />
-            <span>{t(`offline.${etat}`)}</span>
-          </p>
-        ) : null}
+        <div
+          role="group"
+          aria-labelledby={langueId}
+          className="flex items-center gap-1 rounded-2xl p-1"
+          style={{
+            background: 'color-mix(in srgb, var(--text) 7%, transparent)',
+          }}
+        >
+          {LOCALES.map(l => {
+            const selected = l === locale;
+            return (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLocale(l)}
+                aria-pressed={selected}
+                aria-label={LOCALE_LABELS[l]}
+                title={LOCALE_LABELS[l]}
+                className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-colors"
+                style={{
+                  background: selected
+                    ? 'color-mix(in srgb, var(--primary) 20%, transparent)'
+                    : 'transparent',
+                  color: selected ? 'var(--primary)' : 'var(--muted)',
+                }}
+              >
+                <span aria-hidden className="text-base leading-none">
+                  {LOCALE_FLAGS[l]}
+                </span>
+                <span aria-hidden>{l.toUpperCase()}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </>
   );

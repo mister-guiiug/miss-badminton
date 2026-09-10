@@ -245,15 +245,6 @@ export interface Messages {
     confirm: string;
     cancel: string;
   };
-  offline: {
-    banner: string;
-    /** Le service worker contrôle la page : le hors-ligne est acquis. */
-    ready: string;
-    /** Première visite : la mise en cache n'est pas finie. */
-    preparing: string;
-    /** Sans réseau, maintenant. */
-    now: string;
-  };
   historyExtra: {
     replay: string;
     statsTitle: string;
@@ -539,12 +530,6 @@ const fr: Messages = {
     confirm: 'Confirmer',
     cancel: 'Annuler',
   },
-  offline: {
-    banner: 'Hors ligne — les scores restent enregistrés localement.',
-    ready: 'Prêt hors ligne. Vos matchs restent sur cet appareil.',
-    preparing: 'Mise en cache pour le hors-ligne…',
-    now: 'Hors ligne — tout fonctionne quand même.',
-  },
   historyExtra: {
     replay: 'Rejouer ce match',
     statsTitle: 'Statistiques',
@@ -824,12 +809,6 @@ const en: Messages = {
     title: 'Confirm',
     confirm: 'Confirm',
     cancel: 'Cancel',
-  },
-  offline: {
-    banner: 'Offline — scores are still saved locally.',
-    ready: 'Ready offline. Your matches stay on this device.',
-    preparing: 'Caching for offline use…',
-    now: 'Offline — everything still works.',
   },
   historyExtra: {
     replay: 'Replay this match',
@@ -1113,12 +1092,6 @@ const es: Messages = {
     title: 'Confirmar',
     confirm: 'Confirmar',
     cancel: 'Cancelar',
-  },
-  offline: {
-    banner: 'Sin conexión — los marcadores siguen guardándose localmente.',
-    ready: 'Listo sin conexión. Tus partidos se quedan en este dispositivo.',
-    preparing: 'Guardando en caché para el modo sin conexión…',
-    now: 'Sin conexión — todo sigue funcionando.',
   },
   historyExtra: {
     replay: 'Repetir este partido',

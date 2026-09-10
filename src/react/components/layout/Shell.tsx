@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react';
 import { useI18n } from '../../../i18n';
 import { NavDrawer } from './NavDrawer';
 import { PersistentSidebar } from './PersistentSidebar';
-import { OfflineIndicator } from '../OfflineIndicator';
 import { OrientationToggle } from '../OrientationToggle';
 import { FullscreenToggle } from '../FullscreenToggle';
 import { MenuIcon } from '../icons';
@@ -30,7 +29,6 @@ export function Shell({ children }: ShellProps) {
       <OrientationToggle />
       <FullscreenToggle />
       <main className="min-w-0 flex-1">{children}</main>
-      <OfflineIndicator />
       {drawerOpen && <NavDrawer onClose={() => setDrawerOpen(false)} />}
     </div>
   );
