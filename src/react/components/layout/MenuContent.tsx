@@ -117,11 +117,21 @@ export function MenuContent({ onNavigate }: { onNavigate?: () => void }) {
                 aria-label={LOCALE_LABELS[l]}
                 title={LOCALE_LABELS[l]}
                 className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-colors"
+                /*
+                  LES DEUX COULEURS SONT CONTRAINTES PAR LE CONTRASTE, pas par
+                  le goût. Une première version teintait le choix courant
+                  (`--primary` sur 20 % de `--primary`) et grisait les autres
+                  (`--muted` sur le rail) : à 12 px, axe mesurait 4,06 et 4,13
+                  pour 4,5 exigés en AA. Un fond PLEIN pour le courant et
+                  l'encre normale pour les autres montent à 8,0 et 16,4 en
+                  clair, 4,9 et 11,2 en sombre.
+                */
                 style={{
-                  background: selected
-                    ? 'color-mix(in srgb, var(--primary) 20%, transparent)'
-                    : 'transparent',
-                  color: selected ? 'var(--primary)' : 'var(--muted)',
+                  background: selected ? 'var(--surface)' : 'transparent',
+                  boxShadow: selected
+                    ? '0 1px 2px color-mix(in srgb, var(--text) 18%, transparent)'
+                    : 'none',
+                  color: selected ? 'var(--primary)' : 'var(--text)',
                 }}
               >
                 <span aria-hidden className="text-base leading-none">
