@@ -9,7 +9,14 @@ import { test, expect } from '@playwright/test';
  * local ait son mot à dire, et c'est exactement là que l'app doit servir :
  * sous-sol, salle municipale, réseau saturé un samedi de tournoi.
  *
- * Ces parcours tournent sur un BUILD de production (`preview: true` dans la
+ * CE QUI EST VÉRIFIÉ ICI EST LE COMPORTEMENT, PLUS L'ANNONCE. L'app affichait
+ * son état de connexion à deux endroits — une ligne permanente dans le menu,
+ * une pastille flottante hors ligne. Les deux ont été retirées : sans serveur,
+ * « en ligne » et « hors ligne » ne distinguent rien, et l'utilisateur n'avait
+ * aucune décision à prendre à leur lecture. Ce qui compte est que l'app
+ * FONCTIONNE sans réseau, et c'est ce que ces parcours prouvent.
+ *
+ * Ils tournent sur un BUILD de production (`preview: true` dans la
  * configuration Playwright), donc avec le vrai service worker.
  */
 test.beforeEach(async ({ page }) => {
@@ -41,28 +48,8 @@ async function attendreLeServiceWorker(page: import('@playwright/test').Page) {
   );
 }
 
-/**
- * Le menu est une barre latérale au-dessus de `lg:` et un tiroir en dessous :
- * sur Pixel 5 ou iPhone 12, rien n'est visible tant qu'on n'a pas appuyé sur
- * ☰. Ce helper rend le parcours identique sur les cinq navigateurs de la
- * matrice, ET RETOURNE LE MENU OUVERT — les deux existent dans le document
- * (la barre latérale est masquée par le CSS, pas retirée), donc chercher un
- * texte dans la page entière en trouve DEUX. C'est la matrice mobile qui l'a
- * dit, et elle avait raison : une assertion doit viser le menu qu'on regarde.
- */
-async function ouvrirLeMenu(page: import('@playwright/test').Page) {
-  const bouton = page.getByRole('button', {
-    name: /ouvrir le menu|open menu/i,
-  });
-  if (await bouton.isVisible()) {
-    await bouton.click();
-    return page.getByRole('dialog');
-  }
-  return page.getByRole('complementary');
-}
-
 test.describe('Hors ligne @critical', () => {
-  test("l'app se relance sans réseau, et le dit", async ({ page, context }) => {
+  test("l'app se relance sans réseau", async ({ page, context }) => {
     await page.goto('/');
     await attendreLeServiceWorker(page);
 
@@ -73,9 +60,6 @@ test.describe('Hors ligne @critical', () => {
     await expect(
       page.getByRole('heading', { name: /miss badminton/i }).first()
     ).toBeVisible();
-
-    // Et l'app annonce l'état plutôt que de le laisser deviner.
-    await expect(page.getByRole('status')).toContainText(/hors ligne|offline/i);
   });
 
   test('un lien profond rechargé hors ligne retombe sur la coquille', async ({
@@ -108,28 +92,5 @@ test.describe('Hors ligne @critical', () => {
       .first()
       .click();
     await expect(page.getByRole('dialog')).toBeVisible();
-  });
-
-  test('le menu annonce le hors-ligne, en ligne comme hors ligne', async ({
-    page,
-    context,
-  }) => {
-    await page.goto('/');
-    await attendreLeServiceWorker(page);
-
-    // EN LIGNE, la promesse est déjà tenue : le worker contrôle la page, donc
-    // le menu peut le dire sans mentir — c'est ce que l'app ne disait nulle
-    // part, alors qu'elle n'a jamais eu besoin de réseau.
-    const menu = await ouvrirLeMenu(page);
-    await expect(
-      menu.getByText(/prêt hors ligne|ready offline|listo sin conexión/i)
-    ).toBeVisible();
-
-    await context.setOffline(true);
-    await expect(
-      menu.getByText(
-        /tout fonctionne quand même|everything still works|todo sigue funcionando/i
-      )
-    ).toBeVisible();
   });
 });

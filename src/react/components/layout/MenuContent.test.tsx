@@ -64,10 +64,28 @@ describe('les deux menus offrent la même chose', () => {
     expect(actif.getAttribute('href')).toBe('/');
   });
 
-  it('sans service worker, le menu ne promet rien du hors-ligne', () => {
-    // C'est le cas du développement : afficher « mise en cache… » y serait un
-    // mensonge permanent, puisque aucun worker n'est enregistré.
+  it('le menu ne parle jamais du réseau', () => {
+    // L'app n'a pas de serveur : « en ligne / hors ligne » n'y décrit AUCUNE
+    // différence de comportement. La ligne d'état a été retirée du menu, et ce
+    // test empêche qu'elle y revienne par le corps partagé.
     monter(<PersistentSidebar />);
-    expect(screen.queryByText(/hors ligne|offline|caché|cach/i)).toBeNull();
+    expect(
+      screen.queryByText(/hors ligne|offline|sin conexión|connect/i)
+    ).toBeNull();
+  });
+
+  it('le choix de la langue est UN groupe, pas trois pastilles libres', () => {
+    // Les ronds bordés flottaient au ras du bord du tiroir, et le premier
+    // avait son anneau coupé par l'arête du panneau. Le rail segmenté porte
+    // la forme lui-même : ce test tient la structure, pas le pixel.
+    monter(<PersistentSidebar />);
+    const groupe = screen.getByRole('group', {
+      name: /langue|language|idioma/i,
+    });
+    const choix = within(groupe).getAllByRole('button');
+    expect(choix).toHaveLength(3);
+    expect(
+      choix.filter(c => c.getAttribute('aria-pressed') === 'true')
+    ).toHaveLength(1);
   });
 });

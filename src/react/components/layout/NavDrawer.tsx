@@ -27,6 +27,15 @@ interface NavDrawerProps {
  *
  * Les trois hooks du socle (`react/a11y`) font ce travail — ils existaient
  * déjà, cette app ne les avait simplement jamais pris.
+ *
+ * UN PANNEAU POSÉ, PLUS UNE DALLE COLLÉE AU BORD. Le tiroir occupait toute la
+ * hauteur, angles vifs, à ras de l'écran — et son contenu touchait l'arête :
+ * `p-5 … pl-safe` mettait la marge gauche à `env(safe-area-inset-left)`, donc
+ * à ZÉRO sur tout appareil sans encoche, la classe la plus tardive gagnant
+ * contre `p-5`. C'est ce qui coupait l'anneau de la première langue. Le
+ * panneau flotte désormais dans une gouttière qui NE PEUT PAS disparaître —
+ * `max(env(…), 0.5rem)` garde un plancher quand l'encoche vaut zéro — et le
+ * même `max()` protège son rembourrage intérieur.
  */
 export function NavDrawer({ onClose }: NavDrawerProps) {
   const { t } = useI18n();
@@ -43,36 +52,50 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
         onClick={onClose}
         aria-hidden
       />
-      <aside
-        ref={drawerRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('nav.menuLabel')}
-        tabIndex={-1}
-        className="menu-tiroir relative z-10 flex h-full w-80 max-w-[85vw] flex-col gap-4 p-5 pt-safe pb-safe pl-safe shadow-2xl outline-none"
-        style={{ background: 'var(--surface)', color: 'var(--text)' }}
+      {/*
+        Le cadre ne sert qu'à ménager la gouttière. Il laisse passer les clics
+        (`pointer-events-none`) : sans cela il recouvrirait le voile sur toute
+        la hauteur, et fermer le tiroir en touchant la page ne marcherait plus.
+      */}
+      <div
+        className="pointer-events-none absolute inset-0 z-10 flex"
+        style={{
+          paddingTop: 'max(env(safe-area-inset-top), 0.5rem)',
+          paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)',
+          paddingInlineStart: 'max(env(safe-area-inset-left), 0.5rem)',
+        }}
       >
-        <header className="flex items-center justify-between">
-          <span
-            className="inline-flex items-center gap-2 text-lg font-bold"
-            style={{ color: 'var(--primary)' }}
-          >
-            <Logo size={28} />
-            {t('appName')}
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('nav.closeMenu')}
-            className="flex touch-target items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text)_8%,transparent)]"
-            style={{ color: 'var(--muted)' }}
-          >
-            <XIcon size={22} />
-          </button>
-        </header>
+        <aside
+          ref={drawerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('nav.menuLabel')}
+          tabIndex={-1}
+          className="menu-tiroir pointer-events-auto flex h-full w-80 max-w-[86vw] flex-col gap-4 overflow-y-auto rounded-3xl p-5 shadow-2xl outline-none"
+          style={{ background: 'var(--surface)', color: 'var(--text)' }}
+        >
+          <header className="flex items-center justify-between gap-2">
+            <span
+              className="inline-flex items-center gap-2 text-lg font-bold"
+              style={{ color: 'var(--primary)' }}
+            >
+              <Logo size={28} />
+              {t('appName')}
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t('nav.closeMenu')}
+              className="flex touch-target shrink-0 items-center justify-center rounded-full transition-colors hover:bg-[color-mix(in_srgb,var(--text)_10%,transparent)]"
+              style={{ color: 'var(--muted)' }}
+            >
+              <XIcon size={20} />
+            </button>
+          </header>
 
-        <MenuContent onNavigate={onClose} />
-      </aside>
+          <MenuContent onNavigate={onClose} />
+        </aside>
+      </div>
     </div>
   );
 }
