@@ -126,10 +126,7 @@ interface MatchState {
    *   on renvoie 'draw'.
    */
   closeCurrentSet: () =>
-    | 'set-closed'
-    | 'tie-break-required'
-    | 'draw'
-    | 'no-match';
+    'set-closed' | 'tie-break-required' | 'draw' | 'no-match';
 
   // History
   matchHistory: SavedMatch[];
@@ -751,7 +748,6 @@ export const useMatchStore = create<MatchState>()(
         }
         const data = parsed.data;
         let historyCount = 0;
-        let playersCount = 0;
         let settingsApplied = false;
 
         // LES DEUX SENS DE L'EXPORT. Un fichier récent porte `playerProfiles`
@@ -769,7 +765,7 @@ export const useMatchStore = create<MatchState>()(
           legacyNames,
         });
         storage.savePlayers(migrated.players);
-        playersCount = migrated.players.length;
+        const playersCount = migrated.players.length;
 
         if (data.history) {
           const ok = storage.replaceHistory(migrated.matches);

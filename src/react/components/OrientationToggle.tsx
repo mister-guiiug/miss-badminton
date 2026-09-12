@@ -5,18 +5,14 @@ import { ScreenLandscapeIcon, ScreenPortraitIcon } from './icons';
 interface OrientationLock {
   lock?: (
     orientation:
-      | 'landscape'
-      | 'portrait'
-      | 'landscape-primary'
-      | 'portrait-primary'
+      'landscape' | 'portrait' | 'landscape-primary' | 'portrait-primary'
   ) => Promise<void>;
 }
 
 function isOrientationLockSupported(): boolean {
   if (typeof screen === 'undefined') return false;
   const orientation = screen.orientation as
-    | (ScreenOrientation & OrientationLock)
-    | undefined;
+    (ScreenOrientation & OrientationLock) | undefined;
   return typeof orientation?.lock === 'function';
 }
 
