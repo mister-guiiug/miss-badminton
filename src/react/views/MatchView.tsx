@@ -11,7 +11,6 @@ import { FullscreenPrompt } from '../components/FullscreenPrompt';
 import { CourtOverlay } from '../components/CourtOverlay';
 import { SideChangeBanner } from '../components/SideChangeBanner';
 import { SetTransitionBanner } from '../components/SetTransitionBanner';
-import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { useI18n } from '../../i18n';
 import { useFeedback } from '../hooks/useFeedback';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -362,7 +361,6 @@ export function MatchView() {
   return (
     <>
       <FullscreenPrompt />
-      <PwaInstallPrompt />
       <OnboardingHint />
       <div className="mb-scoreboard-wrap relative w-full">
         <section
