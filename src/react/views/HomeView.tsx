@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
 import { PageContainer } from '../components/layout/PageContainer';
+import { PwaInstallPrompt } from '@mister-guiiug/dev-pwa-config/react/pwa-install-prompt';
 import {
   MatchSetupWizard,
   type MatchConfig,
@@ -236,6 +237,16 @@ export function HomeView() {
       )}
 
       <WelcomeTutorial />
+
+      {/* L'INVITE A QUITTÉ L'ÉCRAN DE MATCH pour l'accueil. Elle y paraissait
+          au-dessus du tableau de score, en pleine partie — et le bandeau du
+          socle, qui parle aussi aux iPhone, s'y montrerait bien plus souvent
+          que l'ancien. Ici, le joueur est au repos.
+
+          `dismissKey` reprend la clé du bandeau maison : le socle la lit comme
+          un refus d'avant sa cadence et le traduit en report d'un mois, au lieu
+          de reproposer l'installation à qui l'avait déjà écartée. */}
+      <PwaInstallPrompt dismissKey="mb_pwa_install_dismissed" />
     </PageContainer>
   );
 }
