@@ -83,6 +83,24 @@ function readJson(key: string): unknown {
   return raw === null ? null : JSON.parse(raw);
 }
 
+/**
+ * Les clés de `localStorage` sous ce préfixe, lues par l'interface `Storage`
+ * (`length` + `key(i)`) et non par `Object.keys`.
+ *
+ * Ce fichier a une chose à dire : ce que fait la migration. Qu'un `Storage`
+ * expose en plus ses clés comme propriétés énumérables en est une autre — elle
+ * a son propre test (`storage-environment.test.ts`), et c'est elle qui a fait
+ * tomber celui-ci le 13/09/2026 en se dérobant sous Node 26.
+ */
+function storageKeys(prefix: string): string[] {
+  const keys: string[] = [];
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (key !== null && key.startsWith(prefix)) keys.push(key);
+  }
+  return keys;
+}
+
 describe('migration au chargement : noms → profils', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -176,10 +194,11 @@ describe('migration au chargement : noms → profils', () => {
     // Le garde du mécanisme existant : la donnée invalide part sous
     // `*_invalid_*` et la lecture retombe sur le défaut.
     expect(storage.loadPlayers()).toEqual([]);
-    const backups = Object.keys(localStorage).filter(k =>
-      k.startsWith('mb_player_names_invalid_')
-    );
+    const backups = storageKeys('mb_player_names_invalid_');
     expect(backups).toHaveLength(1);
+    expect(localStorage.getItem(must(backups[0], 'la sauvegarde'))).toBe(
+      '{"pas":"une liste"}'
+    );
   });
 });
 
