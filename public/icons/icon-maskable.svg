@@ -1,0 +1,93 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  role="img"
+  aria-label="Miss Badminton"
+>
+  <!--
+    LE MASKABLE, ET POURQUOI CE N'EST PAS `logo.svg` EN PLUS PETIT.
+
+    Un maskable se DESSINE à fond perdu. Poser la tuile entière, coins arrondis
+    compris, sur un aplat laisse voir le RACCORD : le bord arrondi du dégradé se
+    détache du fond, et le masque d'Android — cercle, goutte, carré arrondi — le
+    révèle au lieu de le cacher. C'est pour ça que le fond ci-dessous n'a pas de
+    `rx` : le dégradé va d'un bord à l'autre, il n'y a plus de bord à raccorder.
+
+    UNE SEULE DIFFÉRENCE AVEC `logo.svg` : le `rx="16"` disparaît, et la marque
+    est ramenée à 78 %. Le dégradé, ses arrêts et le tracé sont identiques.
+
+    CE FICHIER REMPLACE UNE CHIRURGIE DE CHAÎNE. Jusqu'au 14/09/2026,
+    `scripts/generate-pwa-icons.mjs` fabriquait ce SVG à l'exécution, en
+    découpant `logo.svg` sur `source.indexOf('<rect width="64"')` pour en
+    retirer la tuile. Ça marchait tant que personne ne touchait à cette ligne.
+    Le prix de ce fichier-ci, à connaître : le tracé de la raquette vit
+    désormais à DEUX endroits — ici et dans `logo.svg`. Qui modifie l'un modifie
+    l'autre. C'est la convention du parc, et tous les autres dépôts la suivent.
+
+    LES 78 % SONT UN CHOIX, PAS UNE CONTRAINTE — et l'ancien commentaire disait
+    62 %, ce que le code ne faisait pas. Mesure à l'appui : la marque à taille
+    PLEINE atteint 24,5 (le haut du tamis) pour une zone sûre à 25,6, le disque
+    de 80 % de la toile. Elle y tiendrait donc déjà. À 78 % son encre culmine à
+    19,07 — vérifié sur le PNG rendu, 152,6 px sur 512. La réduction est
+    conservée telle quelle pour que la migration ne change pas l'icône ; la
+    lever donnerait 28 % de présence en plus sur Android, et c'est une décision
+    de marque, pas d'outillage.
+  -->
+  <defs>
+    <linearGradient id="mb-logo-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <clipPath id="mb-logo-tamis">
+      <ellipse cx="32" cy="24" rx="11" ry="13.5" />
+    </clipPath>
+  </defs>
+
+  <rect width="64" height="64" fill="url(#mb-logo-bg)" />
+
+  <g transform="translate(32 32) scale(0.78) translate(-32 -32)">
+    <g transform="rotate(-20 32 32)">
+      <!-- Le tamis, le cordage, le manche : trois formes, aucune ombre. -->
+      <ellipse
+        cx="32"
+        cy="25"
+        rx="13.5"
+        ry="15.5"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="4"
+      />
+      <g
+        stroke="#ffffff"
+        stroke-opacity="0.45"
+        stroke-width="1"
+        clip-path="url(#mb-logo-tamis)"
+      >
+        <path d="M 24 9 V 39" />
+        <path d="M 28 9 V 39" />
+        <path d="M 32 9 V 39" />
+        <path d="M 36 9 V 39" />
+        <path d="M 40 9 V 39" />
+        <path d="M 19 14 H 45" />
+        <path d="M 19 19 H 45" />
+        <path d="M 19 24 H 45" />
+        <path d="M 19 29 H 45" />
+        <path d="M 19 34 H 45" />
+      </g>
+      <path
+        d="M 32 40 V 49"
+        stroke="#ffffff"
+        stroke-width="6"
+        stroke-linecap="round"
+      />
+
+      <!-- Le volant à l'impact : trois plumes et le bouchon ambre. -->
+      <g transform="translate(32 24) scale(0.4)">
+        <path d="M -0.74 -4.32 L -10.1 -22.13 L -16.74 -17.66 L -3.73 -2.31 Z" fill="#ffffff" />
+        <path d="M 1.8 -4 L 4 -24 L -4 -24 L -1.8 -4 Z" fill="#ffffff" />
+        <path d="M 3.73 -2.31 L 16.74 -17.66 L 10.1 -22.13 L 0.74 -4.32 Z" fill="#ffffff" />
+        <circle cx="0" cy="4" r="8" fill="#fbbf24" />
+      </g>
+    </g>
+  </g>
+</svg>

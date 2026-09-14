@@ -21,7 +21,8 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:all": "npm run test && npm run test:e2e",
-    "icons": "node scripts/generate-pwa-icons.mjs",
+    "icons": "pwa-icons --source public/logo.svg --out public/icons --sizes 192,512 --no-apple",
+    "icons:maskable": "node scripts/generate-maskable.mjs",
     "type-check": "tsc -b",
     "prepare": "husky"
   },
