@@ -89,6 +89,11 @@ export default defineConfig(({ command }) => {
       // l'identique depuis l'ancienne meta statique de index.html.
       cspPlugin({
         dev: command === 'serve',
+        // Ouvre les hôtes de Google Tag Manager et de GA4. Sans cette
+        // option, le script que `ConsentBanner` injecte APRÈS l'accord serait
+        // refusé par la politique — et l'échec ne se verrait qu'en console,
+        // sur le site déployé, une fois le consentement donné.
+        analytics: true,
         extraDirectives: {
           'frame-ancestors': "'none'",
         },
