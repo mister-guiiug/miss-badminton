@@ -154,6 +154,28 @@ body {
   background: var(--surface);
 }
 
+/* ── Bandeau de consentement (ConsentBanner du socle) ─────────
+   AU-DESSUS DES BOÎTES MODALES, ET EN HAUT. `Modal` pose un
+   `fixed inset-0 z-50` avec un voile qui couvre tout l'écran : le tutoriel
+   de bienvenue, affiché à la première visite, rendait le bandeau
+   inatteignable — relevé le 16/09/2026, `elementFromPoint` au centre
+   d'« Accepter » rendait le voile. Le placement `fixed` du socle plafonne à
+   `z-index: 25` ; on passe au-dessus.
+
+   EN HAUT et pas en bas : au-dessus de TOUTES les modales, un bandeau bas
+   recouvrait les actions de l'assistant de match, qui les ancre en bas.
+
+   Opaque, pour la même raison que le bandeau de mise à jour ci-dessus : le
+   fond teinté par défaut (12 % d'opacité) laisse lire au travers, et un
+   consentement qu'on ne peut pas lire ne vaut rien.
+   Hors `@layer`, donc prioritaire sur `components.css`. */
+.mb-consent-banner {
+  top: calc(0.5rem + max(env(safe-area-inset-top), 0px));
+  bottom: auto;
+  z-index: 60;
+  background: var(--surface);
+}
+
 .mb-update-banner [data-dwc='update-banner-update'] {
   background: var(--primary);
   border-color: transparent;

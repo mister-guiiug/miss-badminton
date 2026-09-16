@@ -92,10 +92,30 @@ function AppRoutes() {
       {/* HORS des routes : le code source et le soutien sont ainsi sur le
           premier écran comme sur les Paramètres — la règle famille. Rendus
           depuis `SettingsView`, ils ne valaient que pour cet écran-là. */}
-      {/* Une `region`, pas une boîte modale : elle ne recouvre rien et ne
-          piège pas le focus. Ne rend RIEN tant que `VITE_GA_MEASUREMENT_ID`
-          n'est pas posée — sans identifiant, il n'y a rien à demander. */}
-      <ConsentBanner gaMeasurementId={import.meta.env.VITE_GA_MEASUREMENT_ID} />
+      {/* Une `region`, pas une boîte modale : elle ne piège pas le focus. Ne
+          rend RIEN tant que `VITE_GA_MEASUREMENT_ID` n'est pas posée — sans
+          identifiant, il n'y a rien à demander.
+
+          AU-DESSUS DE LA MODALE, ET C'EST MESURÉ. `Modal` — dont se sert le
+          tutoriel de bienvenue, affiché à la première visite — pose un
+          `fixed inset-0 z-50` avec un voile `bg-black/55` qui couvre TOUT
+          l'écran. Le bandeau était bien dans le DOM et bien visible, mais
+          aucun clic ne l'atteignait : relevé le 16/09/2026 par la garde
+          `entree.spec.ts`, `elementFromPoint` au centre du bouton « Accepter »
+          rendait le voile. Un visiteur ne pouvait NI accepter NI refuser à
+          l'arrivée.
+
+          `placement="fixed"` le sort du flux et `.mb-consent-banner` — dans
+          `styles.css`, à côté de la règle jumelle du bandeau de mise à jour —
+          le remonte au-dessus, le pose EN HAUT et lui donne un fond opaque.
+          Les trois raisons y sont écrites : le voile de la modale, les actions
+          de l'assistant ancrées en bas, et un fond à 12 % d'opacité qui
+          laissait lire au travers. */}
+      <ConsentBanner
+        gaMeasurementId={import.meta.env.VITE_GA_MEASUREMENT_ID}
+        placement="fixed"
+        className="mb-consent-banner"
+      />
       <FamilyLinks />
     </Shell>
   );

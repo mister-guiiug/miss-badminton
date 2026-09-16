@@ -7,6 +7,10 @@ import { definePwaPlaywrightConfig } from '@mister-guiiug/dev-pwa-config/playwri
 // (service worker, minification, cache réels). VITE_BASE_PATH=/ neutralise le
 // base path GitHub Pages ; port 4173 pour ne pas collisionner avec un dev
 // server (5173).
+// Identifiant de mesure FACTICE pour le serveur e2e : sans lui,
+// `ConsentBanner` ne rend rien et la garde de `entree.spec.ts` n’a rien à
+// vérifier. Le trafic vers Google est intercepté par la garde elle-même —
+// rien ne sort, aucune propriété réelle n’est touchée.
 export default defineConfig(
   definePwaPlaywrightConfig({
     devices,
@@ -14,6 +18,6 @@ export default defineConfig(
     preview: true,
     port: 4173,
     command:
-      'cross-env VITE_BASE_PATH=/ npm run build && cross-env VITE_BASE_PATH=/ vite preview --port 4173 --strictPort',
+      'cross-env VITE_GA_MEASUREMENT_ID=G-E2E0000000 VITE_BASE_PATH=/ npm run build && cross-env VITE_BASE_PATH=/ vite preview --port 4173 --strictPort',
   })
 );
