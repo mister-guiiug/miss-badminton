@@ -170,10 +170,32 @@ body {
    consentement qu'on ne peut pas lire ne vaut rien.
    Hors `@layer`, donc prioritaire sur `components.css`. */
 .mb-consent-banner {
-  top: calc(0.5rem + max(env(safe-area-inset-top), 0px));
+  /* SOUS LE BOUTON DU MENU, pas dessus. `Shell` pose un bouton d'ouverture
+     flottant en haut à gauche (`fixed top-safe-3 z-30`, 44 px) : un bandeau
+     pleine largeur collé au bord le recouvrait, et la navigation mobile
+     devenait impossible — trois échecs `mobile-chrome` en CI, que le seul
+     chromium local ne montrait pas. 4,5 rem dégagent ce bouton ; au-dessus du
+     seuil `lg` il n'existe pas, et le bandeau descend simplement d'un cran. */
+  top: calc(4.5rem + max(env(safe-area-inset-top), 0px));
   bottom: auto;
   z-index: 60;
   background: var(--surface);
+}
+
+/* LES BOUTONS REDEVIENNENT CONTRASTÉS SUR FOND OPAQUE. Le socle les habille
+   pour son fond teinté ; posés sur `--surface`, axe les a refusés en
+   `color-contrast` [serious]. C'est le défaut des couleurs COMPOSÉES : le
+   jeton est bon, la paire ne l'est plus. */
+.mb-consent-banner [data-dwc='consent-accept'] {
+  background: var(--primary);
+  border-color: transparent;
+  color: #fff;
+}
+
+.mb-consent-banner [data-dwc='consent-refuse'] {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
 }
 
 .mb-update-banner [data-dwc='update-banner-update'] {
