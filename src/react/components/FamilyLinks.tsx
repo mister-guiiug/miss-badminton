@@ -3,13 +3,17 @@ import {
   repoUrl,
 } from '@mister-guiiug/dev-pwa-config/apps-catalog';
 import { currentIssueReportUrl } from '@mister-guiiug/dev-pwa-config/issue-report';
-import { AppVersion } from '@mister-guiiug/dev-pwa-config/react/app-version';
 
 const REPO_URL = repoUrl('miss-badminton');
 
 /**
- * Les liens de la règle famille — code source, soutien, SIGNALER, version —
- * rendus par la COQUILLE, hors des routes, donc sur tous les écrans.
+ * Les liens de la règle famille — code source, soutien, SIGNALER — rendus par
+ * la COQUILLE, hors des routes, donc sur tous les écrans.
+ *
+ * PAS DE NUMÉRO DE VERSION. Il y en avait un, lié vers
+ * `…/releases/tag/vX.Y.Z` : aucune app du parc ne pose de tag git, le lien
+ * répondait donc 404 partout. Le numéro voyage toujours dans le rapport de
+ * bug — `currentIssueReportUrl` le préremplit —, là où il sert vraiment.
  *
  * Ils vivaient dans `SettingsView` : le code source n'existait que sur l'écran
  * Paramètres, celui qu'on ouvre le moins. La règle famille du 05/09/2026 les
@@ -79,10 +83,6 @@ export function FamilyLinks() {
           Signaler un problème
         </a>
       </div>
-      {/* Le numéro qui tourne — et « version disponible » quand un sondage de
-          `version.json` voit passer un déploiement (socle 4.4.1). Sans version
-          injectée au build, le composant ne rend rien. */}
-      <AppVersion repoUrl={REPO_URL} className="text-xs opacity-50" />
     </div>
   );
 }
