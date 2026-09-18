@@ -23,7 +23,6 @@ import {
 import { LABELS } from '@mister-guiiug/dev-pwa-config/react/labels';
 import { I18nProvider } from '../i18n';
 import { useI18n } from '../i18n';
-import { messages } from '../i18n/messages';
 import { AppUpdatesProvider } from './AppUpdatesProvider';
 
 /**
@@ -34,11 +33,11 @@ import { AppUpdatesProvider } from './AppUpdatesProvider';
  *    d'apparaître — le défaut vécu des mois par une app de la famille — fait
  *    donc échouer le test au lieu de passer en silence.
  *
- * 2. **Le bandeau parle la BONNE LANGUE.** `react/labels` du socle ne livre
- *    que `fr` et `en`, et fait retomber toute locale inconnue sur le français
- *    SANS RIEN SIGNALER. Miss Badminton parle aussi espagnol : sans les
- *    surcharges d'`AppUpdatesProvider`, un utilisateur en `es` verrait un
- *    bandeau français, et ni le typage, ni ESLint, ni aucun test ne le dirait.
+ * 2. **Le bandeau parle la BONNE LANGUE.** `LabelsProvider` fait retomber
+ *    toute locale INCONNUE sur le français, sans rien signaler. Miss
+ *    Badminton parle aussi espagnol : ces tests prouvent que le socle le sert
+ *    lui-même, depuis qu'il livre sept locales et que l'app a cessé de passer
+ *    ses propres libellés.
  *
  * Voir le `vi.unmock` ci-dessus pour le détour imposé par le `vitest-setup` du
  * socle.
@@ -87,8 +86,8 @@ describe('AppUpdatesProvider', () => {
     // Jusqu'à 3.32, `react/labels` ne portait que fr et en, et résolvait par
     // `LABELS[locale] ?? LABELS.fr` : les cinq autres langues retombaient en
     // français sans un mot. Ces tests figeaient ce piège ; ils figent
-    // désormais sa disparition — mais la règle qu'ils ont inspirée reste
-    // bonne, l'app passe ses propres libellés au bandeau.
+    // désormais sa disparition : l'app a retiré ses surcharges, et c'est ce
+    // dictionnaire-ci qui répond en espagnol.
     expect(Object.keys(LABELS).sort()).toEqual([
       'de',
       'en',
@@ -105,7 +104,7 @@ describe('AppUpdatesProvider', () => {
     mount(pilotableRegisterSW);
 
     // Personne n'a encore rien vu : le bandeau n'apparaît qu'à l'évènement.
-    expect(screen.queryByText(messages.fr.update.available)).toBeNull();
+    expect(screen.queryByText(socleLabels('fr').update.title)).toBeNull();
 
     // Preuve que `registerSW` a bien été injecté : sans lui, `needRefresh()`
     // lèverait au lieu de déclencher quoi que ce soit.
@@ -114,13 +113,15 @@ describe('AppUpdatesProvider', () => {
       swStub.needRefresh();
     });
 
-    expect(screen.getByText(messages.fr.update.available)).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: messages.fr.update.action })
+      screen.getByText(socleLabels('fr').update.title)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: socleLabels('fr').update.update })
     ).toBeInTheDocument();
   });
 
-  it("affiche l'ESPAGNOL — locale que le socle ne connaît pas — et non son repli français", () => {
+  it("affiche l'ESPAGNOL du socle, et non son repli français", () => {
     mount(pilotableRegisterSW);
     act(() => {
       swStub.needRefresh();
@@ -128,15 +129,19 @@ describe('AppUpdatesProvider', () => {
 
     fireEvent.click(screen.getByTestId('to-es'));
 
-    // Le libellé vient de `messages.es`, pas du dictionnaire du socle.
-    expect(screen.getByText(messages.es.update.available)).toBeInTheDocument();
+    // CE TEST A CHANGÉ DE PREUVE, et il est devenu plus fort. Il vérifiait que
+    // les surcharges de l'app couvraient une locale que le socle ignorait ;
+    // il vérifie maintenant que le SOCLE la sert lui-même. C'est la seule
+    // chose dont dépend l'espagnol depuis que la surcharge est retirée.
     expect(
-      screen.getByRole('button', { name: messages.es.update.action })
+      screen.getByText(socleLabels('es').update.title)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: socleLabels('es').update.update })
     ).toBeInTheDocument();
 
-    // Et surtout : PLUS AUCUN français à l'écran. C'est exactement ce que
-    // `LabelsProvider` afficherait sans surcharges, et personne ne le verrait.
-    expect(screen.queryByText(messages.fr.update.available)).toBeNull();
+    // Et surtout : PLUS AUCUN français à l'écran — le repli silencieux que
+    // `LabelsProvider` appliquerait sur une locale qu'il ne connaîtrait pas.
     expect(screen.queryByText(socleLabels('fr').update.title)).toBeNull();
     expect(
       screen.queryByRole('button', { name: socleLabels('fr').update.update })
@@ -151,6 +156,6 @@ describe('AppUpdatesProvider', () => {
     expect(() => {
       swStub.needRefresh();
     }).toThrow(/registerSW n'a jamais été appelé/);
-    expect(screen.queryByText(messages.fr.update.available)).toBeNull();
+    expect(screen.queryByText(socleLabels('fr').update.title)).toBeNull();
   });
 });
