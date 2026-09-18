@@ -18,6 +18,6 @@ export default defineConfig(
     preview: true,
     port: 4173,
     command:
-      'cross-env VITE_GA_MEASUREMENT_ID=G-E2E0000000 VITE_BASE_PATH=/ npm run build && cross-env VITE_BASE_PATH=/ vite preview --port 4173 --strictPort',
+      'cross-env VITE_POSTHOG_KEY=phc_e2e0000000000000000000000 VITE_BASE_PATH=/ npm run build && cross-env VITE_BASE_PATH=/ vite preview --port 4173 --strictPort',
   })
 );

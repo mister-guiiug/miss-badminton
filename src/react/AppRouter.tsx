@@ -31,10 +31,11 @@ function DocumentTitle() {
 
   /*
    * LA VUE DE PAGE VIT ICI, avec le titre du document : ce composant est déjà
-   * celui qui écoute la route et ne rend rien. GA4 n'envoie `page_view` qu'au
-   * chargement du document, et `initAnalytics` pose en plus
-   * `send_page_view: false` pour que la première vue passe par ce hook comme
-   * les autres — sinon l'écran d'entrée serait compté deux fois.
+   * celui qui écoute la route et ne rend rien. `initAnalytics` pose
+   * `capture_pageview: false` pour que la première vue passe par ce hook comme
+   * les autres : laissé à lui-même, PostHog en envoie une au chargement ET à
+   * chaque changement d'historique, et l'écran d'entrée serait compté deux
+   * fois.
    *
    * Ne fait rien tant que le consentement n'est pas accordé.
    */
@@ -93,7 +94,7 @@ function AppRoutes() {
           premier écran comme sur les Paramètres — la règle famille. Rendus
           depuis `SettingsView`, ils ne valaient que pour cet écran-là. */}
       {/* Une `region`, pas une boîte modale : elle ne piège pas le focus. Ne
-          rend RIEN tant que `VITE_GA_MEASUREMENT_ID` n'est pas posée — sans
+          rend RIEN tant que `VITE_POSTHOG_KEY` n'est pas posée — sans
           identifiant, il n'y a rien à demander.
 
           AU-DESSUS DE LA MODALE, ET C'EST MESURÉ. `Modal` — dont se sert le
@@ -112,7 +113,8 @@ function AppRoutes() {
           de l'assistant ancrées en bas, et un fond à 12 % d'opacité qui
           laissait lire au travers. */}
       <ConsentBanner
-        gaMeasurementId={import.meta.env.VITE_GA_MEASUREMENT_ID}
+        posthogKey={import.meta.env.VITE_POSTHOG_KEY}
+        loader={() => import('posthog-js/dist/module.slim.js')}
         placement="fixed"
         className="mb-consent-banner"
       />
