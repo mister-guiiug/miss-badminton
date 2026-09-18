@@ -1,26 +1,27 @@
-import { useMemo, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { AppUpdates } from '@mister-guiiug/dev-pwa-config/react/app-updates';
-import {
-  LabelsProvider,
-  type LabelOverrides,
-} from '@mister-guiiug/dev-pwa-config/react/labels';
+import { LabelsProvider } from '@mister-guiiug/dev-pwa-config/react/labels';
 import type { RegisterSW } from '@mister-guiiug/dev-pwa-config/react/use-update-prompt';
 import { useI18n } from '../i18n';
 
 /**
- * Pont entre le i18n de l'app et le bandeau de mise à jour du socle.
+ * Pont entre la langue de l'app et le bandeau de mise à jour du socle.
  *
- * POURQUOI CE FICHIER EXISTE — ET C'EST TOUT SON INTÉRÊT. `react/labels` du
- * socle ne livre que **`fr` et `en`**, et `LabelsProvider` fait retomber toute
- * locale inconnue sur le **français**, en silence : ni erreur, ni avertissement.
- * Miss Badminton parle fr/en/**es** ; monter `AppUpdates` sans surcharges
- * afficherait donc un bandeau FRANÇAIS à un utilisateur espagnol, sans que rien
- * ne le signale.
+ * CE FICHIER SURCHARGEAIT LES LIBELLÉS, ET LA RAISON A DISPARU. Elle était
+ * écrite ici : « `react/labels` du socle ne livre que **`fr` et `en`**, et
+ * `LabelsProvider` fait retomber toute locale inconnue sur le français, en
+ * silence. Miss Badminton parle fr/en/**es** ; monter `AppUpdates` sans
+ * surcharges afficherait donc un bandeau FRANÇAIS à un utilisateur espagnol. »
  *
- * On ne s'en remet donc jamais au dictionnaire du socle : les quatre libellés
- * du bandeau sont TOUJOURS surchargés depuis `messages.ts`, y compris en
- * français et en anglais. Le repli du socle devient inatteignable — c'est le
- * but. `src/react/AppUpdatesProvider.test.tsx` le prouve en espagnol.
+ * C'était exact — et ça ne l'est plus : le socle livre SEPT locales, dont
+ * l'espagnol, groupe `update` complet. La surcharge ne protégeait donc plus de
+ * rien ; elle ajoutait seulement une neuvième façon d'annoncer une mise à jour
+ * dans un parc qui en comptait déjà huit. Le commentaire figeait une LIMITE du
+ * socle, pas un contrat de l'app.
+ *
+ * Ce qui reste est le seul rôle qui tienne : passer la locale courante, pour
+ * que le socle serve la bonne langue. `AppUpdatesProvider.test.tsx` le prouve
+ * toujours en espagnol — sur les libellés du socle, désormais.
  *
  * `registerSW` est une PROP, pas un import : la décision « on n'enregistre pas
  * de service worker en développement » appartient à `main.tsx`, seul endroit
@@ -34,25 +35,10 @@ export function AppUpdatesProvider({
   registerSW?: RegisterSW;
   children: ReactNode;
 }) {
-  const { locale, t } = useI18n();
-
-  const overrides = useMemo<LabelOverrides>(
-    () => ({
-      update: {
-        title: t('update.available'),
-        update: t('update.action'),
-        updating: t('update.updating'),
-        dismiss: t('update.dismiss'),
-        snooze: t('update.dismiss'),
-        force: t('settings.updateButton'),
-        forceHint: t('settings.updateHelp'),
-      },
-    }),
-    [t]
-  );
+  const { locale } = useI18n();
 
   return (
-    <LabelsProvider locale={locale} overrides={overrides}>
+    <LabelsProvider locale={locale}>
       <AppUpdates
         checkEvery="1h"
         registerSW={registerSW}
