@@ -487,7 +487,7 @@ const fr: Messages = {
   welcome: {
     step1Title: 'Bienvenue sur Miss Badminton',
     step1Body:
-      'Une PWA pour suivre tes scores et garder un historique précis de tes matches.',
+      'Suis tes scores en direct et garde un historique précis de tes matches.',
     step2Title: 'Marquer des points',
     step2Body:
       'Tape la pastille d’une équipe pour ajouter un point. Long-press pour en retirer un.',
@@ -762,7 +762,7 @@ const en: Messages = {
   welcome: {
     step1Title: 'Welcome to Miss Badminton',
     step1Body:
-      'A PWA to track scores and keep an accurate history of your matches.',
+      'Track your scores live and keep an accurate history of your matches.',
     step2Title: 'Scoring',
     step2Body: 'Tap a team pill to add a point. Long-press to subtract one.',
     step3Title: 'Undo & fix',
@@ -1038,7 +1038,7 @@ const es: Messages = {
   welcome: {
     step1Title: 'Bienvenido a Miss Badminton',
     step1Body:
-      'Una PWA para seguir los marcadores y mantener un historial preciso de tus partidos.',
+      'Sigue tus marcadores en directo y guarda un historial preciso de tus partidos.',
     step2Title: 'Marcar puntos',
     step2Body:
       'Toca la zona de un equipo para sumar un punto. Mantén pulsado para restarlo.',

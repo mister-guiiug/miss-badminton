@@ -24,6 +24,7 @@ import {
   indexById,
   matchInvolves,
   teamDisplayNames,
+  teamLabel,
   type Player,
 } from '../../players';
 import { UndoToast } from '../components/UndoToast';
@@ -32,29 +33,6 @@ import { buildShareText } from '../../share';
 import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
 import { Sparkline } from '@mister-guiiug/dev-pwa-config/react/sparkline';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
-
-/**
- * Le libellé d'une équipe, lu DANS LE REGISTRE quand le match porte des
- * identifiants de joueur : un renommage se voit donc ici sans qu'on ait
- * touché au match. Sans identifiant (donnée d'avant la migration), on
- * retombe sur le nom recopié dans le match, comme avant.
- */
-function teamLabel(
-  team: SavedMatch['config']['team1'],
-  fallback: string,
-  byId: Map<string, Player>
-) {
-  const [primaryName, partnerName] = [
-    byId.get(team.primaryId ?? '')?.name ?? team.primary,
-    byId.get(team.partnerId ?? '')?.name ?? team.partner,
-  ];
-  const primary = primaryName || fallback;
-  if (team.partner !== undefined) {
-    const partner = partnerName || '';
-    return partner ? `${primary} & ${partner}` : primary;
-  }
-  return primary;
-}
 
 function formatDate(timestamp: number, locale: Locale): string {
   try {
