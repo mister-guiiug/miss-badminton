@@ -19,6 +19,13 @@ jobs:
     # secrets du dépôt à un workflow qui n'en demande pas un seul.
     with:
       run-doctor: true # la checklist du parc, lue sur le dépôt et sur dist/ (AMELIORATIONS.md, T2)
+      # `doctor-strict` reste à `false`, et voici pourquoi. Mesuré le 19/09/2026
+      # en jouant `--strict` pour de vrai sur ce dépôt : le docteur rend
+      # « 0 défaut(s), 1 dette(s) », et `--strict` échoue sur une dette
+      # (pwa-doctor.mjs:1631). Ce qui bloque aujourd'hui :
+      #   · code source + soutien sur tous les écrans, rendus par la coquille
+      # Le mode strict s'active quand cette liste est vide. Pas avant : une CI
+      # rouge sur une dette connue et non traitée n'apprend rien à personne.
       run-e2e: true
       # TOUTE la suite, pas un sous-ensemble. Mesuré le 06/09/2026 : le défaut
       # du socle (`@critical|@a11y`) retient 8 des 11 tests et écarte les trois
