@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PwaInstallPrompt } from '@mister-guiiug/dev-pwa-config/react/pwa-install-prompt';
+import { GESTES, trackEvent } from '@mister-guiiug/dev-pwa-config/analytics';
 import {
   MatchSetupWizard,
   type MatchConfig,
@@ -48,8 +49,15 @@ export function HomeView() {
     }
   }, []);
 
+  /*
+   * LE MATCH COMMENCE ICI — et `depuis` dit par quelle porte. L'assistant de
+   * configuration et le modèle enregistré sont deux usages distincts : si
+   * personne ne se sert des modèles, ils ne méritent pas l'écran qu'ils
+   * occupent. Ni les noms des joueurs, ni les scores : les noms sont saisis.
+   */
   const handleStartMatch = (config: MatchConfig) => {
     setMatch(config);
+    trackEvent(GESTES.PARTIE, { etape: 'demarree', depuis: 'assistant' });
     setWizardOpen(false);
     navigate('/match');
   };
@@ -62,6 +70,7 @@ export function HomeView() {
 
   const handleUseTemplate = (template: MatchTemplate) => {
     setMatch(template.config);
+    trackEvent(GESTES.PARTIE, { etape: 'demarree', depuis: 'modele' });
     navigate('/match');
   };
   const handleDeleteTemplate = (id: string) => {

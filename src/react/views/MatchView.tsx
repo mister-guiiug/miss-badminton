@@ -18,6 +18,7 @@ import { useTeamColors } from '../hooks/useTeamColors';
 import { useTapOrLongPress } from '../hooks/useTapOrLongPress';
 import { ScoreToast } from '../components/ScoreToast';
 import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
+import { GESTES, trackEvent } from '@mister-guiiug/dev-pwa-config/analytics';
 import { shareOrCopy } from '@mister-guiiug/dev-pwa-config/share';
 import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
@@ -296,6 +297,18 @@ export function MatchView() {
     if (savedMatchIdRef.current) return;
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     savedMatchIdRef.current = id;
+    /*
+     * LA FIN DU MATCH, ADOSSÉE AU GARDE QUI EXISTAIT DÉJÀ.
+     *
+     * `savedMatchIdRef` assure « une fois par match fini » pour l'écriture
+     * dans l'historique : la mesure se place derrière lui plutôt que d'ajouter
+     * un second garde qui pourrait diverger du premier.
+     *
+     * C'est le RAPPORT avec `demarree` qui répond — combien de matchs
+     * commencés vont au bout. Ni le vainqueur, ni le score, ni les noms : ce
+     * sont des personnes et leurs performances.
+     */
+    trackEvent(GESTES.PARTIE, { etape: 'terminee' });
     const durationMs =
       startedAt && endedAt ? Math.max(0, endedAt - startedAt) : undefined;
     const saved: SavedMatch = {
