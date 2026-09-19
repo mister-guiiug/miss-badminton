@@ -121,6 +121,36 @@ export function teamDisplayNames(
   );
 }
 
+/**
+ * Le libellé d'une équipe, avec le nom de repli quand rien n'a été saisi.
+ *
+ * VENU DE `HistoryView`, OÙ IL ÉTAIT SEUL. L'accueil affichait
+ * `config.team1.primary` tel quel : un match joué sans renseigner les noms —
+ * le cas par défaut de l'assistant, qui ne fait que SUGGÉRER « Joueur 1 » en
+ * `placeholder` et enregistre une chaîne VIDE — s'y résumait à « vs », sans
+ * personne autour. Trois écrans montrent les mêmes matchs ; deux savaient
+ * retomber sur un nom, le troisième non.
+ *
+ * Le registre l'emporte sur le nom recopié dans le match : un renommage se
+ * voit partout sans qu'on ait touché aux matchs passés.
+ */
+export function teamLabel(
+  team: Team,
+  fallback: string,
+  byId: Map<string, Player>
+): string {
+  const [primaryName, partnerName] = [
+    byId.get(team.primaryId ?? '')?.name ?? team.primary,
+    byId.get(team.partnerId ?? '')?.name ?? team.partner,
+  ];
+  const primary = primaryName || fallback;
+  if (team.partner !== undefined) {
+    const partner = partnerName || '';
+    return partner ? `${primary} & ${partner}` : primary;
+  }
+  return primary;
+}
+
 /** Les identifiants de joueur portés par un match. */
 export function matchPlayerIds(match: SavedMatch): string[] {
   const out: string[] = [];

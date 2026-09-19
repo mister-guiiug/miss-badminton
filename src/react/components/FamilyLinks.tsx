@@ -35,7 +35,10 @@ const REPO_URL = repoUrl('miss-badminton');
 export function FamilyLinks() {
   return (
     <div
-      className="mt-8 flex flex-col items-center gap-2 pb-6 text-sm"
+      // `mt-6` sur téléphone : ces huit pixels comptent dans un accueil qui
+      // doit tenir sans défilement. L'écart reste franc — le bloc est déjà
+      // séparé par un fond et par sa taille de texte.
+      className="mt-6 flex flex-col items-center gap-2 pb-6 text-sm sm:mt-8"
       style={{ color: 'var(--text)' }}
     >
       <div className="flex flex-wrap items-center justify-center gap-4">
