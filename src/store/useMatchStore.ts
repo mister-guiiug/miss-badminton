@@ -111,6 +111,16 @@ interface MatchState {
   dismissSideChange: () => void;
   clearFeedback: () => void;
   clearSetSummary: () => void;
+  /**
+   * Démarre le chrono SANS marquer de point.
+   *
+   * Il ne partait qu'au premier point (`state.startedAt ?? now` dans `score`),
+   * ce qui mesurait le jeu mais pas la rencontre : l'échauffement, le filet à
+   * régler, le premier service manqué n'y entraient pas. Sans effet si aucun
+   * match n'est posé, s'il tourne déjà, ou s'il est fini — repartir de zéro est
+   * le travail de `resetChrono`, qui demande confirmation.
+   */
+  startChrono: () => void;
   pauseChrono: () => void;
   resumeChrono: () => void;
   resetChrono: () => void;
@@ -216,6 +226,72 @@ function flipSide(side: ServiceSide | null): ServiceSide | null {
   return null;
 }
 
+/**
+ * L'ÉTAT D'UN MATCH QUI COMMENCE — écrit UNE fois, servi à deux endroits.
+ *
+ * `reset` et `setMatch` doivent dire exactement la même chose. Ils ne le
+ * disaient pas : `setMatch` posait la configuration et ne touchait à aucun
+ * score, si bien qu'un « Nouveau match » reprenait le tableau du précédent —
+ * 5-3, un set déjà gagné, parfois un vainqueur, et le chrono qui continuait
+ * de courir. Signalé le 20/09/2026, reproduit par les tests du magasin.
+ *
+ * UNE FONCTION, PAS UNE CONSTANTE : `setWins`, `setScores` et `history` sont
+ * des objets. Partagés entre deux appels, deux matchs successifs tiendraient
+ * la même référence.
+ *
+ * Ce qui n'est PAS ici survit délibérément à un nouveau match : l'historique
+ * des rencontres, les joueurs connus, et l'état d'hydratation. Remettre le
+ * tableau à zéro n'efface pas la mémoire du club.
+ */
+function matchNeuf(): Pick<
+  MatchState,
+  | 'score1'
+  | 'score2'
+  | 'setWins'
+  | 'matchWinner'
+  | 'server'
+  | 'setScores'
+  | 'pendingSideChange'
+  | 'mid11Triggered'
+  | 'pendingTieBreak'
+  | 'currentSetStartedAt'
+  | 'history'
+  | 'pendingFeedback'
+  | 'lastSetSummary'
+  | 'startedAt'
+  | 'endedAt'
+  | 'pausedAt'
+  | 'totalPausedMs'
+  | 'streak1'
+  | 'streak2'
+  | 'maxStreak1'
+  | 'maxStreak2'
+> {
+  return {
+    score1: 0,
+    score2: 0,
+    setWins: { team1: 0, team2: 0 },
+    matchWinner: null,
+    server: null,
+    setScores: [],
+    pendingSideChange: false,
+    mid11Triggered: false,
+    pendingTieBreak: false,
+    currentSetStartedAt: null,
+    history: [],
+    pendingFeedback: null,
+    lastSetSummary: null,
+    startedAt: null,
+    endedAt: null,
+    pausedAt: null,
+    totalPausedMs: 0,
+    streak1: 0,
+    streak2: 0,
+    maxStreak1: 0,
+    maxStreak2: 0,
+  };
+}
+
 export const useMatchStore = create<MatchState>()(
   persist(
     (set, get) => ({
@@ -252,8 +328,11 @@ export const useMatchStore = create<MatchState>()(
       // saisi pour la première fois n'apparaîtrait ni dans les Réglages — donc
       // impossible à renommer — ni dans les suggestions du filtre, jusqu'au
       // prochain rechargement de l'application.
+      // `matchNeuf()` porte le `history: []` d'avant, et tout le reste avec.
+      // La relecture des joueurs demeure : un joueur saisi dans l'assistant
+      // doit apparaître aux Réglages sans attendre un rechargement.
       setMatch: config =>
-        set({ match: config, history: [], players: storage.loadPlayers() }),
+        set({ ...matchNeuf(), match: config, players: storage.loadPlayers() }),
 
       score: team => {
         const state = get();
@@ -486,30 +565,7 @@ export const useMatchStore = create<MatchState>()(
         });
       },
 
-      reset: () =>
-        set({
-          score1: 0,
-          score2: 0,
-          setWins: { team1: 0, team2: 0 },
-          matchWinner: null,
-          server: null,
-          setScores: [],
-          pendingSideChange: false,
-          mid11Triggered: false,
-          pendingTieBreak: false,
-          currentSetStartedAt: null,
-          history: [],
-          pendingFeedback: null,
-          lastSetSummary: null,
-          startedAt: null,
-          endedAt: null,
-          pausedAt: null,
-          totalPausedMs: 0,
-          streak1: 0,
-          streak2: 0,
-          maxStreak1: 0,
-          maxStreak2: 0,
-        }),
+      reset: () => set(matchNeuf()),
 
       restart: () => {
         get().reset();
@@ -518,6 +574,18 @@ export const useMatchStore = create<MatchState>()(
       dismissSideChange: () => set({ pendingSideChange: false }),
       clearFeedback: () => set({ pendingFeedback: null }),
       clearSetSummary: () => set({ lastSetSummary: null }),
+
+      startChrono: () => {
+        const state = get();
+        if (
+          !state.match ||
+          state.startedAt !== null ||
+          state.endedAt !== null
+        ) {
+          return;
+        }
+        set({ startedAt: Date.now(), pausedAt: null, totalPausedMs: 0 });
+      },
 
       pauseChrono: () => {
         const state = get();
