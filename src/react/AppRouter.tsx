@@ -9,7 +9,6 @@ import {
 import { Shell } from './components/layout/Shell';
 import { ConsentBanner } from '@mister-guiiug/dev-pwa-config/react/consent-banner';
 import { usePageViews } from '@mister-guiiug/dev-pwa-config/react/use-page-views';
-import { FamilyLinks } from './components/FamilyLinks';
 import { HomeView } from './views/HomeView';
 import { useI18n } from '../i18n';
 
@@ -165,9 +164,12 @@ function AppRoutes() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-      {/* HORS des routes : le code source et le soutien sont ainsi sur le
-          premier écran comme sur les Paramètres — la règle famille. Rendus
-          depuis `SettingsView`, ils ne valaient que pour cet écran-là. */}
+      {/* LES LIENS DE LA RÈGLE FAMILLE NE SONT PLUS ICI — voir `FamilyLinks`.
+          Rendus par la coquille, hors des routes, ils paraissaient sur TOUS
+          les écrans, l'écran de match compris : trois liens sortants au bas
+          d'un tableau de score, pendant une partie. Ils vivent désormais sur
+          l'accueil et sur les Paramètres, les deux écrans que la règle
+          nomme. */}
       {/* Une `region`, pas une boîte modale : elle ne piège pas le focus. Ne
           rend RIEN tant que `VITE_POSTHOG_KEY` n'est pas posée — sans
           identifiant, il n'y a rien à demander.
@@ -193,7 +195,6 @@ function AppRoutes() {
         placement="fixed"
         className="mb-consent-banner"
       />
-      <FamilyLinks />
     </Shell>
   );
 }

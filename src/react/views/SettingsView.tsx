@@ -10,6 +10,7 @@ import {
   readJsonFile,
 } from '@mister-guiiug/dev-pwa-config/download';
 import { useI18n } from '../../i18n';
+import { FamilyLinks } from '../components/FamilyLinks';
 import {
   LOCALES,
   LOCALE_FLAGS,
@@ -543,6 +544,11 @@ export function SettingsView() {
           }
         />
       </div>
+
+      {/* Le second des deux écrans que la règle famille nomme. Ils vivaient
+          ici avant de passer dans la coquille — d'où ils paraissaient partout,
+          écran de match compris. */}
+      <FamilyLinks />
     </PageContainer>
   );
 }

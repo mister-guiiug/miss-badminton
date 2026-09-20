@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PwaInstallPrompt } from '@mister-guiiug/dev-pwa-config/react/pwa-install-prompt';
+import { FamilyLinks } from '../components/FamilyLinks';
 import { GESTES, trackEvent } from '@mister-guiiug/dev-pwa-config/analytics';
 import {
   MatchSetupWizard,
@@ -285,6 +286,11 @@ export function HomeView() {
           un refus d'avant sa cadence et le traduit en report d'un mois, au lieu
           de reproposer l'installation à qui l'avait déjà écartée. */}
       <PwaInstallPrompt dismissKey="mb_pwa_install_dismissed" />
+
+      {/* La règle famille veut ces trois liens sur le premier écran ET sur les
+          Paramètres — deux écrans, nulle part ailleurs. Ils étaient rendus par
+          la coquille, donc partout, jusqu'en plein match. */}
+      <FamilyLinks />
     </PageContainer>
   );
 }
