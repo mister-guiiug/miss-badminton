@@ -15,7 +15,7 @@ import { useI18n } from '../../i18n';
 import { useFeedback } from '../hooks/useFeedback';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useTeamColors } from '../hooks/useTeamColors';
-import { useTapOrLongPress } from '../hooks/useTapOrLongPress';
+import { useLongPress } from '@mister-guiiug/dev-pwa-config/react/use-long-press';
 import { ScoreToast } from '../components/ScoreToast';
 import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { GESTES, trackEvent } from '@mister-guiiug/dev-pwa-config/analytics';
@@ -770,7 +770,18 @@ function ScorePanel({
   onScore,
   onSubtract,
 }: ScorePanelProps) {
-  const { isPressing, handlers } = useTapOrLongPress(onScore, onSubtract);
+  // Un tap marque le point, l'appui long le retire — sur le `useLongPress` du
+  // socle, promu depuis cette app (clavier Entrée/Espace compris). `delayMs` :
+  // le seuil historique du tableau. `moveTolerancePx: Infinity` : chez le
+  // socle, un déplacement annule l'appui parce que c'est un scroll ; ici, un
+  // demi-tableau est une large zone où le pouce frémit pendant l'appui, et
+  // seul le pointeur qui en SORT annule — comme avant. Pas de
+  // `setPointerCapture` non plus, pour la même raison.
+  const { isPressing, handlers } = useLongPress(onSubtract, {
+    onTap: onScore,
+    delayMs: 380,
+    moveTolerancePx: Number.POSITIVE_INFINITY,
+  });
   return (
     <button
       type="button"
