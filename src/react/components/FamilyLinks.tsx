@@ -8,7 +8,12 @@ const REPO_URL = repoUrl('miss-badminton');
 
 /**
  * Les liens de la règle famille — code source, soutien, SIGNALER — rendus par
- * la COQUILLE, hors des routes, donc sur tous les écrans.
+ * DEUX ÉCRANS : l'accueil et les Paramètres. Nulle part ailleurs.
+ *
+ * ILS ÉTAIENT DANS LA COQUILLE, hors des routes, donc sur TOUS les écrans —
+ * l'écran de match compris. Trois liens sortants au bas d'un tableau de score,
+ * en pleine partie : signalé le 20/09/2026, et `pwa-doctor` le tenait déjà
+ * pour une dette (« deux écrans au plus, jamais dans la coquille »).
  *
  * PAS DE NUMÉRO DE VERSION. Il y en avait un, lié vers
  * `…/releases/tag/vX.Y.Z` : aucune app du parc ne pose de tag git, le lien
