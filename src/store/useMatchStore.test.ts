@@ -548,4 +548,153 @@ describe('useMatchStore', () => {
       );
     });
   });
+
+  /**
+   * LE DÉFAUT : « Nouveau match » gardait le score du précédent.
+   *
+   * Signalé le 20/09/2026. `setMatch` posait la configuration, vidait
+   * l'historique d'annulation et relisait les joueurs — et ne touchait à AUCUN
+   * score. Aucun appelant ne compensait : ni l'assistant (`HomeView`), ni un
+   * modèle enregistré, ni « Rejouer » depuis l'historique, ni l'assistant
+   * rouvert depuis le tableau de bord. On commençait donc une partie à 5-3
+   * avec un set déjà gagné.
+   *
+   * C'est ici que ça se corrige, et pas dans les quatre écrans : `setMatch`
+   * veut dire « voici le match », et un match qui commence est à zéro.
+   */
+  describe('un nouveau match repart de zéro', () => {
+    it('efface scores, sets, vainqueur, serveur et chrono du précédent', () => {
+      useMatchStore.getState().setMatch(standardConfig());
+      scoreN('team1', 21); // un set plié
+      scoreN('team1', 5);
+      scoreN('team2', 3);
+
+      const avant = useMatchStore.getState();
+      expect(avant.setWins).toEqual({ team1: 1, team2: 0 });
+      expect(avant.score1).toBe(5);
+      expect(avant.startedAt).not.toBeNull();
+
+      // « Nouveau match » : l'assistant, un modèle et « Rejouer » passent
+      // tous par cette seule porte.
+      useMatchStore.getState().setMatch(standardConfig({ points: 15 }));
+
+      const apres = useMatchStore.getState();
+      expect(apres.score1).toBe(0);
+      expect(apres.score2).toBe(0);
+      expect(apres.setWins).toEqual({ team1: 0, team2: 0 });
+      expect(apres.setScores).toEqual([]);
+      expect(apres.matchWinner).toBeNull();
+      expect(apres.server).toBeNull();
+      expect(apres.startedAt).toBeNull();
+      expect(apres.totalPausedMs).toBe(0);
+      // Et la nouvelle configuration est bien celle qui s'applique.
+      expect(apres.match?.points).toBe(15);
+    });
+
+    it("n'emporte ni l'historique des matchs ni les joueurs connus", () => {
+      // Remettre à zéro le TABLEAU n'est pas effacer la mémoire du club : ces
+      // deux-là survivent à tout, et c'est ce qui distingue `setMatch` d'un
+      // vidage.
+      const created = storage.rememberPlayer('Lila');
+      useMatchStore.getState().setMatch(standardConfig());
+      useMatchStore.getState().saveToHistory({
+        id: 'm-1',
+        // `completedAt`, et le relire compte : `saveToHistory` écrit dans le
+        // stockage puis RELIT à travers le schéma zod — une entrée non
+        // conforme y disparaît en silence.
+        completedAt: Date.now(),
+        config: standardConfig(),
+        setScores: [{ team1: 21, team2: 10 }],
+        finalSetWins: { team1: 1, team2: 0 },
+        winner: 'team1',
+      });
+
+      useMatchStore.getState().setMatch(standardConfig());
+
+      const apres = useMatchStore.getState();
+      expect(apres.matchHistory.map(m => m.id)).toContain('m-1');
+      expect(apres.players.map(p => p.name)).toContain('Lila');
+      expect(created).not.toBeNull();
+    });
+
+    it('efface aussi un match GAGNÉ, pas seulement un match en cours', () => {
+      // Le cas le plus courant : on vient de finir, on relance. Sans
+      // remise à zéro, `matchWinner` restait posé et l'écran de fin se
+      // rouvrait aussitôt sur la partie neuve.
+      useMatchStore.getState().setMatch(standardConfig({ sets: 1 }));
+      scoreN('team1', 21);
+      expect(useMatchStore.getState().matchWinner).toBe('team1');
+
+      useMatchStore.getState().setMatch(standardConfig({ sets: 1 }));
+
+      expect(useMatchStore.getState().matchWinner).toBeNull();
+      expect(useMatchStore.getState().setScores).toEqual([]);
+    });
+  });
+
+  /**
+   * Le chrono ne partait qu'au PREMIER POINT (`state.startedAt ?? now` dans
+   * `score`). Il mesurait donc le jeu, pas la rencontre : l'échauffement, le
+   * filet à régler, le service manqué n'y entraient pas — et il n'existait
+   * aucun endroit pour le lancer, le composant rendant `null` tant que
+   * `startedAt` était vide.
+   */
+  describe('démarrer le chrono à la main', () => {
+    it('lance la pendule sans marquer le moindre point', () => {
+      useMatchStore.getState().setMatch(standardConfig());
+      expect(useMatchStore.getState().startedAt).toBeNull();
+
+      useMatchStore.getState().startChrono();
+
+      const state = useMatchStore.getState();
+      expect(state.startedAt).not.toBeNull();
+      expect(state.score1).toBe(0);
+      expect(state.score2).toBe(0);
+      expect(state.pausedAt).toBeNull();
+      expect(state.totalPausedMs).toBe(0);
+    });
+
+    it('ne réécrit pas un chrono déjà parti — ni par lui-même, ni par un point', () => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date('2026-09-20T10:00:00Z'));
+        useMatchStore.getState().setMatch(standardConfig());
+        useMatchStore.getState().startChrono();
+        const depart = useMatchStore.getState().startedAt;
+
+        // Une minute d'échauffement, puis le premier point.
+        vi.advanceTimersByTime(60_000);
+        useMatchStore.getState().startChrono();
+        expect(useMatchStore.getState().startedAt).toBe(depart);
+
+        useMatchStore.getState().score('team1');
+        // `score` fait `startedAt ?? now` : l'heure de départ reste CELLE du
+        // bouton, sinon la minute d'échauffement serait perdue.
+        expect(useMatchStore.getState().startedAt).toBe(depart);
+        expect(useMatchStore.getState().score1).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("ne chronomètre rien tant qu'aucun match n'est posé", () => {
+      // Le bouton n'est pas censé être atteignable, mais un magasin ne se
+      // repose pas sur un écran pour rester cohérent.
+      useMatchStore.getState().startChrono();
+      expect(useMatchStore.getState().startedAt).toBeNull();
+    });
+
+    it('ne repart pas sur un match terminé', () => {
+      useMatchStore.getState().setMatch(standardConfig({ sets: 1 }));
+      scoreN('team1', 21);
+      const fini = useMatchStore.getState();
+      expect(fini.matchWinner).toBe('team1');
+      expect(fini.endedAt).not.toBeNull();
+      const departAvant = fini.startedAt;
+
+      useMatchStore.getState().startChrono();
+
+      expect(useMatchStore.getState().startedAt).toBe(departAvant);
+    });
+  });
 });

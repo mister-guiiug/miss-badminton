@@ -6,8 +6,10 @@ interface MatchDurationProps {
   endedAt: number | null;
   pausedAt: number | null;
   totalPausedMs: number;
+  onStart: () => void;
   onToggle: () => void;
   onReset: () => void;
+  startLabel: string;
   pauseLabel: string;
   resumeLabel: string;
   resetLabel: string;
@@ -33,8 +35,10 @@ export function MatchDuration({
   endedAt,
   pausedAt,
   totalPausedMs,
+  onStart,
   onToggle,
   onReset,
+  startLabel,
   pauseLabel,
   resumeLabel,
   resetLabel,
@@ -56,18 +60,35 @@ export function MatchDuration({
     };
   }, [isRunning]);
 
-  if (!startedAt) return null;
+  /*
+   * LE CHRONO SE MONTRE AVANT DE TOURNER, à 0:00.
+   *
+   * Il ne partait qu'au premier point, et ce composant rendait `null` tant que
+   * `startedAt` était vide : il n'existait donc aucun endroit où démarrer la
+   * pendule à la main. Or un match commence avant son premier point —
+   * échauffement, filet à régler, service manqué. La pastille à 0:00 rend le
+   * bouton découvrable là où l'on regardera le temps, et sans déplacer quoi que
+   * ce soit dans un pied de page déjà serré.
+   */
+  const pasDemarre = startedAt === null;
   const cursor = isFinished
     ? (endedAt as number)
     : isPaused
       ? (pausedAt as number)
       : now;
-  const elapsed = cursor - startedAt - totalPausedMs;
+  const elapsed = pasDemarre
+    ? 0
+    : cursor - (startedAt as number) - totalPausedMs;
+  const libelleBascule = pasDemarre
+    ? startLabel
+    : isPaused
+      ? resumeLabel
+      : pauseLabel;
   return (
     <span className="ml-2 inline-flex items-center gap-1">
       <span
         aria-live="off"
-        className={`inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium tabular-nums ${isPaused ? 'opacity-60' : 'opacity-90'}`}
+        className={`inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium tabular-nums ${pasDemarre || isPaused ? 'opacity-60' : 'opacity-90'}`}
       >
         <span aria-hidden>⏱</span>
         {formatDuration(elapsed)}
@@ -76,22 +97,30 @@ export function MatchDuration({
         <>
           <button
             type="button"
-            onClick={onToggle}
-            aria-label={isPaused ? resumeLabel : pauseLabel}
-            title={isPaused ? resumeLabel : pauseLabel}
+            onClick={pasDemarre ? onStart : onToggle}
+            aria-label={libelleBascule}
+            title={libelleBascule}
             className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
           >
-            {isPaused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
+            {pasDemarre || isPaused ? (
+              <PlayIcon size={14} />
+            ) : (
+              <PauseIcon size={14} />
+            )}
           </button>
-          <button
-            type="button"
-            onClick={onReset}
-            aria-label={resetLabel}
-            title={resetLabel}
-            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
-          >
-            <TimerResetIcon size={14} />
-          </button>
+          {/* Rien à remettre à zéro tant que rien n'a couru : ce bouton
+              n'apparaît qu'une fois le chrono lancé. */}
+          {!pasDemarre && (
+            <button
+              type="button"
+              onClick={onReset}
+              aria-label={resetLabel}
+              title={resetLabel}
+              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
+            >
+              <TimerResetIcon size={14} />
+            </button>
+          )}
         </>
       )}
     </span>

@@ -139,6 +139,7 @@ export function MatchView() {
     dismissSideChange,
     clearFeedback,
     clearSetSummary,
+    startChrono,
     pauseChrono,
     resumeChrono,
     resetChrono,
@@ -663,8 +664,10 @@ export function MatchView() {
               endedAt={endedAt}
               pausedAt={pausedAt}
               totalPausedMs={totalPausedMs}
+              onStart={startChrono}
               onToggle={handleToggleChrono}
               onReset={() => setResetChronoConfirmOpen(true)}
+              startLabel={t('scoreboard.startChrono')}
               pauseLabel={t('scoreboard.pauseChrono')}
               resumeLabel={t('scoreboard.resumeChrono')}
               resetLabel={t('scoreboard.resetChrono')}
