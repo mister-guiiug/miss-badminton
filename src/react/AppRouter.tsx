@@ -9,6 +9,7 @@ import {
 import { Shell } from './components/layout/Shell';
 import { ConsentBanner } from '@mister-guiiug/dev-pwa-config/react/consent-banner';
 import { usePageViews } from '@mister-guiiug/dev-pwa-config/react/use-page-views';
+import { useIdlePrefetch } from '@mister-guiiug/dev-pwa-config/react/use-prefetch';
 import { HomeView } from './views/HomeView';
 import { useI18n } from '../i18n';
 
@@ -17,7 +18,7 @@ import { useI18n } from '../i18n';
 // et de temps jusqu'à l'interactivité sur l'accueil.
 //
 // CHAQUE IMPORT EST NOMMÉ, parce qu'il sert DEUX FOIS : à `lazy` ci-dessous,
-// et au préchargement à l'inactivité de `usePrechargeLesVues`. Deux `import()`
+// et au préchargement à l'inactivité de `chargeLesVues`. Deux `import()`
 // du même spécificateur ne téléchargent qu'une fois — le registre de modules
 // dédoublonne — mais il faut que ce soit LITTÉRALEMENT le même spécificateur,
 // sinon le bundler émet deux morceaux et le préchargement ne sert plus à rien.
@@ -36,9 +37,6 @@ const SettingsView = lazy(() =>
   chargeSettings().then(m => ({ default: m.SettingsView }))
 );
 
-/** `navigator.connection` n'est pas dans les types du DOM : il reste un brouillon. */
-type NavigateurEconome = Navigator & { connection?: { saveData?: boolean } };
-
 /**
  * PRÉCHARGE LES TROIS VUES DÈS QUE LE FIL PRINCIPAL SOUFFLE.
  *
@@ -54,39 +52,22 @@ type NavigateurEconome = Navigator & { connection?: { saveData?: boolean } };
  * visiteur regarde l'accueil, elles ne coûtent rien de perceptible — et elles
  * ne comptent PAS dans `bundleBudget.preloadGzipKb`, qui ne mesure que ce qui
  * est `modulepreload` dans le document.
+ *
+ * LA MÉCANIQUE EST AU SOCLE (`prefetch.js`, par `useIdlePrefetch`) :
+ * `requestIdleCallback` et son repli minuté pour Safari, les rejets avalés, et
+ * la garde `shouldPrefetch()` — `saveData` ET les connexions 2g, là où la copie
+ * locale ne lisait que `saveData`. Quand elle coupe, c'est le menu qui sait
+ * dire qu'il charge.
+ *
+ * UNE CONSTANTE DE MODULE, PAS UNE FONCTION EN LIGNE : le socle ne lance un
+ * chargeur qu'UNE fois et le reconnaît à son IDENTITÉ. Écrit dans le
+ * composant, `() => …` changerait d'identité à chaque montage et relancerait
+ * tout. `allSettled` : un morceau qui manque ne prive pas les deux autres — au
+ * clic, `lazy` redemandera le sien et c'est LUI qui portera l'erreur, dans son
+ * propre `Suspense`.
  */
-function usePrechargeLesVues() {
-  useEffect(() => {
-    // `saveData` : le visiteur a demandé qu'on épargne son forfait. On ne
-    // télécharge alors que ce qu'il demande vraiment — et c'est précisément
-    // pour ce cas-là que le menu, lui, sait dire qu'il charge.
-    if ((navigator as NavigateurEconome).connection?.saveData) return;
-
-    let annule = false;
-    const precharge = () => {
-      if (annule) return;
-      // Un échec ici est sans conséquence : au clic, `lazy` redemandera le
-      // morceau et c'est LUI qui portera l'erreur, dans son propre `Suspense`.
-      for (const charge of CHARGEURS) void charge().catch(() => {});
-    };
-
-    // `requestIdleCallback` manque encore à Safari avant la 17 ; le repli
-    // minuté vaut mieux que rien. Le `timeout` borne l'attente sur un appareil
-    // qui n'est jamais vraiment inactif.
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(precharge, { timeout: 3000 });
-      return () => {
-        annule = true;
-        window.cancelIdleCallback?.(id);
-      };
-    }
-    const id = window.setTimeout(precharge, 1200);
-    return () => {
-      annule = true;
-      window.clearTimeout(id);
-    };
-  }, []);
-}
+const chargeLesVues = () =>
+  Promise.allSettled(CHARGEURS.map(charge => charge()));
 
 function DocumentTitle() {
   const location = useLocation();
@@ -143,7 +124,7 @@ function RouteFallback() {
 }
 
 function AppRoutes() {
-  usePrechargeLesVues();
+  useIdlePrefetch(chargeLesVues);
   return (
     <Shell>
       <DocumentTitle />
