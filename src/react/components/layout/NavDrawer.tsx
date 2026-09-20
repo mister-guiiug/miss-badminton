@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   useEscape,
   useFocusTrap,
@@ -40,10 +41,32 @@ interface NavDrawerProps {
 export function NavDrawer({ onClose }: NavDrawerProps) {
   const { t } = useI18n();
   const drawerRef = useRef<HTMLDivElement>(null);
+  const { pathname } = useLocation();
+  const precedent = useRef(pathname);
 
   useFocusTrap(drawerRef, { restoreFocus: true });
   useScrollLock();
   useEscape(onClose);
+
+  /*
+   * LE TIROIR SE FERME QUAND ON EST ARRIVÉ, PAS QUAND ON A CLIQUÉ.
+   *
+   * `MenuContent` appelait un `onNavigate` dès le clic. Or la vue visée n'est
+   * pas encore là : son morceau de code est demandé à cet instant précis, et il
+   * met un aller-retour réseau à venir — 118 ms mesurées le 20/09/2026 sur le
+   * site publié, bien davantage à la première visite, quand la requête part au
+   * milieu du reste du chargement. Le menu disparaissait donc sur une page
+   * inchangée, et plus rien ne bougeait.
+   *
+   * `useLocation` ne change qu'une fois la transition VALIDÉE, c'est-à-dire une
+   * fois la vue prête à peindre : c'est exactement le moment où refermer. Entre
+   * les deux, le menu reste ouvert et l'entrée cliquée tourne.
+   */
+  useEffect(() => {
+    if (precedent.current === pathname) return;
+    precedent.current = pathname;
+    onClose();
+  }, [pathname, onClose]);
 
   return (
     <div className="fixed inset-0 z-[70]">
@@ -93,7 +116,7 @@ export function NavDrawer({ onClose }: NavDrawerProps) {
             </button>
           </header>
 
-          <MenuContent onNavigate={onClose} />
+          <MenuContent />
         </aside>
       </div>
     </div>
