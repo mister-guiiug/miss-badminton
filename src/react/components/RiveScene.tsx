@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas';
+import { RiveAnimation } from '@mister-guiiug/dev-pwa-config/react/rive';
 
 interface RiveSceneProps {
   src: string;
@@ -17,6 +17,17 @@ interface ProbeState {
 
 const RIVE_MAGIC = 'RIVE';
 
+/**
+ * LA SONDE RESTE À L'APP, ET VOICI POURQUOI. `RiveAnimation` du socle garantit
+ * le repli quand le RUNTIME manque — son `lazy()` rejette, sa frontière
+ * l'attrape — et quand l'utilisateur réduit les animations. Mais un `.riv`
+ * absent ou corrompu, le runtime ne le LÈVE pas : `@rive-app/canvas` 2.42
+ * écrit « Problem loading file; may be corrupt! » dans la console et émet
+ * `onLoadError`, que l'enveloppe React ne remonte à personne. Une frontière
+ * d'erreur ne voit rien passer, et l'écran garderait une toile vide là où la
+ * décoration devait être. D'où ces quatre octets lus AVANT de monter quoi que
+ * ce soit — et avant de demander le runtime.
+ */
 async function probeRiveFile(src: string): Promise<boolean> {
   try {
     const response = await fetch(src, { cache: 'no-store' });
@@ -30,6 +41,18 @@ async function probeRiveFile(src: string): Promise<boolean> {
   }
 }
 
+/**
+ * L'animation elle-même est celle du socle : runtime chargé à la demande par
+ * son `lazy()`, `prefers-reduced-motion` respecté (le repli statique, sans
+ * même charger le runtime), `role="img"` + `aria-label` quand un libellé est
+ * donné, `aria-hidden` sinon. La disposition d'avant — `Fit.Contain` centré —
+ * est celle par défaut du runtime : rien à passer.
+ *
+ * Le runtime pèse 56,8 ko gzip au build (203 ko brut), plus le WASM qu'il va
+ * chercher lui-même : `vite.config.ts` lui réserve son propre morceau, sans
+ * quoi `manualChunks` le renverrait dans `vendor`, qui est PRÉCHARGÉ, et le
+ * `lazy()` ne servirait à rien.
+ */
 export function RiveScene({
   src,
   stateMachine,
@@ -55,32 +78,13 @@ export function RiveScene({
   }
 
   return (
-    <RiveCanvas
+    <RiveAnimation
       src={src}
-      stateMachine={stateMachine}
+      stateMachines={stateMachine}
       artboard={artboard}
       className={className}
       ariaLabel={ariaLabel}
+      fallback={fallback}
     />
-  );
-}
-
-function RiveCanvas({
-  src,
-  stateMachine,
-  artboard,
-  className,
-  ariaLabel,
-}: Omit<RiveSceneProps, 'fallback'>) {
-  const { RiveComponent } = useRive({
-    src,
-    stateMachines: stateMachine,
-    artboard,
-    autoplay: true,
-    layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
-  });
-
-  return (
-    <RiveComponent className={className} role="img" aria-label={ariaLabel} />
   );
 }

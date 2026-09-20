@@ -1,4 +1,8 @@
-import { useEffect } from 'react';
+import { useMemo } from 'react';
+import {
+  useKeyboardShortcuts as useShortcutMap,
+  type ShortcutMap,
+} from '@mister-guiiug/dev-pwa-config/react/use-keyboard-shortcuts';
 
 interface ShortcutHandlers {
   onTeam1?: () => void;
@@ -8,55 +12,39 @@ interface ShortcutHandlers {
   onSwap?: () => void;
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-  return target.isContentEditable;
-}
+/** Les touches de chaque geste — celles que l'écran Paramètres énumère. */
+const KEYS: ReadonlyArray<[keyof ShortcutHandlers, readonly string[]]> = [
+  ['onTeam1', ['a', '1']],
+  ['onTeam2', ['l', '2']],
+  ['onUndo', ['u']],
+  ['onReset', ['r']],
+  ['onSwap', ['s']],
+];
 
+/**
+ * Les raccourcis du tableau de score, sur le `useKeyboardShortcuts` du socle.
+ * C'est lui qui écoute `keydown`, ignore une frappe née dans un champ éditable
+ * (`input`, `textarea`, `select`, `contenteditable`) ou pendant une
+ * composition IME, et route par touche. Ce fichier ne garde que le vocabulaire
+ * de l'app — cinq gestes, sept touches — et UNE garde que le socle n'a pas :
+ * une frappe avec modificateur n'est pas un geste. Ctrl+R recharge, Ctrl+S
+ * enregistre, Alt+1 change d'onglet ; les intercepter, c'est voler ses
+ * raccourcis au navigateur.
+ */
 export function useKeyboardShortcuts(handlers: ShortcutHandlers): void {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (isEditableTarget(e.target)) return;
-      const key = e.key.toLowerCase();
-      switch (key) {
-        case 'a':
-        case '1':
-          if (handlers.onTeam1) {
-            e.preventDefault();
-            handlers.onTeam1();
-          }
-          break;
-        case 'l':
-        case '2':
-          if (handlers.onTeam2) {
-            e.preventDefault();
-            handlers.onTeam2();
-          }
-          break;
-        case 'u':
-          if (handlers.onUndo) {
-            e.preventDefault();
-            handlers.onUndo();
-          }
-          break;
-        case 'r':
-          if (handlers.onReset) {
-            e.preventDefault();
-            handlers.onReset();
-          }
-          break;
-        case 's':
-          if (handlers.onSwap) {
-            e.preventDefault();
-            handlers.onSwap();
-          }
-          break;
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+  const shortcuts = useMemo(() => {
+    const map: ShortcutMap = {};
+    for (const [name, keys] of KEYS) {
+      const handler = handlers[name];
+      if (!handler) continue;
+      const onKey = (event: KeyboardEvent) => {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        event.preventDefault();
+        handler();
+      };
+      for (const key of keys) map[key] = onKey;
+    }
+    return map;
   }, [handlers]);
+  useShortcutMap(shortcuts);
 }

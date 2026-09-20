@@ -48,6 +48,14 @@ export default defineConfig(({ command }) => {
             // téléchargée chez un visiteur qui refuse. C'est `preloadGzipKb`
             // qui le voit, jamais le total.
             if (norm.includes('/posthog-js/')) return 'posthog';
+            // ET RIVE, POUR LA RAISON DE SENTRY. `RiveAnimation` du socle
+            // charge le runtime par un `lazy(() => import(…))` — mais tout ce
+            // qui vient de node_modules tombe ici dans `vendor`, PRÉCHARGÉ, et
+            // le `lazy()` ne servirait à rien. Mesuré au build du 20/09/2026 :
+            // 56,8 kB gzip (203 kB brut), près de la moitié de `vendor`
+            // (115,2 → 61,1 kB), pour une animation dont aucun `.riv`
+            // n'existe encore.
+            if (norm.includes('/@rive-app/')) return 'rive';
             if (
               norm.includes('/vite-plugin-pwa/') ||
               norm.includes('/workbox-')

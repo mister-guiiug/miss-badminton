@@ -1,4 +1,4 @@
-import { useCallback, useState, useSyncExternalStore } from 'react';
+import { useCallback, useState } from 'react';
 import {
   FamilyApps,
   useThemeContext,
@@ -27,6 +27,7 @@ import {
 } from '../../team-colors';
 import { useAppUpdates } from '@mister-guiiug/dev-pwa-config/react/app-updates';
 import { useUpdatePrompt } from '@mister-guiiug/dev-pwa-config/react/use-update-prompt';
+import { useMediaQuery } from '@mister-guiiug/dev-pwa-config/react/use-media-query';
 import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
 import {
@@ -45,27 +46,12 @@ import {
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 
-const KEYBOARD_QUERY = '(hover: hover) and (pointer: fine)';
-
 /**
- * Vrai si le device a un pointeur fin + survol — heuristique fiable pour
- * "il y a probablement un clavier". Faux sur smartphone / tablette pur tactile.
+ * Pointeur fin + survol : il y a probablement un clavier. Faux sur un
+ * téléphone ou une tablette tactile, où la liste des raccourcis ne servirait
+ * à rien. Suivie par `useMediaQuery` du socle, qui réagit au changement.
  */
-function useLikelyHasKeyboard(): boolean {
-  return useSyncExternalStore(
-    cb => {
-      if (typeof window === 'undefined') return () => {};
-      const mq = window.matchMedia(KEYBOARD_QUERY);
-      mq.addEventListener('change', cb);
-      return () => mq.removeEventListener('change', cb);
-    },
-    () =>
-      typeof window === 'undefined'
-        ? true
-        : window.matchMedia(KEYBOARD_QUERY).matches,
-    () => true
-  );
-}
+const KEYBOARD_QUERY = '(hover: hover) and (pointer: fine)';
 
 export function SettingsView() {
   const { t, locale, setLocale } = useI18n();
@@ -79,7 +65,7 @@ export function SettingsView() {
   const setTheme = (pref: ThemePreference): void => {
     themeCtx?.setTheme(pref);
   };
-  const hasKeyboard = useLikelyHasKeyboard();
+  const hasKeyboard = useMediaQuery(KEYBOARD_QUERY);
   const { matchHistory, importBundle, players, renamePlayer, removePlayer } =
     useMatchStore();
   const [importError, setImportError] = useState<string | null>(null);

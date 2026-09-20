@@ -27,7 +27,7 @@ import {
   teamLabel,
   type Player,
 } from '../../players';
-import { UndoToast } from '../components/UndoToast';
+import { ToastViewport } from '@mister-guiiug/dev-pwa-config/react/toast';
 import { shareOrCopy } from '@mister-guiiug/dev-pwa-config/share';
 import { buildShareText } from '../../share';
 import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
@@ -829,14 +829,35 @@ export function HistoryView() {
           pas l'espagnol. */}
       {/* ANNULER REMPLACE CONFIRMER sur la suppression d'une ligne : le
           match a quitté l'écran, il ne quittera le stockage qu'à
-          l'expiration du délai porté par le magasin. */}
-      {pendingDeletion && (
-        <UndoToast
-          message={t('historyExtra.deleted')}
-          actionLabel={t('historyExtra.undoDelete')}
-          onUndo={undoPendingRemoval}
-        />
-      )}
+          l'expiration du délai porté par le magasin.
+
+          LE VIEWPORT DU SOCLE, PAS SON FOURNISSEUR. `useToast().show()`
+          tiendrait son propre rebours — suspendu au survol — et le fournisseur
+          ne prévient personne quand il expire : deux minuteurs dont un seul
+          décide, et un « Annuler » encore affiché après que le magasin a
+          supprimé. `ToastViewport` seul est fait pour « les apps qui gèrent la
+          file dans leur propre magasin » : celui-ci reste le seul minuteur, le
+          viewport n'affiche et ne rend que le clic. Monté même vide : une
+          région vivante n'annonce que ce qu'on y INSÈRE, jamais ce qui arrive
+          avec elle. L'`id` suit le match : une seconde suppression est un
+          nouveau nœud, donc annoncée. Sans `onDismiss`, pas de bouton de
+          fermeture — comme avant, on annule ou on laisse filer. */}
+      <ToastViewport
+        toasts={
+          pendingDeletion
+            ? [
+                {
+                  id: `undo-${pendingDeletion.id}`,
+                  message: t('historyExtra.deleted'),
+                  action: {
+                    label: t('historyExtra.undoDelete'),
+                    onAction: undoPendingRemoval,
+                  },
+                },
+              ]
+            : []
+        }
+      />
 
       <ConfirmDialog
         open={clearOpen}
