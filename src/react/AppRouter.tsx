@@ -16,15 +16,78 @@ import { useI18n } from '../i18n';
 // HomeView reste eager : c'est la page d'atterrissage par défaut. Les
 // autres vues ne sont chargées qu'au premier accès — gain de bundle initial
 // et de temps jusqu'à l'interactivité sur l'accueil.
+//
+// CHAQUE IMPORT EST NOMMÉ, parce qu'il sert DEUX FOIS : à `lazy` ci-dessous,
+// et au préchargement à l'inactivité de `usePrechargeLesVues`. Deux `import()`
+// du même spécificateur ne téléchargent qu'une fois — le registre de modules
+// dédoublonne — mais il faut que ce soit LITTÉRALEMENT le même spécificateur,
+// sinon le bundler émet deux morceaux et le préchargement ne sert plus à rien.
+const chargeMatch = () => import('./views/MatchView');
+const chargeHistory = () => import('./views/HistoryView');
+const chargeSettings = () => import('./views/SettingsView');
+const CHARGEURS = [chargeMatch, chargeHistory, chargeSettings];
+
 const MatchView = lazy(() =>
-  import('./views/MatchView').then(m => ({ default: m.MatchView }))
+  chargeMatch().then(m => ({ default: m.MatchView }))
 );
 const HistoryView = lazy(() =>
-  import('./views/HistoryView').then(m => ({ default: m.HistoryView }))
+  chargeHistory().then(m => ({ default: m.HistoryView }))
 );
 const SettingsView = lazy(() =>
-  import('./views/SettingsView').then(m => ({ default: m.SettingsView }))
+  chargeSettings().then(m => ({ default: m.SettingsView }))
 );
+
+/** `navigator.connection` n'est pas dans les types du DOM : il reste un brouillon. */
+type NavigateurEconome = Navigator & { connection?: { saveData?: boolean } };
+
+/**
+ * PRÉCHARGE LES TROIS VUES DÈS QUE LE FIL PRINCIPAL SOUFFLE.
+ *
+ * LE DÉFAUT QUE CECI CORRIGE. Sans préchargement, le morceau d'une vue n'est
+ * demandé qu'au CLIC. Relevé le 20/09/2026 sur le site publié : `HistoryView`
+ * pèse 5,4 ko transférés — et coûte pourtant 118 ms, parce que ce n'est pas du
+ * poids mais un aller-retour réseau complet, payé au pire moment. À la première
+ * visite, cette requête part pendant que `vendor` (117 ko) et `react-vendor`
+ * (69 ko) finissent d'arriver et que le service worker précharge ses 30
+ * entrées : le clic reste sans effet le temps que tout ce monde se démêle.
+ *
+ * Les trois vues ensemble pèsent ~18 ko compressés. Téléchargées pendant que le
+ * visiteur regarde l'accueil, elles ne coûtent rien de perceptible — et elles
+ * ne comptent PAS dans `bundleBudget.preloadGzipKb`, qui ne mesure que ce qui
+ * est `modulepreload` dans le document.
+ */
+function usePrechargeLesVues() {
+  useEffect(() => {
+    // `saveData` : le visiteur a demandé qu'on épargne son forfait. On ne
+    // télécharge alors que ce qu'il demande vraiment — et c'est précisément
+    // pour ce cas-là que le menu, lui, sait dire qu'il charge.
+    if ((navigator as NavigateurEconome).connection?.saveData) return;
+
+    let annule = false;
+    const precharge = () => {
+      if (annule) return;
+      // Un échec ici est sans conséquence : au clic, `lazy` redemandera le
+      // morceau et c'est LUI qui portera l'erreur, dans son propre `Suspense`.
+      for (const charge of CHARGEURS) void charge().catch(() => {});
+    };
+
+    // `requestIdleCallback` manque encore à Safari avant la 17 ; le repli
+    // minuté vaut mieux que rien. Le `timeout` borne l'attente sur un appareil
+    // qui n'est jamais vraiment inactif.
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(precharge, { timeout: 3000 });
+      return () => {
+        annule = true;
+        window.cancelIdleCallback?.(id);
+      };
+    }
+    const id = window.setTimeout(precharge, 1200);
+    return () => {
+      annule = true;
+      window.clearTimeout(id);
+    };
+  }, []);
+}
 
 function DocumentTitle() {
   const location = useLocation();
@@ -57,19 +120,31 @@ function DocumentTitle() {
   return null;
 }
 
+/**
+ * CE REPLI NE SE VOIT QUE SUR UN ATTERRISSAGE DIRECT, et il faut le savoir
+ * avant d'essayer de l'améliorer : react-router 7 enveloppe tout changement
+ * d'URL dans `startTransition`, et React 19 garde délibérément l'écran déjà
+ * affiché plutôt que de le remplacer par un repli. Sur un CLIC dans
+ * l'application, il ne paraît donc jamais — mesuré le 20/09/2026, 4 s
+ * d'échantillonnage toutes les 16 ms, zéro apparition. C'est le menu qui dit
+ * qu'il charge ; ici, on ne couvre que l'arrivée de plain-pied sur `/historique`
+ * ou `/parametres`, où rien n'est encore à l'écran.
+ */
 function RouteFallback() {
+  const { t } = useI18n();
   return (
     <div
       role="status"
       aria-live="polite"
       className="flex min-h-[40vh] items-center justify-center text-sm opacity-60"
     >
-      …
+      {t('nav.loading')}
     </div>
   );
 }
 
 function AppRoutes() {
+  usePrechargeLesVues();
   return (
     <Shell>
       <DocumentTitle />

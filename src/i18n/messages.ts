@@ -25,6 +25,7 @@ export interface Messages {
     openMenu: string;
     closeMenu: string;
     menuLabel: string;
+    loading: string;
     forceLandscape: string;
     forcePortrait: string;
     enterFullscreen: string;
@@ -295,6 +296,7 @@ const fr: Messages = {
     openMenu: 'Ouvrir le menu',
     closeMenu: 'Fermer le menu',
     menuLabel: 'Menu de navigation',
+    loading: 'Chargement…',
     forceLandscape: 'Forcer le mode paysage',
     forcePortrait: 'Forcer le mode portrait',
     enterFullscreen: 'Passer en plein écran',
@@ -575,6 +577,7 @@ const en: Messages = {
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
     menuLabel: 'Navigation menu',
+    loading: 'Loading…',
     forceLandscape: 'Force landscape mode',
     forcePortrait: 'Force portrait mode',
     enterFullscreen: 'Enter fullscreen',
@@ -849,6 +852,7 @@ const es: Messages = {
     openMenu: 'Abrir el menú',
     closeMenu: 'Cerrar el menú',
     menuLabel: 'Menú de navegación',
+    loading: 'Cargando…',
     forceLandscape: 'Forzar modo paisaje',
     forcePortrait: 'Forzar modo retrato',
     enterFullscreen: 'Pantalla completa',
