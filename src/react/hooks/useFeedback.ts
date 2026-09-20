@@ -1,30 +1,44 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
+import {
+  useFeedback as useSensoryFeedback,
+  type FeedbackSpec,
+} from '@mister-guiiug/dev-pwa-config/react/use-feedback';
 import { storage } from '../../storage';
 
-interface AudioContextConstructor {
-  new (): AudioContext;
-}
-
-function getAudioCtor(): AudioContextConstructor | null {
-  if (typeof window === 'undefined') return null;
-  const w = window as unknown as {
-    AudioContext?: AudioContextConstructor;
-    webkitAudioContext?: AudioContextConstructor;
-  };
-  return w.AudioContext ?? w.webkitAudioContext ?? null;
-}
-
-function vibrate(pattern: number | number[]): void {
-  if (typeof navigator === 'undefined') return;
-  if (typeof navigator.vibrate !== 'function') return;
-  try {
-    navigator.vibrate(pattern);
-  } catch {
-    /* ignore */
-  }
-}
-
 export type FeedbackEvent = 'point' | 'setWon' | 'matchWon';
+
+/**
+ * Les trois évènements de l'app, avec leur vibration et leurs notes. Ce sont
+ * exactement les motifs, fréquences, durées et décalages de la synthèse locale
+ * d'avant (`beep(660, 70)`, `[40, 30, 40]`…), portés en secondes ; `volume:
+ * 0.18` parce que le socle sonne à 0,15 par défaut et qu'on ne baisse pas le
+ * son en changeant de moteur. Le socle ne connaît ni « point » ni « set » : la
+ * table est à l'app, la synthèse (`audio.js`) et la vibration (`haptics.js`)
+ * sont à lui.
+ */
+const EVENTS: Record<FeedbackEvent, FeedbackSpec> = {
+  point: {
+    vibration: 15,
+    sound: [{ freq: 660, duration: 0.07, volume: 0.18 }],
+  },
+  setWon: {
+    vibration: [40, 30, 40],
+    sound: [
+      { freq: 523, duration: 0.11, volume: 0.18 },
+      { freq: 659, duration: 0.11, volume: 0.18, at: 0.13 },
+      { freq: 784, duration: 0.16, volume: 0.18, at: 0.26 },
+    ],
+  },
+  matchWon: {
+    vibration: [60, 40, 60, 40, 120],
+    sound: [
+      { freq: 523, duration: 0.12, volume: 0.18 },
+      { freq: 659, duration: 0.12, volume: 0.18, at: 0.14 },
+      { freq: 784, duration: 0.12, volume: 0.18, at: 0.28 },
+      { freq: 1047, duration: 0.26, volume: 0.18, at: 0.42 },
+    ],
+  },
+};
 
 export interface FeedbackPrefs {
   sound: boolean;
@@ -34,48 +48,17 @@ export interface FeedbackPrefs {
   trigger: (event: FeedbackEvent) => void;
 }
 
+/**
+ * Les deux préférences restent lues et écrites ICI, dans `storage` : le socle
+ * ne porte que les interrupteurs, pas leur persistance. `trigger` est le
+ * `useFeedback` du socle, branché dessus.
+ */
 export function useFeedback(): FeedbackPrefs {
   const [sound, setSoundState] = useState<boolean>(() =>
     storage.loadBoolPref('sound', true)
   );
   const [haptic, setHapticState] = useState<boolean>(() =>
     storage.loadBoolPref('haptic', true)
-  );
-  const audioCtxRef = useRef<AudioContext | null>(null);
-
-  useEffect(() => {
-    return () => {
-      audioCtxRef.current?.close().catch(() => undefined);
-    };
-  }, []);
-
-  const ensureCtx = useCallback((): AudioContext | null => {
-    if (audioCtxRef.current) return audioCtxRef.current;
-    const Ctor = getAudioCtor();
-    if (!Ctor) return null;
-    audioCtxRef.current = new Ctor();
-    return audioCtxRef.current;
-  }, []);
-
-  const beep = useCallback(
-    (freq: number, durationMs: number, delayMs = 0): void => {
-      const ctx = ensureCtx();
-      if (!ctx) return;
-      const start = ctx.currentTime + delayMs / 1000;
-      const stop = start + durationMs / 1000;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.18, start + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, stop);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(start);
-      osc.stop(stop);
-    },
-    [ensureCtx]
   );
 
   const setSound = useCallback((v: boolean) => {
@@ -88,30 +71,7 @@ export function useFeedback(): FeedbackPrefs {
     storage.saveBoolPref('haptic', v);
   }, []);
 
-  const trigger = useCallback(
-    (event: FeedbackEvent) => {
-      if (haptic) {
-        if (event === 'point') vibrate(15);
-        if (event === 'setWon') vibrate([40, 30, 40]);
-        if (event === 'matchWon') vibrate([60, 40, 60, 40, 120]);
-      }
-      if (sound) {
-        if (event === 'point') beep(660, 70);
-        if (event === 'setWon') {
-          beep(523, 110, 0);
-          beep(659, 110, 130);
-          beep(784, 160, 260);
-        }
-        if (event === 'matchWon') {
-          beep(523, 120, 0);
-          beep(659, 120, 140);
-          beep(784, 120, 280);
-          beep(1047, 260, 420);
-        }
-      }
-    },
-    [beep, haptic, sound]
-  );
+  const trigger = useSensoryFeedback<FeedbackEvent>(EVENTS, { sound, haptic });
 
   return { sound, haptic, setSound, setHaptic, trigger };
 }
