@@ -50,3 +50,8 @@ jobs:
       # à deux largeurs ; la matrice locale (`npm run test:e2e`, 55 tests sur
       # cinq navigateurs) reste l'endroit où les cinq tournent.
       e2e-project: 'chromium mobile-chrome'
+      # Second avis TypeScript 7, NON BLOQUANT. La 6 reste la référence : c'est
+      # elle que typescript-eslint résout, et il refuse la 7.0 par une assertion
+      # à l'import. Le jour où typescript-eslint#10940 se ferme, cette entrée
+      # et l'alias `typescript-7` disparaissent ensemble.
+      run-type-check-7: true
