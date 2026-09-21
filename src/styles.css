@@ -367,35 +367,19 @@ body {
   }
 }
 
-/* Famille — grille « Nos autres applications » (composant partagé FamilyApps). */
-.bb-family [data-dwc='family-apps-title'] {
-  margin: 0 0 0.75rem;
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--text);
-}
-.bb-family [data-dwc='family-app-list'] {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.bb-family [data-dwc='family-app'] {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0.7rem;
-  border-radius: 0.85rem;
-  background: var(--surface-highlight);
-  border: 1px solid var(--border);
-  color: var(--text);
-  text-decoration: none;
-}
-.bb-family [data-dwc='family-app']:hover {
-  border-color: rgba(var(--accent-rgb), 0.35);
-}
+/* Famille — grille « Nos autres applications » (composant partagé FamilyApps).
+
+   TOUT L'HABILLAGE VIENT DE `components.css`, par le contrat `--dwc-*` posé
+   plus haut : la colonne unique est demandée par `layout="list"`, une prop, là
+   où l'app refaisait la grille en flex. Les couleurs de maturité aussi — celles
+   du paquet sont mélangées vers la couleur de texte de l'app et mesurées sur
+   trente-six palettes, ce que les trois teintes en dur ici ne pouvaient pas
+   suivre.
+
+   Ne reste que le fond teinté de l'icône : le paquet ne colore que l'initiale
+   de repli, en aplat de primaire. Ce fond ne se voit que derrière cette
+   initiale et derrière une icône transparente — celles du catalogue peignent
+   le leur et le recouvrent. */
 .bb-family [data-dwc='family-app-icon'] {
   width: 40px;
   height: 40px;
@@ -408,66 +392,6 @@ body {
   background: rgba(var(--accent-rgb), 0.12);
   color: var(--primary);
   font-weight: 700;
-}
-.bb-family [data-dwc='family-app-body'] {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  flex: 1;
-  min-width: 0;
-}
-.bb-family [data-dwc='family-app-head'] {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.bb-family [data-dwc='family-app-name'] {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-.bb-family [data-dwc='family-app-desc'] {
-  font-size: 0.78rem;
-  color: var(--muted);
-  line-height: 1.4;
-}
-.bb-family [data-dwc='family-app-arrow'] {
-  color: var(--muted);
-  flex-shrink: 0;
-  display: flex;
-}
-.bb-family [data-dwc='maturity'] {
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.12em 0.5em;
-  border-radius: 999px;
-  border: 1px solid transparent;
-}
-.bb-family [data-maturity='stable'] {
-  background: rgba(34, 160, 90, 0.14);
-  color: #1b8a4c;
-  border-color: rgba(34, 160, 90, 0.3);
-}
-.bb-family [data-maturity='beta'] {
-  background: rgba(210, 150, 20, 0.16);
-  color: #9a6a00;
-  border-color: rgba(210, 150, 20, 0.32);
-}
-.bb-family [data-maturity='alpha'] {
-  background: rgba(150, 90, 210, 0.14);
-  color: #7a44c8;
-  border-color: rgba(150, 90, 210, 0.3);
-}
-html[data-theme='dark'] .bb-family [data-maturity='stable'] {
-  color: #5cd99a;
-}
-html[data-theme='dark'] .bb-family [data-maturity='beta'] {
-  color: #f5c97a;
-}
-html[data-theme='dark'] .bb-family [data-maturity='alpha'] {
-  color: #c9a6f0;
 }
 
 /* Écran de secours du composant partagé ErrorBoundary (dev-pwa-config). */

@@ -512,6 +512,12 @@ export function SettingsView() {
           currentAppId="miss-badminton"
           showSource={false}
           showSponsor={false}
+          // Une colonne : le paquet la rend maintenant sur demande, là où
+          // `styles.css` refaisait la grille en flex.
+          layout="list"
+          // Dix-neuf cartes d'affilée faisaient un mur en bas des réglages.
+          // Repliées par catégorie, il en reste sept lignes.
+          groupBy="category"
           labels={
             {
               fr: {
