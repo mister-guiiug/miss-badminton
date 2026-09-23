@@ -121,7 +121,7 @@ export function HomeView() {
           <button
             type="button"
             onClick={() => setWizardOpen(true)}
-            className="flex min-h-20 w-full items-center justify-center gap-4 rounded-3xl p-5 sm:min-h-24 sm:p-6 text-xl font-bold text-white shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="flex min-h-20 w-full items-center justify-center gap-4 rounded-3xl p-5 sm:min-h-24 sm:p-6 text-xl font-bold text-[var(--primary-ink)] shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98]"
             style={{ background: 'var(--primary)' }}
           >
             <PlusIcon size={32} strokeWidth={3} />

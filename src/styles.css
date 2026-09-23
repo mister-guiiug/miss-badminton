@@ -13,6 +13,10 @@ html[data-theme='light'] {
   --primary-hover: #4338ca;
   --primary-light: #818cf8;
   --primary-deep: #3730a3;
+  /* L'encre de tout ce qui est écrit SUR `--primary` : boutons pleins, segment
+     actif, rang n°1, interrupteur allumé — et la primaire des composants du
+     socle. Blanche en clair (6,29:1). Voir le bloc sombre. */
+  --primary-ink: #ffffff;
   --danger: #dc2626;
   --danger-hover: #b91c1c;
   --border: #e2e8f0;
@@ -51,9 +55,10 @@ html[data-theme='light'] {
   --dwc-border: var(--border);
   --dwc-border-strong: var(--muted);
   --dwc-primary: var(--primary);
-  /* L'app pose partout du texte blanc sur la primaire (boutons période,
-     rang n°1 du classement) — y compris en sombre. */
-  --dwc-primary-contrast: #ffffff;
+  /* La même encre que l'app : le blanc d'avant, repris « parce que l'app
+     pose partout du blanc sur la primaire », donnait 2,98:1 en sombre sur le
+     bouton de confirmation du socle — et sur tous ceux de l'app. */
+  --dwc-primary-contrast: var(--primary-ink);
   --dwc-primary-soft: rgba(var(--accent-rgb), 0.12);
   --dwc-success: #16a34a;
   --dwc-warning: #b45309;
@@ -78,6 +83,12 @@ html[data-theme='dark'] {
   --primary-hover: #a5b4fc;
   --primary-light: #a5b4fc;
   --primary-deep: #4f46e5;
+  /* En sombre, c'est l'ENCRE qui change, pas l'indigo. `#818cf8` est clair
+     pour se lire en texte sur l'ardoise (4,90:1 sur `--surface`), et c'est
+     justement ce qui l'empêche de porter du blanc : 2,98:1, et 1,99 au survol
+     sur `--primary-hover`. Aucun indigo ne tient les deux ; le fond de page,
+     lui, tient sur les deux aplats — 5,98 et 8,96. */
+  --primary-ink: #0f172a;
   --danger: #f87171;
   --danger-hover: #ef4444;
   --border: rgba(148, 163, 184, 0.22);
@@ -189,7 +200,7 @@ body {
 .mb-consent-banner [data-dwc='consent-accept'] {
   background: var(--primary);
   border-color: transparent;
-  color: #fff;
+  color: var(--primary-ink);
 }
 
 .mb-consent-banner [data-dwc='consent-refuse'] {
@@ -201,7 +212,7 @@ body {
 .mb-update-banner [data-dwc='update-banner-update'] {
   background: var(--primary);
   border-color: transparent;
-  color: #fff;
+  color: var(--primary-ink);
   white-space: nowrap;
 }
 
