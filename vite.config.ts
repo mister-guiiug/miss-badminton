@@ -116,7 +116,7 @@ export default defineConfig(({ command }) => {
       pwaSeoPlugin({
         siteName: 'Miss Badminton',
         basePath,
-        logoPath: '/logo.svg',
+        logoPath: '/icons/icon-512.png',
         // Script anti-FOUC engendré par le socle (theme-boot), injecté en tête
         // de <head>. Il interroge `(prefers-color-scheme: dark)` — l'ancienne
         // IIFE maison interrogeait `light` avec repli sombre, donc tout
