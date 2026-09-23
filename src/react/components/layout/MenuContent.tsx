@@ -100,7 +100,14 @@ export function MenuContent() {
                 }`
               }
               style={({ isActive }) => ({
-                color: isActive ? 'var(--primary)' : 'var(--text)',
+                // La primaire MÉLANGÉE vers le texte, pas la primaire nue : sur
+                // sa propre teinte à 12 %, l'indigo clair du thème sombre ne
+                // donnait que 4,07:1 (axe, 23/09/2026). Le mélange du socle,
+                // 60 % vers `--text`, garde la teinte et monte à 6,27 en
+                // sombre, 8,40 en clair.
+                color: isActive
+                  ? 'color-mix(in srgb, var(--primary) 60%, var(--text))'
+                  : 'var(--text)',
               })}
             >
               {({ isActive }) => (

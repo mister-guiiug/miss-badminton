@@ -82,7 +82,7 @@ export function FullscreenPrompt() {
         <button
           type="button"
           onClick={activate}
-          className="inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
+          className="inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-semibold text-[var(--primary-ink)]"
           style={{ background: 'var(--primary)' }}
         >
           {t('fullscreen.activate')}

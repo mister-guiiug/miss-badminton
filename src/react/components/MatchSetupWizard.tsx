@@ -331,7 +331,7 @@ export function MatchSetupWizard({
               type="button"
               onClick={() => setStep(s => (s + 1) as 1 | 2 | 3)}
               disabled={step === 1 && !canNextStep1}
-              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-[var(--primary-ink)] disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: 'var(--primary)' }}
             >
               {t('wizard.next')}
@@ -340,7 +340,7 @@ export function MatchSetupWizard({
             <button
               type="button"
               onClick={finish}
-              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-white"
+              className="inline-flex min-h-11 items-center rounded-xl px-5 py-2 text-sm font-semibold text-[var(--primary-ink)]"
               style={{ background: 'var(--primary)' }}
             >
               {t('wizard.start')}
@@ -771,7 +771,7 @@ function PillGroup<T extends string | number>({
               style={{
                 borderColor: isSelected ? 'var(--primary)' : 'var(--border)',
                 background: isSelected ? 'var(--primary)' : 'transparent',
-                color: isSelected ? '#fff' : 'var(--text)',
+                color: isSelected ? 'var(--primary-ink)' : 'var(--text)',
               }}
             >
               {opt.label}

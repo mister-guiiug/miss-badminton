@@ -28,7 +28,7 @@ export function SideChangeBanner({ onSwap, onDismiss }: SideChangeBannerProps) {
       <button
         type="button"
         onClick={onSwap}
-        className="inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
+        className="inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-semibold text-[var(--primary-ink)]"
         style={{ background: 'var(--primary)' }}
       >
         {t('sideChange.swapNow')}

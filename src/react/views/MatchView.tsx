@@ -1064,7 +1064,7 @@ function MatchOverOverlay({
           <button
             type="button"
             onClick={onRematch}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-[var(--primary-ink)]"
             style={{ background: 'var(--primary)' }}
           >
             <RotateCwIcon size={16} />

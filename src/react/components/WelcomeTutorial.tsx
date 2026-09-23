@@ -105,7 +105,7 @@ export function WelcomeTutorial() {
               if (isLast) close();
               else setStep(s => (s + 1) as 0 | 1 | 2 | 3);
             }}
-            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
+            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-[var(--primary-ink)]"
             style={{ background: 'var(--primary)' }}
           >
             {isLast ? t('welcome.start') : t('welcome.next')}

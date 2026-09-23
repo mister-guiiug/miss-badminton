@@ -357,7 +357,7 @@ export function HistoryView() {
                 borderColor: period === p ? 'var(--primary)' : 'var(--border)',
                 background:
                   period === p ? 'var(--primary)' : 'var(--surface-highlight)',
-                color: period === p ? 'white' : 'var(--text)',
+                color: period === p ? 'var(--primary-ink)' : 'var(--text)',
               }}
             >
               {p === 'all'
@@ -561,7 +561,7 @@ export function HistoryView() {
                     style={{
                       background:
                         i === 0 ? 'var(--primary)' : 'var(--surface-highlight)',
-                      color: i === 0 ? 'white' : 'var(--muted)',
+                      color: i === 0 ? 'var(--primary-ink)' : 'var(--muted)',
                     }}
                   >
                     {i + 1}
@@ -941,7 +941,7 @@ function EditSetDialog({
             type="button"
             disabled={invalid}
             onClick={() => onConfirm({ team1: t1, team2: t2 })}
-            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-[var(--primary-ink)] disabled:opacity-40"
             style={{ background: 'var(--primary)' }}
           >
             {confirmLabel}

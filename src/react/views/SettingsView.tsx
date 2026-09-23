@@ -353,7 +353,7 @@ export function SettingsView() {
                   <button
                     type="button"
                     onClick={handleRename}
-                    className="min-h-9 rounded-lg px-3 py-1 text-sm font-semibold text-white"
+                    className="min-h-9 rounded-lg px-3 py-1 text-sm font-semibold text-[var(--primary-ink)]"
                     style={{ background: 'var(--primary)' }}
                   >
                     {t('settingsExtra.renameSave')}
@@ -479,7 +479,7 @@ export function SettingsView() {
           type="button"
           onClick={handleForceUpdate}
           disabled={updating}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] disabled:cursor-not-allowed disabled:opacity-60"
           style={{ background: 'var(--primary)' }}
         >
           <RefreshCwIcon
@@ -670,7 +670,7 @@ function Pills<T extends string>({
             style={{
               borderColor: selected ? 'var(--primary)' : 'var(--border)',
               background: selected ? 'var(--primary)' : 'transparent',
-              color: selected ? '#fff' : 'var(--text)',
+              color: selected ? 'var(--primary-ink)' : 'var(--text)',
             }}
           >
             {opt.label}
@@ -707,13 +707,13 @@ function Toggle({
       style={{
         borderColor: value ? 'var(--primary)' : 'var(--border)',
         background: value ? 'var(--primary)' : 'transparent',
-        color: value ? '#fff' : 'var(--text)',
+        color: value ? 'var(--primary-ink)' : 'var(--text)',
       }}
     >
       <span
         aria-hidden
         className="inline-block h-3 w-3 rounded-full"
-        style={{ background: value ? '#fff' : 'var(--muted)' }}
+        style={{ background: value ? 'var(--primary-ink)' : 'var(--muted)' }}
       />
       <span className="text-sm font-medium">
         {value ? enabledLabel : disabledLabel}
