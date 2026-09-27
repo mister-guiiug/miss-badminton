@@ -5,6 +5,7 @@ import { type SavedMatch } from '../../storage';
 import type { Locale } from '../../i18n/messages';
 import { useTeamColors } from '../hooks/useTeamColors';
 import { PageContainer } from '../components/layout/PageContainer';
+import { Button } from '@mister-guiiug/dev-pwa-config/react/button';
 import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import {
   FlameIcon,
@@ -399,15 +400,16 @@ export function HistoryView() {
             ))}
           </datalist>
           {playerQuery.trim().length > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
+              iconOnly
               onClick={() => setPlayerQuery('')}
               aria-label={t('historyExtra.playerFilterClear')}
-              className="flex touch-target items-center justify-center rounded-full border"
-              style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
+              style={{ color: 'var(--muted)' }}
             >
               <XIcon size={16} />
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -679,8 +681,10 @@ export function HistoryView() {
                     {formatDate(match.completedAt, locale)}
                   </span>
                   <div className="flex gap-1">
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
                       onClick={() => {
                         const text = buildShareText(match, {
                           team1: t1,
@@ -693,13 +697,14 @@ export function HistoryView() {
                         });
                       }}
                       aria-label={t('scoreboard.share')}
-                      className="touch-target flex items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--muted)' }}
                     >
                       <Share2Icon size={16} />
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
                       onClick={() => {
                         const name = `${t1} vs ${t2}`;
                         storage.addTemplate({
@@ -711,29 +716,30 @@ export function HistoryView() {
                       }}
                       aria-label={t('historyExtra.saveTemplate')}
                       title={t('historyExtra.saveTemplate')}
-                      className="touch-target flex items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--muted)' }}
                     >
                       <PlusIcon size={16} />
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
                       onClick={() => handleReplay(match)}
                       aria-label={t('historyExtra.replay')}
-                      className="touch-target flex items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--primary)' }}
                     >
                       <RotateCwIcon size={16} />
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
                       onClick={() => requestRemoveFromHistory(match.id)}
                       aria-label={t('history.delete')}
-                      className="touch-target flex items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--muted)' }}
                     >
                       <Trash2Icon size={16} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
