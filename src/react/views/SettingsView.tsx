@@ -738,7 +738,7 @@ function ColorField({ label, value, onChange }: ColorFieldProps) {
         type="color"
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
+        className="touch-target w-11 cursor-pointer rounded border-0 bg-transparent p-0"
         aria-label={label}
       />
       <span>{label}</span>
