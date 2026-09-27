@@ -693,7 +693,7 @@ export function HistoryView() {
                         });
                       }}
                       aria-label={t('scoreboard.share')}
-                      className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+                      className="touch-target flex items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--muted)' }}
                     >
                       <Share2Icon size={16} />
@@ -711,7 +711,7 @@ export function HistoryView() {
                       }}
                       aria-label={t('historyExtra.saveTemplate')}
                       title={t('historyExtra.saveTemplate')}
-                      className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+                      className="touch-target flex items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--muted)' }}
                     >
                       <PlusIcon size={16} />
@@ -720,7 +720,7 @@ export function HistoryView() {
                       type="button"
                       onClick={() => handleReplay(match)}
                       aria-label={t('historyExtra.replay')}
-                      className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+                      className="touch-target flex items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--primary)' }}
                     >
                       <RotateCwIcon size={16} />
@@ -729,7 +729,7 @@ export function HistoryView() {
                       type="button"
                       onClick={() => requestRemoveFromHistory(match.id)}
                       aria-label={t('history.delete')}
-                      className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+                      className="touch-target flex items-center justify-center rounded-full hover:bg-black/5"
                       style={{ color: 'var(--muted)' }}
                     >
                       <Trash2Icon size={16} />
