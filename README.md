@@ -44,8 +44,8 @@ npm run dev
 
 Pas de compte ni de serveur : les matchs restent sur l'appareil (stockage du
 navigateur). Le site publié branche deux services tiers hébergés dans l'Union
-européenne : **Sentry** démarre à l'ouverture, sans demander d'accord (il signale
-la session et reçoit un rapport technique quand une erreur survient), et
+européenne : **Sentry** démarre à l'ouverture, sans demander d'accord, et ne
+reçoit un rapport technique que lorsqu'une erreur survient ;
 **PostHog** ne mesure la fréquentation qu'après accord dans le bandeau de
 consentement.
 
