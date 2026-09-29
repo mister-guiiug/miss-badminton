@@ -2,7 +2,7 @@
 title: Compter les points au badminton : score, service et sets
 description: Compter les points au badminton : sets de 15 points depuis 2026, deux points d'écart, plafond à 21, qui sert et de quel côté, quand changer de côté.
 date: 2026-09-25
-updated: 2026-09-29
+updated: 2026-09-30
 answer: Au badminton, chaque échange rapporte un point. Un match se joue en deux sets gagnants de 15 points : format appliqué en France depuis le 1er septembre 2026, et dans les Lois de la BWF à partir du 4 janvier 2027. À 14-14, il faut deux points d'écart ; à 20-20, le 21e point gagne le set.
 ---
 
@@ -76,12 +76,13 @@ En club ou entre amis, rien n'interdit de s'accorder sur un autre format, pourvu
 
 [Miss Badminton](https://mister-guiiug.github.io/miss-badminton/) transforme un téléphone ou une tablette en tableau de score, sans compte : les matchs restent sur l'appareil.
 
-- **Simple ou double.** Le bouton « Match standard » lance un simple en 2 sets gagnants de 21 points, plafond à 30 : l'ancien format officiel. L'assistant propose aussi des sets de 15 points, mais pas encore le plafond à 21 ni le changement de côté à 8 points du nouveau format.
+- **Le format de 2026 en un toucher.** Le bouton « Match standard » lance un simple en 2 sets gagnants de 15 points, avec deux points d'écart dès 14-14 et un plafond à 21. Le bouton « Format 21 points » garde l'ancien format, plafond à 30.
+- **Simple ou double.** Pour un double, l'assistant part du même format.
 - **Un toucher par point.** Touchez la zone du camp qui gagne l'échange ; un appui long retire un point, et un bouton annule le dernier point.
 - **Le service affiché.** Un repère, à la couleur du camp qui sert, se place dans sa zone de service, à droite ou à gauche selon la parité de son score.
-- **Balle de set et balle de match** sont signalées à l'écran.
-- **Rappel du changement de côté**, à chaque set, avant le set décisif seulement, ou à 11 points. Un bouton permute les camps à tout moment, par exemple à 8 points dans le troisième set.
-- **Vos formats.** 1, 2, 3 ou 5 sets gagnants, sets de 5, 11, 15, 21, 30 ou 31 points, plafond à 30 ou non, durée maximale par set.
+- **Balle de set et balle de match** sont signalées à l'écran, y compris à 20-20 en 15 points, où le point suivant gagne le set.
+- **Rappel du changement de côté** à la fin de chaque set, et au troisième set quand un camp atteint 8 points (11 dans le format en 21 points). Un bouton permute les camps à tout moment.
+- **Vos formats.** 1, 2, 3 ou 5 sets gagnants ; sets de 5, 11, 15, 21, 30 ou 31 points ; deux points d'écart ou un seul ; plafond à 21, à 30 ou aucun ; changement de côté à 8 ou 11 points, au set décisif ou à chaque set ; durée maximale par set.
 - **Historique et statistiques** : classement, face-à-face, détail des sets, correction d'un set après coup.
 
 Pour tout savoir sur la mise en jeu elle-même, lisez aussi nos [règles du service au badminton](regles-du-service-au-badminton.html).

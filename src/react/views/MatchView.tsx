@@ -4,9 +4,9 @@ import { RiveScene } from '../components/RiveScene';
 import {
   MatchSetupWizard,
   type MatchConfig,
-  type PointsCap,
   type Team,
 } from '../components/MatchSetupWizard';
+import { isSetPoint, setRulesOf } from '../../scoring';
 import { FullscreenPrompt } from '../components/FullscreenPrompt';
 import { CourtOverlay } from '../components/CourtOverlay';
 import { SideChangeBanner } from '../components/SideChangeBanner';
@@ -80,25 +80,6 @@ function resolveTeamLabel(team: Team, fallbacks: [string, string?]): string {
  */
 function maxTotalSets(setsToWin: number): number {
   return 2 * setsToWin - 1;
-}
-
-function isSetWon(
-  scoreA: number,
-  scoreB: number,
-  target: number,
-  cap: PointsCap
-): boolean {
-  if (cap !== null && scoreA >= cap && scoreA > scoreB) return true;
-  return scoreA >= target && scoreA - scoreB >= 2;
-}
-
-function isSetPoint(
-  scoreA: number,
-  scoreB: number,
-  target: number,
-  cap: PointsCap
-): boolean {
-  return isSetWon(scoreA + 1, scoreB, target, cap);
 }
 
 export function MatchView() {
@@ -277,14 +258,12 @@ export function MatchView() {
   const totalSets = match ? maxTotalSets(match.sets) : 0;
   const pointsTarget = match?.points;
 
+  // Les mêmes règles que le magasin, qui décide de la fin du set : une balle
+  // de set annoncée est un set qui se termine au point suivant.
   const team1AtSetPoint =
-    !!match &&
-    !matchWinner &&
-    isSetPoint(score1, score2, match.points, match.cap);
+    !!match && !matchWinner && isSetPoint(score1, score2, setRulesOf(match));
   const team2AtSetPoint =
-    !!match &&
-    !matchWinner &&
-    isSetPoint(score2, score1, match.points, match.cap);
+    !!match && !matchWinner && isSetPoint(score2, score1, setRulesOf(match));
   const setsToWin = match?.sets ?? 0;
   const team1AtMatchPoint = team1AtSetPoint && setWins.team1 + 1 >= setsToWin;
   const team2AtMatchPoint = team2AtSetPoint && setWins.team2 + 1 >= setsToWin;

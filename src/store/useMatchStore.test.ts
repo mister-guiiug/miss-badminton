@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UNDO_DELETE_MS, useMatchStore } from './useMatchStore';
 import { storage } from '../storage';
 import type { MatchConfig } from '../react/components/MatchSetupWizard';
+import { FORMAT_15, FORMAT_21 } from '../scoring';
 
 function resetStore() {
   // On vide localStorage entre les tests pour repartir d'un état propre,
@@ -201,6 +202,165 @@ describe('useMatchStore', () => {
       scoreN('team1', 5);
       // Doit rester false (mid11Triggered prévient un second déclenchement)
       expect(useMatchStore.getState().pendingSideChange).toBe(false);
+    });
+  });
+
+  /**
+   * LE FORMAT DE 2026, joué point par point : deux sets gagnants de 15
+   * points, deux points d'écart dès 14-14, plafond à 21, changement de côté à
+   * la fin de chaque set et à 8 au set décisif. Et le 21 points, gardé en
+   * alternative, avec son changement à 11 et son plafond à 30.
+   */
+  describe('formats de match', () => {
+    /** Le « Match standard », tel que l'assistant l'enregistre. */
+    function troisFois15(overrides: Partial<MatchConfig> = {}): MatchConfig {
+      return standardConfig({
+        ...FORMAT_15,
+        sideChange: 'each-set',
+        ...overrides,
+      });
+    }
+
+    /** `n` points de chaque côté, en alternant : le score reste serré. */
+    function alterner(n: number) {
+      for (let i = 0; i < n; i++) {
+        useMatchStore.getState().score('team1');
+        useMatchStore.getState().score('team2');
+      }
+    }
+
+    const enAttente = () => useMatchStore.getState().pendingSideChange;
+
+    it('3 × 15 : 15-13 ferme le set, 15-14 le prolonge', () => {
+      useMatchStore.getState().setMatch(troisFois15());
+      scoreN('team1', 14);
+      scoreN('team2', 13);
+      scoreN('team1', 1);
+      expect(useMatchStore.getState().setScores).toEqual([
+        { team1: 15, team2: 13 },
+      ]);
+
+      alterner(14);
+      scoreN('team1', 1); // 15-14 : deux points d'écart dès 14-14
+      expect(useMatchStore.getState().setScores).toHaveLength(1);
+      scoreN('team1', 1);
+      expect(useMatchStore.getState().setScores).toEqual([
+        { team1: 15, team2: 13 },
+        { team1: 16, team2: 14 },
+      ]);
+    });
+
+    it('3 × 15 : à 20-20, le 21e point gagne le set', () => {
+      useMatchStore.getState().setMatch(troisFois15());
+      alterner(20);
+      expect(useMatchStore.getState().score1).toBe(20);
+      expect(useMatchStore.getState().score2).toBe(20);
+      scoreN('team2', 1);
+      const state = useMatchStore.getState();
+      expect(state.setScores).toEqual([{ team1: 20, team2: 21 }]);
+      expect(state.setWins).toEqual({ team1: 0, team2: 1 });
+    });
+
+    it('3 × 15 : un rappel à la fin des sets, et à 8 au set décisif seulement', () => {
+      useMatchStore.getState().setMatch(troisFois15());
+
+      // Set 1 : rien à 8, un rappel à la fin.
+      scoreN('team1', 8);
+      expect(enAttente()).toBe(false);
+      scoreN('team1', 7);
+      expect(useMatchStore.getState().setWins).toEqual({ team1: 1, team2: 0 });
+      expect(enAttente()).toBe(true);
+      useMatchStore.getState().dismissSideChange();
+
+      // Set 2 : pareil, pour l'autre camp.
+      scoreN('team2', 8);
+      expect(enAttente()).toBe(false);
+      scoreN('team2', 7);
+      expect(useMatchStore.getState().setWins).toEqual({ team1: 1, team2: 1 });
+      expect(enAttente()).toBe(true);
+      useMatchStore.getState().dismissSideChange();
+
+      // Set 3, décisif : au premier camp qui atteint 8, et une seule fois.
+      scoreN('team2', 5);
+      scoreN('team1', 7);
+      expect(enAttente()).toBe(false);
+      scoreN('team1', 1); // 8-5
+      expect(enAttente()).toBe(true);
+      useMatchStore.getState().dismissSideChange();
+      scoreN('team2', 3); // 8-8 : l'autre camp y arrive à son tour
+      expect(enAttente()).toBe(false);
+    });
+
+    it('21 points : changement à 11 au set décisif, plafond à 30', () => {
+      useMatchStore
+        .getState()
+        .setMatch(standardConfig({ ...FORMAT_21, sideChange: 'each-set' }));
+      scoreN('team1', 21);
+      useMatchStore.getState().dismissSideChange();
+      scoreN('team2', 21);
+      useMatchStore.getState().dismissSideChange();
+
+      scoreN('team1', 10);
+      expect(enAttente()).toBe(false);
+      scoreN('team1', 1);
+      expect(enAttente()).toBe(true);
+      useMatchStore.getState().dismissSideChange();
+
+      // Puis la prolongation jusqu'au plafond : le 30e point gagne à 29-29.
+      scoreN('team2', 11);
+      alterner(18);
+      scoreN('team2', 1);
+      const state = useMatchStore.getState();
+      expect(state.setScores.at(-1)).toEqual({ team1: 29, team2: 30 });
+      expect(state.matchWinner).toBe('team2');
+    });
+
+    it('écart de 1 : le set tombe à 15-14', () => {
+      useMatchStore.getState().setMatch(troisFois15({ winBy: 1 }));
+      alterner(14);
+      scoreN('team1', 1);
+      expect(useMatchStore.getState().setScores).toEqual([
+        { team1: 15, team2: 14 },
+      ]);
+    });
+
+    it('« en cours de set » à 8 : le rappel revient à chaque set, pas entre', () => {
+      useMatchStore
+        .getState()
+        .setMatch(troisFois15({ sideChange: 'mid-match' }));
+      scoreN('team1', 8);
+      expect(enAttente()).toBe(true);
+      useMatchStore.getState().dismissSideChange();
+      scoreN('team1', 7);
+      expect(useMatchStore.getState().setWins).toEqual({ team1: 1, team2: 0 });
+      expect(enAttente()).toBe(false);
+      scoreN('team2', 8);
+      expect(enAttente()).toBe(true);
+    });
+
+    it('annuler le point du changement efface le rappel, le rejouer le rend', () => {
+      // Un match en un set : son seul set est le set décisif.
+      useMatchStore.getState().setMatch(troisFois15({ sets: 1 }));
+      scoreN('team1', 8);
+      expect(enAttente()).toBe(true);
+      useMatchStore.getState().undo();
+      expect(enAttente()).toBe(false);
+      expect(useMatchStore.getState().mid11Triggered).toBe(false);
+      scoreN('team1', 1);
+      expect(enAttente()).toBe(true);
+    });
+
+    it('un match enregistré avant ces réglages se joue comme avant', () => {
+      // `standardConfig()` : 21 points, 'each-set', ni écart ni point — la
+      // forme de tout ce qui a été enregistré avant le format de 2026. Pas
+      // de rappel en cours de set au troisième, comme alors.
+      useMatchStore.getState().setMatch(standardConfig({ sets: 2 }));
+      scoreN('team1', 21);
+      useMatchStore.getState().dismissSideChange();
+      scoreN('team2', 21);
+      useMatchStore.getState().dismissSideChange();
+      scoreN('team1', 11);
+      expect(enAttente()).toBe(false);
     });
   });
 

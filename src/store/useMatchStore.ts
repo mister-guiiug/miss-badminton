@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type {
-  MatchConfig,
-  PointsCap,
-} from '../react/components/MatchSetupWizard';
+import type { MatchConfig } from '../react/components/MatchSetupWizard';
+import { isSetWon, midSetSideChangeAt, setRulesOf } from '../scoring';
 import { storage, type SavedMatch } from '../storage';
 import { ExportBundleSchema, type Player } from '../schemas';
 import { migratePlayers, renameInMatches } from '../players';
@@ -73,6 +71,11 @@ interface MatchState {
   server: ServiceSide | null;
   setScores: { team1: number; team2: number }[];
   pendingSideChange: boolean;
+  /**
+   * Vrai une fois le changement de côté du set en cours déclenché, au point
+   * du format (`midSetSideChangeAt`). Le nom date du temps où ce point était
+   * 11 pour tout le monde ; il reste, parce qu'il est persisté.
+   */
   mid11Triggered: boolean;
   /**
    * Vrai entre l'instant où `closeCurrentSet` a renvoyé `'tie-break-required'`
@@ -206,16 +209,6 @@ interface MatchState {
   };
 }
 
-function isSetWon(
-  scoreA: number,
-  scoreB: number,
-  target: number,
-  cap: PointsCap
-): boolean {
-  if (cap !== null && scoreA >= cap && scoreA > scoreB) return true;
-  return scoreA >= target && scoreA - scoreB >= 2;
-}
-
 function maxTotalSets(setsToWin: number): number {
   return 2 * setsToWin - 1;
 }
@@ -345,12 +338,13 @@ export const useMatchStore = create<MatchState>()(
         // Sudden death : un point déclenché par `closeCurrentSet` à l'épuisement
         // du temps. Ce point ferme le set immédiatement, indépendamment du
         // seuil de points ou du cap.
+        const rules = setRulesOf(state.match);
         const team1Won = state.pendingTieBreak
           ? team === 'team1'
-          : isSetWon(nextS1, nextS2, state.match.points, state.match.cap);
+          : isSetWon(nextS1, nextS2, rules);
         const team2Won = state.pendingTieBreak
           ? team === 'team2'
-          : isSetWon(nextS2, nextS1, state.match.points, state.match.cap);
+          : isSetWon(nextS2, nextS1, rules);
         const setEnded = team1Won || team2Won;
 
         const baseHistory: HistoryEntry = {
@@ -433,12 +427,16 @@ export const useMatchStore = create<MatchState>()(
           return;
         }
 
+        // Le changement de côté EN COURS de set : au point du format (8 en
+        // 15 points, 11 en 21), une fois par set, au premier camp qui
+        // l'atteint. Le set où il tombe, c'est `midSetSideChangeAt` qui le dit.
         let pendingSideChange = state.pendingSideChange;
         let mid11Triggered = state.mid11Triggered;
+        const changeAt = midSetSideChangeAt(state.match, state.setWins);
         if (
-          state.match.sideChange === 'mid-match' &&
+          changeAt !== null &&
           !mid11Triggered &&
-          (nextS1 === 11 || nextS2 === 11)
+          (nextS1 === changeAt || nextS2 === changeAt)
         ) {
           pendingSideChange = true;
           mid11Triggered = true;

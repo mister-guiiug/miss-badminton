@@ -98,15 +98,23 @@ export interface Messages {
     setsWinning: string;
     points: string;
     pointsHelp: string;
+    winBy: string;
+    winByHelp: string;
     cap: string;
     capHelp: string;
     capNone: string;
     capValue: string;
     sideChange: string;
-    sideChangeHelp: string;
-    sideChangeDecisive: string;
+    sideChangeOfficial: string;
+    sideChangeOfficialHelp: string;
     sideChangeEachSet: string;
+    sideChangeEachSetHelp: string;
+    sideChangeDecisive: string;
+    sideChangeDecisiveHelp: string;
     sideChangeMidMatch: string;
+    sideChangeMidMatchHelp: string;
+    sideChangeAt: string;
+    sideChangeAtHelp: string;
     timeLimit: string;
     timeLimitHelp: string;
     timeLimitNone: string;
@@ -121,6 +129,10 @@ export interface Messages {
     next: string;
     start: string;
     summaryLabel: string;
+    summaryWinBy: string;
+    summaryCap: string;
+    summaryNoCap: string;
+    summarySideChangeAt: string;
   };
   players: {
     player1: string;
@@ -275,6 +287,7 @@ export interface Messages {
   wizardExtra: {
     quickStart: string;
     quickStartHint: string;
+    quickStartAlt: string;
   };
   settingsExtra: {
     contrastWarning: string;
@@ -372,16 +385,26 @@ const fr: Messages = {
     setsHelp: 'Premier à {wins} sets gagnants',
     setsWinning: '{wins} sets gagnants',
     points: 'Points par set',
-    pointsHelp: 'Le set s’arrête au premier à ce score',
+    pointsHelp:
+      '15 ou 21 : l’écart, le plafond et le changement de côté suivent',
+    winBy: 'Écart',
+    winByHelp: 'Points d’avance pour gagner le set ; 1 = sans prolongation',
     cap: 'Plafond',
     capHelp: 'Score limite si égalité prolongée',
     capNone: 'Sans',
     capValue: '{n}',
     sideChange: 'Changement de côté',
-    sideChangeHelp: 'Quand échanger les zones du terrain',
-    sideChangeDecisive: 'Set décisif uniquement',
-    sideChangeEachSet: 'Chaque set',
-    sideChangeMidMatch: 'Mi-match (à 11)',
+    sideChangeOfficial: 'Règle officielle',
+    sideChangeOfficialHelp:
+      'À la fin de chaque set, et au set décisif quand un camp atteint {n} points.',
+    sideChangeEachSet: 'Entre les sets',
+    sideChangeEachSetHelp: 'À la fin de chaque set, sauf le dernier.',
+    sideChangeDecisive: 'Avant le set décisif',
+    sideChangeDecisiveHelp: 'Une seule fois, avant le set décisif.',
+    sideChangeMidMatch: 'En cours de set',
+    sideChangeMidMatchHelp: 'À chaque set, quand un camp atteint {n} points.',
+    sideChangeAt: 'Point du changement',
+    sideChangeAtHelp: '8 en 15 points, 11 en 21 points',
     timeLimit: 'Durée du set',
     timeLimitHelp:
       'Limite max. par set ; au temps, le score en tête l’emporte.',
@@ -397,6 +420,10 @@ const fr: Messages = {
     next: 'Suivant',
     start: 'Commencer',
     summaryLabel: 'Résumé',
+    summaryWinBy: 'écart {n}',
+    summaryCap: 'plafond {n}',
+    summaryNoCap: 'sans plafond',
+    summarySideChangeAt: '{label}, à {n}',
   },
   players: {
     player1: 'joueur 1',
@@ -557,7 +584,8 @@ const fr: Messages = {
   },
   wizardExtra: {
     quickStart: 'Match standard',
-    quickStartHint: 'Simple · 2 sets gagnants · 21 pts · plafond 30',
+    quickStartHint: 'Simple · 2 sets gagnants · {points} pts · plafond {cap}',
+    quickStartAlt: 'Format 21 points',
   },
   settingsExtra: {
     contrastWarning:
@@ -653,16 +681,25 @@ const en: Messages = {
     setsHelp: 'First to {wins} winning sets',
     setsWinning: '{wins} winning sets',
     points: 'Points per set',
-    pointsHelp: 'A set ends at this score',
+    pointsHelp: '15 or 21 also sets the matching lead, cap and side change',
+    winBy: 'Win by',
+    winByHelp: 'Lead needed to win a set; 1 means no extra points',
     cap: 'Cap',
     capHelp: 'Maximum score to close a tied set',
     capNone: 'None',
     capValue: '{n}',
     sideChange: 'Side change',
-    sideChangeHelp: 'When to swap court sides',
-    sideChangeDecisive: 'Decisive set only',
-    sideChangeEachSet: 'Each set',
-    sideChangeMidMatch: 'Mid-match (at 11)',
+    sideChangeOfficial: 'Official rule',
+    sideChangeOfficialHelp:
+      'At the end of each set, and in the deciding set when a side reaches {n} points.',
+    sideChangeEachSet: 'Between sets',
+    sideChangeEachSetHelp: 'At the end of each set except the last.',
+    sideChangeDecisive: 'Before the deciding set',
+    sideChangeDecisiveHelp: 'Once, before the deciding set.',
+    sideChangeMidMatch: 'Mid-set',
+    sideChangeMidMatchHelp: 'In every set, when a side reaches {n} points.',
+    sideChangeAt: 'Side change point',
+    sideChangeAtHelp: '8 in sets to 15, 11 in sets to 21',
     timeLimit: 'Set duration',
     timeLimitHelp: 'Cap per set; at time-up, the leader wins the set.',
     timeLimitNone: 'No limit',
@@ -677,6 +714,10 @@ const en: Messages = {
     next: 'Next',
     start: 'Start',
     summaryLabel: 'Summary',
+    summaryWinBy: 'win by {n}',
+    summaryCap: 'cap {n}',
+    summaryNoCap: 'no cap',
+    summarySideChangeAt: '{label}, at {n}',
   },
   players: {
     player1: 'player 1',
@@ -833,7 +874,8 @@ const en: Messages = {
   },
   wizardExtra: {
     quickStart: 'Standard match',
-    quickStartHint: 'Singles · Best of 3 · 21 pts · cap 30',
+    quickStartHint: 'Singles · Best of 3 · {points} pts · cap {cap}',
+    quickStartAlt: '21-point format',
   },
   settingsExtra: {
     contrastWarning:
@@ -929,16 +971,26 @@ const es: Messages = {
     setsHelp: 'Primer a {wins} sets ganados',
     setsWinning: '{wins} sets ganados',
     points: 'Puntos por set',
-    pointsHelp: 'Un set termina al primero en alcanzar este puntaje',
+    pointsHelp:
+      '15 o 21 ajusta también la diferencia, el tope y el cambio de lado',
+    winBy: 'Diferencia',
+    winByHelp: 'Ventaja necesaria para ganar el set; 1 = sin prórroga',
     cap: 'Tope',
     capHelp: 'Puntaje límite en caso de empate',
     capNone: 'Sin tope',
     capValue: '{n}',
     sideChange: 'Cambio de lado',
-    sideChangeHelp: 'Cuándo intercambiar lados de la pista',
-    sideChangeDecisive: 'Solo set decisivo',
-    sideChangeEachSet: 'Cada set',
-    sideChangeMidMatch: 'A mitad de partido (a 11)',
+    sideChangeOfficial: 'Regla oficial',
+    sideChangeOfficialHelp:
+      'Al final de cada set, y en el set decisivo cuando un equipo llega a {n} puntos.',
+    sideChangeEachSet: 'Entre sets',
+    sideChangeEachSetHelp: 'Al final de cada set, salvo el último.',
+    sideChangeDecisive: 'Antes del set decisivo',
+    sideChangeDecisiveHelp: 'Una sola vez, antes del set decisivo.',
+    sideChangeMidMatch: 'A mitad de set',
+    sideChangeMidMatchHelp: 'En cada set, cuando un equipo llega a {n} puntos.',
+    sideChangeAt: 'Punto del cambio',
+    sideChangeAtHelp: '8 en sets a 15, 11 en sets a 21',
     timeLimit: 'Duración del set',
     timeLimitHelp: 'Tope por set; al tiempo, gana quien lidera.',
     timeLimitNone: 'Sin límite',
@@ -953,6 +1005,10 @@ const es: Messages = {
     next: 'Siguiente',
     start: 'Empezar',
     summaryLabel: 'Resumen',
+    summaryWinBy: 'diferencia {n}',
+    summaryCap: 'tope {n}',
+    summaryNoCap: 'sin tope',
+    summarySideChangeAt: '{label}, a {n}',
   },
   players: {
     player1: 'jugador 1',
@@ -1112,7 +1168,8 @@ const es: Messages = {
   },
   wizardExtra: {
     quickStart: 'Partido estándar',
-    quickStartHint: 'Individual · Al mejor de 3 · 21 pts · tope 30',
+    quickStartHint: 'Individual · Al mejor de 3 · {points} pts · tope {cap}',
+    quickStartAlt: 'Formato a 21 puntos',
   },
   settingsExtra: {
     contrastWarning:
