@@ -47,6 +47,14 @@ const PointsTargetSchema = z.union([
 const SideChangeSchema = z.enum(['decisive', 'each-set', 'mid-match']);
 /** Borne supérieure au score d'un set (peut être null = pas de plafond). */
 const PointsCapSchema = z.number().int().positive().nullable();
+/**
+ * L'écart pour gagner un set, et le point du changement de côté en cours de
+ * set. Des entiers, pas une liste de valeurs : une version antérieure de l'app
+ * rejetterait tout l'historique d'un match joué avec une valeur qu'elle ne
+ * connaîtrait pas, là où un nombre inattendu se joue simplement.
+ */
+const WinBySchema = z.number().int().positive();
+const SideChangeAtSchema = z.number().int().positive();
 /** Limite de temps en minutes (null = pas de limite). */
 const TimeLimitSchema = z.number().int().positive().nullable();
 /** Comportement quand la limite de temps est atteinte ou à égalité. */
@@ -64,6 +72,11 @@ export const MatchConfigSchema = z.object({
   // schéma pour garder la rétrocompatibilité des données déjà persistées.
   timeLimitMin: TimeLimitSchema.optional(),
   tieBreak: TieBreakSchema.optional(),
+  // Le format de 2026 (cf. `scoring.ts`). Oubliés ici, zod les retirerait à
+  // chaque lecture : un match en 15 points perdrait son changement de côté à 8
+  // dans l'historique, un modèle ou un lien « rejouer ».
+  winBy: WinBySchema.optional(),
+  sideChangeAt: SideChangeAtSchema.optional(),
 });
 
 const SetScoreSchema = z.object({

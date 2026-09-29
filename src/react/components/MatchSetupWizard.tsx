@@ -1,6 +1,14 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useI18n } from '../../i18n';
+import {
+  DEFAULT_WIN_BY,
+  FORMAT_15,
+  FORMAT_21,
+  LEGACY_SIDE_CHANGE_AT,
+  officialFormat,
+  type MatchFormat,
+} from '../../scoring';
 import { storage } from '../../storage';
 
 export type MatchType = 'singles' | 'doubles';
@@ -16,6 +24,17 @@ export type PointsTarget = 5 | 11 | 15 | 21 | 30 | 31;
 export type SideChange = 'decisive' | 'each-set' | 'mid-match';
 /** Plafond de score d'un set, indépendamment de la règle des 2 points. */
 export type PointsCap = number | null;
+/**
+ * Les points d'avance qu'il faut pour gagner un set : 2 dans les deux formats
+ * officiels, 1 pour un set sans prolongation.
+ */
+export type WinBy = number;
+/**
+ * Le score qui déclenche le changement de côté EN COURS de set, quand un camp
+ * l'atteint le premier : 8 en 15 points, 11 en 21 points. Le set où il
+ * s'applique dépend de `SideChange` (cf. `midSetSideChangeAt`).
+ */
+export type SideChangeAt = number;
 /** Limite de temps en minutes (par set ou par match selon le contexte). */
 export type TimeLimitMin = number | null;
 /**
@@ -49,8 +68,30 @@ export interface MatchConfig {
   type: MatchType;
   sets: SetCount;
   points: PointsTarget;
+  /**
+   * Optionnel : l'écart pour gagner un set. Absent (match enregistré avant ce
+   * réglage) : 2, la seule règle que l'app appliquait.
+   */
+  winBy?: WinBy;
   cap: PointsCap;
   sideChange: SideChange;
+  /**
+   * Optionnel : le point du changement de côté en cours de set. Avec
+   * `'mid-match'`, il vaut pour chaque set ; avec `'each-set'` ou
+   * `'decisive'`, pour le set décisif seulement. `'each-set'` et ce point,
+   * c'est la règle des Lois : fin du premier set, avant le troisième, et à 8
+   * dans le troisième.
+   *
+   * DEUX CHAMPS OPTIONNELS PLUTÔT QU'UNE VALEUR DE PLUS DANS `SideChange`.
+   * Une version antérieure de l'app valide `sideChange` contre sa propre
+   * liste : une valeur qu'elle ne connaît pas lui ferait rejeter tout
+   * l'historique qui la porte. Un champ qu'elle ne connaît pas, zod le retire
+   * à la lecture, et le match se joue avec les changements entre les sets.
+   *
+   * Absent (match enregistré avant ce réglage) : 11 pour `'mid-match'`,
+   * aucun changement en cours de set pour les deux autres.
+   */
+  sideChangeAt?: SideChangeAt;
   team1: Team;
   team2: Team;
   /**
@@ -62,24 +103,52 @@ export interface MatchConfig {
   tieBreak?: TieBreak;
 }
 
+/**
+ * Le changement de côté tel que l'assistant le PROPOSE. `'official'` n'est pas
+ * stocké : `finish` l'écrit `'each-set'` avec un `sideChangeAt` (voir
+ * `MatchConfig.sideChangeAt` pour la raison).
+ */
+type SideChangeChoice = 'official' | SideChange;
+
 interface WizardDraft {
   type: MatchType | null;
   sets: SetCount;
   points: PointsTarget;
+  winBy: WinBy;
   cap: PointsCap;
-  sideChange: SideChange;
+  sideChange: SideChangeChoice;
+  /** Gardé même quand le choix n'en use pas : il revient si l'on y retourne. */
+  sideChangeAt: SideChangeAt;
   timeLimitMin: TimeLimitMin;
   tieBreak: TieBreak;
   team1: { primary: string; partner: string };
   team2: { primary: string; partner: string };
 }
 
+/**
+ * Les règles d'un format nommé, prêtes pour le brouillon. Le changement de
+ * côté est celui des Lois : fin de chaque set, et au set décisif.
+ */
+function draftRules(
+  format: MatchFormat
+): Pick<
+  WizardDraft,
+  'points' | 'winBy' | 'cap' | 'sideChange' | 'sideChangeAt'
+> {
+  return {
+    points: format.points,
+    winBy: format.winBy,
+    cap: format.cap,
+    sideChange: 'official',
+    sideChangeAt: format.sideChangeAt,
+  };
+}
+
+/** Un nouveau match part du format standard, le 3 × 15. */
 const DEFAULT_DRAFT: WizardDraft = {
   type: null,
   sets: 2,
-  points: 21,
-  cap: null,
-  sideChange: 'each-set',
+  ...draftRules(FORMAT_15),
   timeLimitMin: null,
   tieBreak: 'none',
   team1: { primary: '', partner: '' },
@@ -91,8 +160,21 @@ function draftFromConfig(config: MatchConfig): WizardDraft {
     type: config.type,
     sets: config.sets,
     points: config.points,
+    winBy: config.winBy ?? DEFAULT_WIN_BY,
     cap: config.cap ?? null,
-    sideChange: config.sideChange,
+    sideChange:
+      config.sideChange === 'each-set' && config.sideChangeAt !== undefined
+        ? 'official'
+        : config.sideChange,
+    // Un match `'mid-match'` sans point se jouait à 11, et c'est ce qu'on lui
+    // rend. Pour les autres, le point n'est qu'une proposition, prise dans le
+    // format officiel de ses points quand il y en a un.
+    sideChangeAt:
+      config.sideChangeAt ??
+      (config.sideChange === 'mid-match'
+        ? LEGACY_SIDE_CHANGE_AT
+        : (officialFormat(config.points)?.sideChangeAt ??
+          LEGACY_SIDE_CHANGE_AT)),
     timeLimitMin: config.timeLimitMin ?? null,
     tieBreak: config.tieBreak ?? 'none',
     team1: {
@@ -104,6 +186,20 @@ function draftFromConfig(config: MatchConfig): WizardDraft {
       partner: config.team2.partner ?? '',
     },
   };
+}
+
+/** Ce que le match enregistre du changement de côté choisi. */
+function sideChangeOf(
+  draft: WizardDraft
+): Pick<MatchConfig, 'sideChange' | 'sideChangeAt'> {
+  switch (draft.sideChange) {
+    case 'official':
+      return { sideChange: 'each-set', sideChangeAt: draft.sideChangeAt };
+    case 'mid-match':
+      return { sideChange: 'mid-match', sideChangeAt: draft.sideChangeAt };
+    default:
+      return { sideChange: draft.sideChange, sideChangeAt: undefined };
+  }
 }
 
 interface MatchSetupWizardProps {
@@ -140,6 +236,20 @@ export function MatchSetupWizard({
 
   const canNextStep1 = draft.type !== null;
 
+  // Un format nommé passe l'étape des règles : un simple en deux sets
+  // gagnants, sans limite de temps — rien d'un match rejoué ne s'y ajoute.
+  const startWith = (format: MatchFormat) => {
+    setDraft(d => ({
+      ...d,
+      type: 'singles',
+      sets: 2,
+      ...draftRules(format),
+      timeLimitMin: null,
+      tieBreak: 'none',
+    }));
+    setStep(3);
+  };
+
   const finish = () => {
     if (!draft.type) return;
     const isDoubles = draft.type === 'doubles';
@@ -165,8 +275,9 @@ export function MatchSetupWizard({
       type: draft.type,
       sets: draft.sets,
       points: draft.points,
+      winBy: draft.winBy,
       cap: draft.cap,
-      sideChange: draft.sideChange,
+      ...sideChangeOf(draft),
       timeLimitMin: draft.timeLimitMin,
       tieBreak: draft.tieBreak,
       team1: {
@@ -248,40 +359,33 @@ export function MatchSetupWizard({
 
         {step === 1 && (
           <>
-            <button
-              type="button"
-              onClick={() => {
-                setDraft(d => ({
-                  ...d,
-                  type: 'singles',
-                  sets: 2,
-                  points: 21,
-                  cap: 30,
-                  sideChange: 'each-set',
-                }));
-                setStep(3);
-              }}
-              className="flex w-full items-center justify-between gap-3 rounded-xl border-2 border-dashed px-4 py-3 text-left transition-colors hover:bg-black/[0.03]"
-              style={{ borderColor: 'var(--primary)' }}
-            >
-              <span>
-                <span
-                  className="block text-sm font-bold"
-                  style={{ color: 'var(--primary)' }}
-                >
-                  ⚡ {t('wizardExtra.quickStart')}
-                </span>
-                <span
-                  className="block text-xs"
-                  style={{ color: 'var(--muted)' }}
-                >
-                  {t('wizardExtra.quickStartHint')}
-                </span>
-              </span>
-              <span aria-hidden className="text-xl">
-                →
-              </span>
-            </button>
+            {/*
+             * DEUX FORMATS NOMMÉS, chacun en un toucher. Le « Match standard »
+             * est le 3 × 15 : la FFBaD le joue depuis le 1er septembre 2026,
+             * les Lois de la BWF le prennent le 4 janvier 2027. Le 21 points,
+             * qui était le standard jusque-là, reste à portée en second : la
+             * BWF le garde en format alternatif, la FFBaD pour le Promobad.
+             */}
+            <div className="flex flex-col gap-2">
+              <QuickStart
+                icon="⚡"
+                title={t('wizardExtra.quickStart')}
+                hint={t('wizardExtra.quickStartHint', {
+                  points: FORMAT_15.points,
+                  cap: FORMAT_15.cap,
+                })}
+                emphasis
+                onClick={() => startWith(FORMAT_15)}
+              />
+              <QuickStart
+                title={t('wizardExtra.quickStartAlt')}
+                hint={t('wizardExtra.quickStartHint', {
+                  points: FORMAT_21.points,
+                  cap: FORMAT_21.cap,
+                })}
+                onClick={() => startWith(FORMAT_21)}
+              />
+            </div>
             <Step1
               value={draft.type}
               onChange={type => setDraft(d => ({ ...d, type }))}
@@ -292,8 +396,10 @@ export function MatchSetupWizard({
           <Step2
             sets={draft.sets}
             points={draft.points}
+            winBy={draft.winBy}
             cap={draft.cap}
             sideChange={draft.sideChange}
+            sideChangeAt={draft.sideChangeAt}
             timeLimitMin={draft.timeLimitMin}
             tieBreak={draft.tieBreak}
             onChange={patch => setDraft(d => ({ ...d, ...patch }))}
@@ -368,6 +474,49 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
   );
 }
 
+interface QuickStartProps {
+  title: string;
+  hint: string;
+  /** Décoratif : tenu hors du nom accessible du bouton. */
+  icon?: string;
+  /** Le format standard est mis en avant ; l'alternative reste en retrait. */
+  emphasis?: boolean;
+  onClick: () => void;
+}
+
+function QuickStart({
+  title,
+  hint,
+  icon,
+  emphasis = false,
+  onClick,
+}: QuickStartProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:bg-black/[0.03] ${emphasis ? 'border-2 border-dashed' : 'border'}`}
+      style={{ borderColor: emphasis ? 'var(--primary)' : 'var(--border)' }}
+    >
+      <span>
+        <span
+          className="block text-sm font-bold"
+          style={{ color: emphasis ? 'var(--primary)' : 'var(--text)' }}
+        >
+          {icon && <span aria-hidden>{icon} </span>}
+          {title}
+        </span>
+        <span className="block text-xs" style={{ color: 'var(--muted)' }}>
+          {hint}
+        </span>
+      </span>
+      <span aria-hidden className="text-xl">
+        →
+      </span>
+    </button>
+  );
+}
+
 interface Step1Props {
   value: MatchType | null;
   onChange: (value: MatchType) => void;
@@ -397,15 +546,24 @@ function Step1({ value, onChange }: Step1Props) {
 interface Step2Props {
   sets: SetCount;
   points: PointsTarget;
+  winBy: WinBy;
   cap: PointsCap;
-  sideChange: SideChange;
+  sideChange: SideChangeChoice;
+  sideChangeAt: SideChangeAt;
   timeLimitMin: TimeLimitMin;
   tieBreak: TieBreak;
   onChange: (
     patch: Partial<
       Pick<
         WizardDraft,
-        'sets' | 'points' | 'cap' | 'sideChange' | 'timeLimitMin' | 'tieBreak'
+        | 'sets'
+        | 'points'
+        | 'winBy'
+        | 'cap'
+        | 'sideChange'
+        | 'sideChangeAt'
+        | 'timeLimitMin'
+        | 'tieBreak'
       >
     >
   ) => void;
@@ -413,37 +571,80 @@ interface Step2Props {
 
 const SET_OPTIONS: SetCount[] = [1, 2, 3, 5];
 const POINT_OPTIONS: PointsTarget[] = [5, 11, 15, 21, 30, 31];
-const CAP_OPTIONS: PointsCap[] = [null, 30];
+const WIN_BY_OPTIONS: WinBy[] = [1, 2];
+/** `null` = sans plafond ; 21 et 30, les plafonds des deux formats officiels. */
+const CAP_OPTIONS: PointsCap[] = [null, FORMAT_15.cap, FORMAT_21.cap];
+const SIDE_CHANGE_OPTIONS: SideChangeChoice[] = [
+  'official',
+  'each-set',
+  'decisive',
+  'mid-match',
+];
+const SIDE_CHANGE_AT_OPTIONS: SideChangeAt[] = [
+  FORMAT_15.sideChangeAt,
+  FORMAT_21.sideChangeAt,
+];
 /** Options de durée de set en minutes ; `null` = pas de limite de temps. */
 const TIME_LIMIT_OPTIONS: TimeLimitMin[] = [null, 5, 10, 15, 20];
+
+/**
+ * Choisir 15 ou 21 points, c'est choisir le FORMAT : l'écart, le plafond et le
+ * point du changement de côté suivent, et chacun reste modifiable ensuite.
+ * Pour les autres scores, on ne retire qu'un plafond qui ne serait plus
+ * au-dessus des points.
+ */
+function rulesForPoints(
+  points: PointsTarget,
+  cap: PointsCap
+): Partial<Pick<WizardDraft, 'winBy' | 'cap' | 'sideChangeAt'>> {
+  const format = officialFormat(points);
+  if (format) {
+    return {
+      winBy: format.winBy,
+      cap: format.cap,
+      sideChangeAt: format.sideChangeAt,
+    };
+  }
+  return { cap: cap !== null && cap > points ? cap : null };
+}
 
 function Step2({
   sets,
   points,
+  winBy,
   cap,
   sideChange,
+  sideChangeAt,
   timeLimitMin,
   tieBreak,
   onChange,
 }: Step2Props) {
   const { t } = useI18n();
-  const sideChangeLabels: Record<SideChange, string> = {
-    decisive: t('wizard.sideChangeDecisive'),
+  const sideChangeLabels: Record<SideChangeChoice, string> = {
+    official: t('wizard.sideChangeOfficial'),
     'each-set': t('wizard.sideChangeEachSet'),
+    decisive: t('wizard.sideChangeDecisive'),
     'mid-match': t('wizard.sideChangeMidMatch'),
   };
-  const sideChangeOptions: { value: SideChange; label: string }[] = [
-    { value: 'decisive', label: sideChangeLabels.decisive },
-    { value: 'each-set', label: sideChangeLabels['each-set'] },
-    { value: 'mid-match', label: sideChangeLabels['mid-match'] },
-  ];
-  const capOptions: { value: string; label: string }[] = CAP_OPTIONS.map(c => ({
+  // L'aide dit ce que fait le choix EN COURS, point compris : « à 8 » se lit
+  // là où l'on choisit, pas seulement dans le résumé.
+  const sideChangeHelps: Record<SideChangeChoice, string> = {
+    official: t('wizard.sideChangeOfficialHelp', { n: sideChangeAt }),
+    'each-set': t('wizard.sideChangeEachSetHelp'),
+    decisive: t('wizard.sideChangeDecisiveHelp'),
+    'mid-match': t('wizard.sideChangeMidMatchHelp', { n: sideChangeAt }),
+  };
+  const usesSideChangeAt =
+    sideChange === 'official' || sideChange === 'mid-match';
+  // Un plafond qui n'est pas au-dessus des points couperait le set avant
+  // son terme : il n'est pas proposé.
+  const capOptions: { value: string; label: string }[] = CAP_OPTIONS.filter(
+    c => c === null || c > points
+  ).map(c => ({
     value: c === null ? 'none' : String(c),
     label: c === null ? t('wizard.capNone') : t('wizard.capValue', { n: c }),
   }));
   const capKey = cap === null ? 'none' : String(cap);
-  const capLabel =
-    cap === null ? t('wizard.capNone') : t('wizard.capValue', { n: cap });
   const timeOptions: { value: string; label: string }[] =
     TIME_LIMIT_OPTIONS.map(v => ({
       value: v === null ? 'none' : String(v),
@@ -464,8 +665,16 @@ function Step2({
   const summaryItems = [
     t('wizard.setsWinning', { wins: sets }),
     `${points} pts`,
-    capLabel,
-    sideChangeLabels[sideChange],
+    t('wizard.summaryWinBy', { n: winBy }),
+    cap === null
+      ? t('wizard.summaryNoCap')
+      : t('wizard.summaryCap', { n: cap }),
+    usesSideChangeAt
+      ? t('wizard.summarySideChangeAt', {
+          label: sideChangeLabels[sideChange],
+          n: sideChangeAt,
+        })
+      : sideChangeLabels[sideChange],
     timeLabel,
   ];
 
@@ -517,7 +726,15 @@ function Step2({
         help={t('wizard.pointsHelp')}
         value={points}
         options={POINT_OPTIONS.map(v => ({ value: v, label: `${v}` }))}
-        onChange={v => onChange({ points: v })}
+        onChange={v => onChange({ points: v, ...rulesForPoints(v, cap) })}
+        equalWidth
+      />
+      <PillGroup
+        label={t('wizard.winBy')}
+        help={t('wizard.winByHelp')}
+        value={winBy}
+        options={WIN_BY_OPTIONS.map(v => ({ value: v, label: `${v}` }))}
+        onChange={v => onChange({ winBy: v })}
         equalWidth
       />
       <PillGroup
@@ -525,16 +742,32 @@ function Step2({
         help={t('wizard.capHelp')}
         value={capKey}
         options={capOptions}
-        onChange={v => onChange({ cap: v === 'none' ? null : 30 })}
+        onChange={v => onChange({ cap: v === 'none' ? null : Number(v) })}
         equalWidth
       />
       <PillGroup
         label={t('wizard.sideChange')}
-        help={t('wizard.sideChangeHelp')}
+        help={sideChangeHelps[sideChange]}
         value={sideChange}
-        options={sideChangeOptions}
+        options={SIDE_CHANGE_OPTIONS.map(v => ({
+          value: v,
+          label: sideChangeLabels[v],
+        }))}
         onChange={v => onChange({ sideChange: v })}
       />
+      {usesSideChangeAt && (
+        <PillGroup
+          label={t('wizard.sideChangeAt')}
+          help={t('wizard.sideChangeAtHelp')}
+          value={sideChangeAt}
+          options={SIDE_CHANGE_AT_OPTIONS.map(v => ({
+            value: v,
+            label: `${v}`,
+          }))}
+          onChange={v => onChange({ sideChangeAt: v })}
+          equalWidth
+        />
+      )}
       <PillGroup
         label={t('wizard.timeLimit')}
         help={t('wizard.timeLimitHelp')}

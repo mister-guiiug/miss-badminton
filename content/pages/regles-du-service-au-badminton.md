@@ -2,6 +2,7 @@
 title: Règles du service au badminton : zones, hauteur et fautes
 description: Les règles du service au badminton : d'où servir en simple et en double, la hauteur de frappe (1,15 m ou la taille), les pieds, le volant et les fautes.
 date: 2026-09-29
+updated: 2026-09-30
 answer: Au badminton, on sert en diagonale, depuis sa zone droite si le score de son camp est pair, depuis la gauche s'il est impair. Le volant, lâché sans effet, est frappé vers le haut, sous 1,15 m dans les Lois de la BWF ou sous la taille dans la plupart des compétitions françaises, les pieds immobiles au sol.
 ---
 
@@ -71,6 +72,7 @@ Deux situations ne sont pas des fautes :
 
 - **Le service affiché.** Un repère, à la couleur du camp qui sert, se place dans sa zone de service : à droite ou à gauche selon la parité de son score.
 - **Un toucher par point.** Touchez la zone du camp qui gagne l'échange, faute de service comprise ; un bouton annule le dernier point.
+- **Le format de 2026.** Le bouton « Match standard » lance 2 sets gagnants de 15 points, plafond à 21, et rappelle chaque changement de côté, dont celui à 8 points au troisième set. Le bouton « Format 21 points » garde l'ancien format.
 - **Simple ou double**, avec un historique de vos matchs gardé sur l'appareil.
 
 ## Questions fréquentes

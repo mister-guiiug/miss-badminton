@@ -2,6 +2,7 @@
 title: Badminton scoring rules: points, sets, serve and sides
 description: How to keep score in badminton: games to 15 under the new 3x15 system, a two-point lead, a cap at 21, who serves from which side, and when to change ends.
 date: 2026-09-29
+updated: 2026-09-30
 translation: compter-les-points-au-badminton
 answer: In badminton, every rally scores a point. Under the BWF's new 3x15 system, in force in its Laws from 4 January 2027, a match is the best of three games to 15 points: at 14-all a side needs a two-point lead, and at 20-all the 21st point wins. France switched early, on 1 September 2026.
 ---
@@ -78,12 +79,13 @@ In a club or among friends, nothing stops you agreeing on another format, as lon
 
 [Miss Badminton](https://mister-guiiug.github.io/miss-badminton/) turns a phone or tablet into a scoreboard, with no account: matches stay on the device.
 
-- **Singles or doubles.** The Standard match button starts, in one tap, a singles match of best of three games to 21 with a cap at 30: the previous official format. The setup wizard also offers games to 15, but not yet the cap at 21 or the change of ends at 8 points of the new format.
+- **The 2026 format in one tap.** The Standard match button starts a singles match, best of three games to 15, with a two-point lead needed from 14-all and a cap at 21. The 21-point format button keeps the previous format, with a cap at 30.
+- **Singles or doubles.** For doubles, the setup wizard starts from the same format.
 - **One tap per point.** Tap the half of the side that won the rally; a long press takes a point away, and a button undoes the last point.
 - **The serve on screen.** A marker in the serving side's colour sits in its service court, right or left depending on whether its score is even or odd.
-- **Game point and match point** are flagged on screen.
-- **Change-of-ends reminders**, after every game, before the deciding game only, or at 11 points. A button swaps the sides at any time, for instance at 8 points in the third game.
-- **Your formats.** 1, 2, 3 or 5 games to win, games to 5, 11, 15, 21, 30 or 31 points, a cap at 30 or none, and an optional time limit per game.
+- **Game point and match point** are flagged on screen, including at 20-all in games to 15, where the next point wins the game.
+- **Change-of-ends reminders** at the end of each game, and in the third game when a side reaches 8 points (11 in the 21-point format). A button swaps the sides at any time.
+- **Your formats.** 1, 2, 3 or 5 games to win; games to 5, 11, 15, 21, 30 or 31 points; a two-point lead or a single point; a cap at 21, at 30 or none; a change of ends at 8 or 11 points, in the deciding game or in every game; and an optional time limit per game.
 - **History and statistics**: rankings, head-to-head records, game details, and corrections after the fact.
 
 ## Frequently asked questions
