@@ -1,17 +1,26 @@
 ---
 title: Compter les points au badminton : score, service et sets
-description: Comment compter les points au badminton : 21 points, deux points d'écart, plafond à 30, qui sert et de quel côté, quand changer de côté. Exemples à l'appui.
+description: Compter les points au badminton : sets de 15 points depuis 2026, deux points d'écart, plafond à 21, qui sert et de quel côté, quand changer de côté.
+date: 2026-09-25
+updated: 2026-09-29
+answer: Au badminton, chaque échange rapporte un point. Un match se joue en deux sets gagnants de 15 points : format appliqué en France depuis le 1er septembre 2026, et dans les Lois de la BWF à partir du 4 janvier 2027. À 14-14, il faut deux points d'écart ; à 20-20, le 21e point gagne le set.
 ---
 
 # Compter les points au badminton, simple et double
 
-Au badminton, chaque échange rapporte un point, et le score dit aussi qui sert et depuis quelle moitié du terrain. Une fois ces deux mécanismes compris, plus besoin de se disputer au filet. Voici les règles du comptage telles que les fixent les règles officielles du badminton, avec des exemples chiffrés.
+Au badminton, chaque échange rapporte un point, et le score dit aussi qui sert et depuis quelle moitié du terrain. Le système a changé en 2026 : les sets se jouent désormais en 15 points, et non plus en 21. Voici les règles du comptage fixées par la fédération internationale (BWF) et la Fédération française de badminton (FFBaD), avec des exemples chiffrés.
+
+## Le nouveau format : des sets de 15 points
+
+La BWF a adopté lors de son assemblée générale du 25 avril 2026 un nouveau système de score, dit « 3 × 15 ». Il entre dans ses Lois du badminton le 4 janvier 2027. La FFBaD l'applique en France depuis le 1er septembre 2026, à toutes les compétitions qu'elle organise ou autorise, tournois compris.
+
+L'ancien format en 21 points ne disparaît pas tout à fait : la BWF le garde comme format alternatif, à choisir d'avance, et la FFBaD le réserve aux compétitions Promobad.
 
 ## Le format d'un match
 
-Un match se joue en **deux sets gagnants** : le premier joueur (ou la première paire) à remporter deux sets gagne. Il y a donc deux ou trois sets.
+Un match se joue en **deux sets gagnants** : le premier joueur, ou la première paire, à remporter deux sets gagne. Il y a donc deux ou trois sets.
 
-Chaque set se joue en **21 points**. Le vainqueur d'un set sert en premier au set suivant.
+Chaque set se joue en **15 points**. Le vainqueur d'un set sert en premier au set suivant.
 
 ## Un point à chaque échange
 
@@ -19,13 +28,13 @@ Chaque échange rapporte un point à celui qui le gagne, **qu'il ait servi ou no
 
 Un volant qui tombe **sur la ligne est bon**.
 
-## Gagner un set : 21 points, deux d'écart, plafond à 30
+## Gagner un set : 15 points, deux d'écart, plafond à 21
 
-1. Le premier à 21 points gagne le set, à condition d'avoir **deux points d'avance**. À 21-19, le set est terminé.
-2. À **20-20**, le jeu continue jusqu'à ce qu'un camp prenne deux points d'avance : 22-20, 23-21, etc.
-3. À **29-29**, le point suivant décide : le camp qui marque le 30e point gagne le set, 30-29.
+1. Le premier à 15 points gagne le set, à condition d'avoir **deux points d'avance**. À 15-13, le set est terminé.
+2. À **14-14**, le jeu continue jusqu'à ce qu'un camp prenne deux points d'avance : 16-14, 17-15, etc.
+3. À **20-20**, le point suivant décide : le camp qui marque le 21e point gagne le set, 21-20.
 
-Un set ne peut donc pas dépasser 30 points.
+Un set ne peut donc pas dépasser 21 points.
 
 ## Qui sert, et de quel côté
 
@@ -53,31 +62,39 @@ Les joueurs changent de côté du terrain :
 
 - à la fin du premier set ;
 - à la fin du deuxième set, s'il y a un troisième set ;
-- au troisième set, quand un camp atteint 11 points.
+- au troisième set, quand un camp atteint 8 points.
 
-Les règles prévoient aussi une pause de 60 secondes au plus dans chaque set, quand le score du camp qui mène atteint 11 points, et une pause de 2 minutes au plus entre deux sets.
+Les règles prévoient aussi une pause de 60 secondes au plus dans chaque set, quand le score du camp qui mène atteint 8 points, et une pause de 2 minutes au plus entre deux sets.
 
-## Des formats plus courts en loisir
+## L'ancien format en 21 points
 
-Les compétitions officielles se jouent en 21 points. En club, à l'entraînement ou entre amis, il arrive qu'on s'accorde sur des sets plus courts (11 ou 15 points), un seul set, ou une durée limitée. Rien ne l'interdit en loisir, pourvu que tout le monde soit d'accord avant de commencer.
+Jusqu'à la réforme, un set se jouait en 21 points : deux points d'écart à partir de 20-20, et plafond à 30, le 30e point gagnant le set à 29-29. Au troisième set, on changeait de côté à 11 points, et la pause de 60 secondes tombait elle aussi à 11 points.
+
+En club ou entre amis, rien n'interdit de s'accorder sur un autre format, pourvu que tout le monde soit d'accord avant de commencer.
 
 ## Comment Miss Badminton vous aide
 
 [Miss Badminton](https://mister-guiiug.github.io/miss-badminton/) transforme un téléphone ou une tablette en tableau de score, sans compte : les matchs restent sur l'appareil.
 
-- **Simple ou double.** Le bouton « Match standard » lance en un geste un simple en 2 sets gagnants de 21 points, plafond à 30 ; un double se règle en trois étapes.
+- **Simple ou double.** Le bouton « Match standard » lance un simple en 2 sets gagnants de 21 points, plafond à 30 : l'ancien format officiel. L'assistant propose aussi des sets de 15 points, mais pas encore le plafond à 21 ni le changement de côté à 8 points du nouveau format.
 - **Un toucher par point.** Touchez la zone du camp qui gagne l'échange ; un appui long retire un point, et un bouton annule le dernier point.
-- **Le service affiché.** Un repère, à la couleur du camp qui sert, se place dans sa zone de service : à droite ou à gauche selon la parité de son score.
+- **Le service affiché.** Un repère, à la couleur du camp qui sert, se place dans sa zone de service, à droite ou à gauche selon la parité de son score.
 - **Balle de set et balle de match** sont signalées à l'écran.
-- **Rappel du changement de côté**, à chaque set, avant le set décisif seulement, ou à 11 points, selon votre réglage. Un bouton permute les camps à tout moment, par exemple à 11 points dans le troisième set.
-- **Vos formats.** 1, 2, 3 ou 5 sets gagnants, sets de 5, 11, 15, 21, 30 ou 31 points, avec ou sans plafond à 30, et une durée maximale par set si besoin.
-- **Historique et statistiques** : classement, face-à-face entre joueurs, détail des sets, correction d'un set après coup.
+- **Rappel du changement de côté**, à chaque set, avant le set décisif seulement, ou à 11 points. Un bouton permute les camps à tout moment, par exemple à 8 points dans le troisième set.
+- **Vos formats.** 1, 2, 3 ou 5 sets gagnants, sets de 5, 11, 15, 21, 30 ou 31 points, plafond à 30 ou non, durée maximale par set.
+- **Historique et statistiques** : classement, face-à-face, détail des sets, correction d'un set après coup.
+
+Pour tout savoir sur la mise en jeu elle-même, lisez aussi nos [règles du service au badminton](regles-du-service-au-badminton.html).
 
 ## Questions fréquentes
 
 ### Combien de points faut-il pour gagner un set de badminton ?
 
-21 points, avec deux points d'avance. À 20-20, on joue jusqu'à deux points d'écart ; à 29-29, le 30e point gagne le set.
+15 points, avec deux points d'avance : à 14-14, on joue jusqu'à deux points d'écart, et à 20-20, le 21e point gagne le set. Avant la réforme de 2026, un set se jouait en 21 points.
+
+### Depuis quand les sets de badminton se jouent-ils en 15 points ?
+
+En France, depuis le 1er septembre 2026, dans toutes les compétitions organisées ou autorisées par la FFBaD. Dans les Lois de la BWF, à partir du 4 janvier 2027.
 
 ### Qui sert après un point au badminton ?
 
@@ -85,12 +102,15 @@ Le camp qui vient de gagner l'échange. Il sert depuis la droite si son score es
 
 ### Quand change-t-on de côté au badminton ?
 
-À la fin de chaque set (le deuxième seulement s'il y a un troisième set), et au troisième set quand un camp atteint 11 points.
+À la fin de chaque set (le deuxième seulement s'il y a un troisième set), et au troisième set quand un camp atteint 8 points. Dans l'ancien format en 21 points, ce changement se faisait à 11 points.
 
 ### Un volant qui tombe sur la ligne est-il bon ?
 
 Oui. La ligne fait partie de la zone qu'elle délimite : un volant qui la touche est bon.
 
-### Combien de sets se joue un match de badminton ?
+## Sources
 
-Un match officiel se joue en deux sets gagnants, donc en deux ou trois sets de 21 points. Dans Miss Badminton, vous pouvez aussi choisir un seul set ou un format plus long.
+- [BWF : les changements du système 3 × 15, en anglais](https://bwfbadminton.com/news-single/2026/04/26/key-changes-under-the-3x15-scoring-system)
+- [BWF : les Lois du badminton, en anglais, dont la version en vigueur le 4 janvier 2027](https://corporate.bwfbadminton.com/statutes/)
+- [FFBaD : communication sur le système de score, 19 juin 2026](https://www.ffbad.org/actualites/actualites/2026/communication-sur-le-systeme-de-score)
+- [FFBaD : comment jouer au badminton](https://www.ffbad.org/pratiquer-comment-jouer-au-badminton)

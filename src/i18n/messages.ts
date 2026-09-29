@@ -304,7 +304,9 @@ const fr: Messages = {
     exitFullscreen: 'Quitter le plein écran',
   },
   documentTitle: {
-    home: 'Miss Badminton',
+    // Titre de l'accueil = titre du HTML servi (≥ 50 caractères) : Google et
+    // Bing indexent le titre après rendu.
+    home: 'Miss Badminton - compteur de score et stats de badminton',
     match: 'Match en cours — Miss Badminton',
     history: 'Historique — Miss Badminton',
     settings: 'Paramètres — Miss Badminton',
@@ -586,7 +588,7 @@ const en: Messages = {
     exitFullscreen: 'Exit fullscreen',
   },
   documentTitle: {
-    home: 'Miss Badminton',
+    home: 'Miss Badminton - badminton score counter and match stats',
     match: 'Match in progress — Miss Badminton',
     history: 'History — Miss Badminton',
     settings: 'Settings — Miss Badminton',
@@ -862,7 +864,7 @@ const es: Messages = {
     exitFullscreen: 'Salir de pantalla completa',
   },
   documentTitle: {
-    home: 'Miss Badminton',
+    home: 'Miss Badminton - marcador y estadísticas de bádminton',
     match: 'Partido en curso — Miss Badminton',
     history: 'Historial — Miss Badminton',
     settings: 'Ajustes — Miss Badminton',
