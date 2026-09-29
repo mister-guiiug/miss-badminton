@@ -28,6 +28,7 @@ import {
 import { useAppUpdates } from '@mister-guiiug/dev-pwa-config/react/app-updates';
 import { useUpdatePrompt } from '@mister-guiiug/dev-pwa-config/react/use-update-prompt';
 import { useMediaQuery } from '@mister-guiiug/dev-pwa-config/react/use-media-query';
+import { ConsentSection } from '@mister-guiiug/dev-pwa-config/react/consent-section';
 import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
 import {
@@ -470,6 +471,17 @@ export function SettingsView() {
           </p>
         )}
       </Section>
+
+      {/* Revenir sur son choix de mesure d’audience : le retrait se fait ici, en
+          un clic (RGPD, art. 7.3). Mêmes clé et chargeur que le bandeau. Les
+          classes redisent l'habit de `Section`, qui le pose en style en ligne. */}
+      <ConsentSection
+        posthogKey={import.meta.env.VITE_POSTHOG_KEY}
+        loader={() => import('posthog-js/dist/module.slim.js')}
+        className="gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-[clamp(0.75rem,2.4vw,1.25rem)]"
+        titleClassName="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]"
+        actionClassName="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-highlight)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+      />
 
       <Section
         title={t('settings.updateLabel')}
