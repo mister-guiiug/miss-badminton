@@ -8,7 +8,10 @@ export const ROUTE_META: Record<
   AppRoute,
   { documentTitle: string; breadcrumb: string }
 > = {
-  home: { documentTitle: 'Miss Badminton', breadcrumb: 'Accueil' },
+  home: {
+    documentTitle: 'Miss Badminton - compteur de score et stats de badminton',
+    breadcrumb: 'Accueil',
+  },
   match: {
     documentTitle: 'Match en cours — Miss Badminton',
     breadcrumb: 'Match',
