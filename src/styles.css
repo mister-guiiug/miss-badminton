@@ -209,17 +209,6 @@ body {
   color: var(--text);
 }
 
-.mb-update-banner [data-dwc='update-banner-update'] {
-  background: var(--primary);
-  border-color: transparent;
-  color: var(--primary-ink);
-  white-space: nowrap;
-}
-
-.mb-update-banner [data-dwc='update-banner-update']:hover {
-  background: var(--primary-hover);
-}
-
 /* ── Scoreboard responsive (orientation + tablette) ──────────── */
 .mb-scoreboard {
   aspect-ratio: 16 / 10;
