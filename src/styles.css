@@ -170,6 +170,18 @@ body {
   background: var(--surface);
 }
 
+/* « Mettre à jour » prend sa couleur au socle ; son survol reste celui de
+   l'app. `--primary-hover` s'éloigne de l'encre dans les deux thèmes (plus
+   sombre sous le blanc, plus clair sous l'encre sombre), là où
+   l'éclaircissement du socle (`brightness(1.08)`) rapprocherait l'indigo du
+   blanc en thème clair. */
+.mb-update-banner
+  [data-dwc='update-banner-update']:hover:not([aria-busy='true']) {
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
+  filter: none;
+}
+
 /* ── Bandeau de consentement (ConsentBanner du socle) ─────────
    AU-DESSUS DES BOÎTES MODALES, ET EN HAUT. `Modal` pose un
    `fixed inset-0 z-50` avec un voile qui couvre tout l'écran : le tutoriel
