@@ -80,12 +80,23 @@ describe('les liens de la règle famille', () => {
     // vide ne porte pas de liens. On l'ancre sur le pied du tableau de score,
     // qui n'existe que là — `role="status"` ne ferait pas l'affaire, l'écran
     // en porte plusieurs.
-    await waitFor(() =>
-      expect(document.querySelector('.mb-scoreboard-footer')).not.toBeNull()
+    //
+    // PAS LE DÉLAI PAR DÉFAUT DE `waitFor`, qui n'attend qu'une seconde. Le
+    // premier `import()` de l'écran le transforme dans le worker, et sa durée
+    // suit la charge de la machine : mesuré le 30/09/2026 sur le poste
+    // Windows, bridé à deux workers, de 360 ms au calme à plus de 1 140 ms
+    // quand d'autres suites tournaient à côté — deux échecs sur cinq passages
+    // de la suite. La CI Linux tient en 400 ms. Cinq secondes laissent plus de
+    // quatre fois le pire relevé ; le délai du TEST passe à dix, pour que ce
+    // soit `waitFor` qui échoue, en montrant le DOM, et non le test entier.
+    await waitFor(
+      () =>
+        expect(document.querySelector('.mb-scoreboard-footer')).not.toBeNull(),
+      { timeout: 5_000 }
     );
     expect(window.location.pathname).toBe('/match');
     expect(liens()).toEqual([0, 0, 0]);
-  });
+  }, 10_000);
 
   it("n'en pose qu'UN exemplaire sur l'accueil, pas deux", async () => {
     // La garde de la migration : si la coquille les rendait ENCORE en plus de
