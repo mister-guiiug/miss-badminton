@@ -36,7 +36,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
-    "@mister-guiiug/dev-pwa-config": "^6.21.0",
+    "@mister-guiiug/dev-pwa-config": "^6.21.1",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
@@ -63,7 +63,7 @@
   "dependencies": {
     "@rive-app/react-canvas": "^4.36.0",
     "@sentry/react": "^11.1.0",
-    "posthog-js": "^1.435.5",
+    "posthog-js": "^1.435.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4",
