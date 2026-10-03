@@ -128,6 +128,42 @@ function AppRoutes() {
   return (
     <Shell>
       <DocumentTitle />
+      {/* Une `region`, pas une boîte modale : elle ne piège pas le focus. Ne
+          rend RIEN tant que `VITE_POSTHOG_KEY` n'est pas posée : sans
+          identifiant, il n'y a rien à demander.
+
+          AU-DESSUS DE LA MODALE, ET C'EST MESURÉ. `Modal`, dont se sert le
+          tutoriel de bienvenue affiché à la première visite, pose un
+          `fixed inset-0 z-50` avec un voile `bg-black/55` qui couvre TOUT
+          l'écran. Le bandeau était bien dans le DOM et bien visible, mais
+          aucun clic ne l'atteignait : relevé le 16/09/2026 par la garde
+          `entree.spec.ts`, `elementFromPoint` au centre du bouton « Accepter »
+          rendait le voile. Un visiteur ne pouvait NI accepter NI refuser à
+          l'arrivée.
+
+          EN TÊTE DE `<main>`, AVANT LES ÉCRANS, ET C'EST AUSSI MESURÉ. Rendu
+          après les routes et sorti du flux, il se posait PAR-DESSUS le haut
+          de l'écran courant : titre, actions et filtres passaient dessous,
+          sans défilement possible sur une page courte. Relevé le 03/10/2026
+          en `mobile-chrome` : sur l'historique, le bouton « 7 jours » ne
+          recevait plus le toucher, que « Refuser » interceptait. Placé ici,
+          `.mb-consent-banner` le rend collant (`sticky`) au même endroit
+          qu'avant : il garde sa hauteur dans le flux, et l'écran commence
+          sous lui au lieu de passer dessous. C'est aussi le premier arrêt du
+          clavier dans `<main>`, là où on le voit.
+
+          `placement="fixed"` reste : c'est lui qui fait taire le bandeau de
+          mise à jour tant que la question est posée (règle de précédence du
+          socle). Les autres raisons sont dans `styles.css`, à côté de la
+          règle jumelle du bandeau de mise à jour : le voile de la modale, les
+          actions de l'assistant ancrées en bas, et un fond à 12 % d'opacité
+          qui laissait lire au travers. */}
+      <ConsentBanner
+        posthogKey={import.meta.env.VITE_POSTHOG_KEY}
+        loader={() => import('posthog-js/dist/module.slim.js')}
+        placement="fixed"
+        className="mb-consent-banner"
+      />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/" element={<HomeView />} />
@@ -151,31 +187,6 @@ function AppRoutes() {
           d'un tableau de score, pendant une partie. Ils vivent désormais sur
           l'accueil et sur les Paramètres, les deux écrans que la règle
           nomme. */}
-      {/* Une `region`, pas une boîte modale : elle ne piège pas le focus. Ne
-          rend RIEN tant que `VITE_POSTHOG_KEY` n'est pas posée — sans
-          identifiant, il n'y a rien à demander.
-
-          AU-DESSUS DE LA MODALE, ET C'EST MESURÉ. `Modal` — dont se sert le
-          tutoriel de bienvenue, affiché à la première visite — pose un
-          `fixed inset-0 z-50` avec un voile `bg-black/55` qui couvre TOUT
-          l'écran. Le bandeau était bien dans le DOM et bien visible, mais
-          aucun clic ne l'atteignait : relevé le 16/09/2026 par la garde
-          `entree.spec.ts`, `elementFromPoint` au centre du bouton « Accepter »
-          rendait le voile. Un visiteur ne pouvait NI accepter NI refuser à
-          l'arrivée.
-
-          `placement="fixed"` le sort du flux et `.mb-consent-banner` — dans
-          `styles.css`, à côté de la règle jumelle du bandeau de mise à jour —
-          le remonte au-dessus, le pose EN HAUT et lui donne un fond opaque.
-          Les trois raisons y sont écrites : le voile de la modale, les actions
-          de l'assistant ancrées en bas, et un fond à 12 % d'opacité qui
-          laissait lire au travers. */}
-      <ConsentBanner
-        posthogKey={import.meta.env.VITE_POSTHOG_KEY}
-        loader={() => import('posthog-js/dist/module.slim.js')}
-        placement="fixed"
-        className="mb-consent-banner"
-      />
     </Shell>
   );
 }
