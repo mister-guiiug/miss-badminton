@@ -58,7 +58,7 @@ if (rootElement) {
             la main. */}
         <ThemeProvider
           legacyKeys={['mb_theme']}
-          themeColor={{ light: '#0b3d2e', dark: '#0e1512' }}
+          themeColor={{ light: '#4f46e5', dark: '#0f172a' }}
         >
           <I18nProvider>
             {/* En développement, `registerSW` vaut `undefined` : le hook du
