@@ -46,8 +46,8 @@ export function Logo({ size = 32, ariaLabel, className }: LogoProps) {
     >
       <defs>
         <linearGradient id={fond} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#0b3d2e" />
-          <stop offset="100%" stopColor="#1a6b52" />
+          <stop offset="0%" stopColor="#4f46e5" />
+          <stop offset="100%" stopColor="#7c3aed" />
         </linearGradient>
         <clipPath id={tamis}>
           <ellipse cx="32" cy="24" rx="11" ry="13.5" />
@@ -102,7 +102,7 @@ export function Logo({ size = 32, ariaLabel, className }: LogoProps) {
             d="M 3.73 -2.31 L 16.74 -17.66 L 10.1 -22.13 L 0.74 -4.32 Z"
             fill="#ffffff"
           />
-          <circle cx="0" cy="4" r="8" fill="#b8f24a" />
+          <circle cx="0" cy="4" r="8" fill="#fbbf24" />
         </g>
       </g>
     </svg>
