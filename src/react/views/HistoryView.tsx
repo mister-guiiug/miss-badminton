@@ -248,8 +248,12 @@ export function HistoryView() {
   };
 
   const [period, setPeriod] = useState<PeriodFilter>('all');
-  /** Vue d'ensemble (KPIs, heatmap, classement) ou liste des matchs. */
-  const [tab, setTab] = useState<'overview' | 'matches'>('overview');
+  /**
+   * Liste des matchs d'abord : c'est ce que « Historique » promet, et ce que
+   * les parcours (filtre, suppression, score seedé) consultent. La vue
+   * d'ensemble (KPIs, heatmap) reste un clic à côté.
+   */
+  const [tab, setTab] = useState<'overview' | 'matches'>('matches');
   /**
    * LE FILTRE PAR JOUEUR — « tous mes matchs contre X ».
    *
