@@ -199,112 +199,124 @@ export function SettingsView() {
 
   return (
     <PageContainer width="lg">
-      <h1
-        className="font-bold"
-        style={{
-          color: 'var(--primary)',
-          fontSize: 'clamp(1.5rem, 4.5vw, 2.25rem)',
-        }}
-      >
-        {t('nav.settings')}
-      </h1>
+      <header>
+        <h1
+          className="font-extrabold tracking-tight"
+          style={{
+            color: 'var(--text)',
+            fontSize: 'clamp(1.5rem, 4.5vw, 2.25rem)',
+          }}
+        >
+          {t('nav.settings')}
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
+          {t('settings.dataHelp')}
+        </p>
+      </header>
 
-      <Section
-        title={t('settings.languageLabel')}
-        help={t('settings.languageHelp')}
-      >
-        <Pills
-          ariaLabel={t('settings.languageLabel')}
-          value={locale}
-          options={LOCALES.map(l => ({
-            value: l,
-            label: (
-              <span className="text-xl leading-none" aria-hidden>
-                {LOCALE_FLAGS[l]}
-              </span>
-            ),
-            srLabel: LOCALE_LABELS[l],
-          }))}
-          onChange={v => setLocale(v as Locale)}
-        />
-      </Section>
-
-      <Section title={t('settings.themeLabel')} help={t('settings.themeHelp')}>
-        <Pills
-          ariaLabel={t('settings.themeLabel')}
-          value={theme}
-          options={THEMES.map(p => ({ value: p, label: themeLabel(p) }))}
-          onChange={v => setTheme(v as ThemePreference)}
-        />
-      </Section>
-
-      <Section
-        title={t('settings.colorsLabel')}
-        help={t('settings.colorsHelp')}
-      >
-        <div className="flex flex-wrap items-center gap-4">
-          <ColorField
-            label={t('settings.colorTeam1')}
-            value={colors.team1}
-            onChange={c => setTeamColor('team1', c)}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Section
+          title={t('settings.languageLabel')}
+          help={t('settings.languageHelp')}
+        >
+          <Pills
+            ariaLabel={t('settings.languageLabel')}
+            value={locale}
+            options={LOCALES.map(l => ({
+              value: l,
+              label: (
+                <span className="text-xl leading-none" aria-hidden>
+                  {LOCALE_FLAGS[l]}
+                </span>
+              ),
+              srLabel: LOCALE_LABELS[l],
+            }))}
+            onChange={v => setLocale(v as Locale)}
           />
-          <ColorField
-            label={t('settings.colorTeam2')}
-            value={colors.team2}
-            onChange={c => setTeamColor('team2', c)}
+        </Section>
+
+        <Section
+          title={t('settings.themeLabel')}
+          help={t('settings.themeHelp')}
+        >
+          <Pills
+            ariaLabel={t('settings.themeLabel')}
+            value={theme}
+            options={THEMES.map(p => ({ value: p, label: themeLabel(p) }))}
+            onChange={v => setTheme(v as ThemePreference)}
           />
-          {!colorsAreDefault && (
-            <button
-              type="button"
-              onClick={resetTeamColors}
-              className="inline-flex min-h-9 items-center rounded-lg border px-3 py-1.5 text-xs font-semibold"
+        </Section>
+
+        <Section
+          title={t('settings.colorsLabel')}
+          help={t('settings.colorsHelp')}
+        >
+          <div className="flex flex-wrap items-center gap-4">
+            <ColorField
+              label={t('settings.colorTeam1')}
+              value={colors.team1}
+              onChange={c => setTeamColor('team1', c)}
+            />
+            <ColorField
+              label={t('settings.colorTeam2')}
+              value={colors.team2}
+              onChange={c => setTeamColor('team2', c)}
+            />
+            {!colorsAreDefault && (
+              <button
+                type="button"
+                onClick={resetTeamColors}
+                className="inline-flex min-h-9 items-center rounded-lg border px-3 py-1.5 text-xs font-semibold"
+                style={{
+                  borderColor: 'var(--border)',
+                  color: 'var(--muted)',
+                }}
+              >
+                {t('settings.resetColors')}
+              </button>
+            )}
+          </div>
+          {colorsTooClose && (
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-lg px-3 py-2 text-xs"
               style={{
-                borderColor: 'var(--border)',
-                color: 'var(--muted)',
+                background: 'rgba(220,38,38,0.08)',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
               }}
             >
-              {t('settings.resetColors')}
-            </button>
+              <span aria-hidden>⚠</span>
+              <span>{t('settingsExtra.contrastWarning')}</span>
+            </p>
           )}
-        </div>
-        {colorsTooClose && (
-          <p
-            role="alert"
-            className="flex items-start gap-2 rounded-lg px-3 py-2 text-xs"
-            style={{
-              background: 'rgba(220,38,38,0.08)',
-              border: '1px solid var(--danger)',
-              color: 'var(--danger)',
-            }}
-          >
-            <span aria-hidden>⚠</span>
-            <span>{t('settingsExtra.contrastWarning')}</span>
+        </Section>
+
+        <Section
+          title={t('settings.soundLabel')}
+          help={t('settings.soundHelp')}
+        >
+          <Toggle
+            ariaLabel={t('settings.soundLabel')}
+            value={feedback.sound}
+            onChange={feedback.setSound}
+            enabledLabel={t('settings.enabled')}
+            disabledLabel={t('settings.disabled')}
+          />
+          <div className="pt-2">
+            <Toggle
+              ariaLabel={t('settings.hapticLabel')}
+              value={feedback.haptic}
+              onChange={feedback.setHaptic}
+              enabledLabel={t('settings.enabled')}
+              disabledLabel={t('settings.disabled')}
+            />
+          </div>
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>
+            {t('settings.hapticHelp')}
           </p>
-        )}
-      </Section>
-
-      <Section title={t('settings.soundLabel')} help={t('settings.soundHelp')}>
-        <Toggle
-          ariaLabel={t('settings.soundLabel')}
-          value={feedback.sound}
-          onChange={feedback.setSound}
-          enabledLabel={t('settings.enabled')}
-          disabledLabel={t('settings.disabled')}
-        />
-      </Section>
-
-      <Section
-        title={t('settings.hapticLabel')}
-        help={t('settings.hapticHelp')}
-      >
-        <Toggle
-          ariaLabel={t('settings.hapticLabel')}
-          value={feedback.haptic}
-          onChange={feedback.setHaptic}
-          enabledLabel={t('settings.enabled')}
-          disabledLabel={t('settings.disabled')}
-        />
-      </Section>
+        </Section>
+      </div>
 
       <Section
         title={t('settings.playersLabel')}
@@ -424,83 +436,87 @@ export function SettingsView() {
         )}
       </Section>
 
-      <Section title={t('settings.dataLabel')} help={t('settings.dataHelp')}>
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={handleExport}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
-            style={{
-              borderColor: 'var(--border)',
-              background: 'var(--surface-highlight)',
-              color: 'var(--text)',
-            }}
-          >
-            <DownloadIcon size={16} />
-            {t('settings.exportButton')}
-          </button>
-          <label
-            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
-            style={{
-              borderColor: 'var(--border)',
-              background: 'var(--surface-highlight)',
-              color: 'var(--text)',
-            }}
-          >
-            <UploadIcon size={16} />
-            {t('settings.importButton')}
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImport}
-              className="hidden"
-            />
-          </label>
-        </div>
-        {importError && (
-          <p
-            role="alert"
-            className="mt-2 rounded-lg px-3 py-2 text-xs"
-            style={{
-              background: 'rgba(220,38,38,0.08)',
-              border: '1px solid var(--danger)',
-              color: 'var(--danger)',
-            }}
-          >
-            {importError}
-          </p>
-        )}
-      </Section>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Section title={t('settings.dataLabel')} help={t('settings.dataHelp')}>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleExport}
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
+              style={{
+                borderColor: 'var(--border)',
+                background: 'var(--surface-highlight)',
+                color: 'var(--text)',
+              }}
+            >
+              <DownloadIcon size={16} />
+              {t('settings.exportButton')}
+            </button>
+            <label
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
+              style={{
+                borderColor: 'var(--border)',
+                background: 'var(--surface-highlight)',
+                color: 'var(--text)',
+              }}
+            >
+              <UploadIcon size={16} />
+              {t('settings.importButton')}
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
+              />
+            </label>
+          </div>
+          {importError && (
+            <p
+              role="alert"
+              className="mt-2 rounded-lg px-3 py-2 text-xs"
+              style={{
+                background: 'rgba(220,38,38,0.08)',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
+              }}
+            >
+              {importError}
+            </p>
+          )}
+        </Section>
 
-      {/* Revenir sur son choix de mesure d’audience : le retrait se fait ici, en
+        {/* Revenir sur son choix de mesure d’audience : le retrait se fait ici, en
           un clic (RGPD, art. 7.3). Mêmes clé et chargeur que le bandeau. Les
           classes redisent l'habit de `Section`, qui le pose en style en ligne. */}
-      <ConsentSection
-        posthogKey={import.meta.env.VITE_POSTHOG_KEY}
-        loader={() => import('posthog-js/dist/module.slim.js')}
-        className="gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-[clamp(0.75rem,2.4vw,1.25rem)]"
-        titleClassName="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]"
-        actionClassName="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-highlight)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
-      />
+        <ConsentSection
+          posthogKey={import.meta.env.VITE_POSTHOG_KEY}
+          loader={() => import('posthog-js/dist/module.slim.js')}
+          className="gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-[clamp(0.75rem,2.4vw,1.25rem)]"
+          titleClassName="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]"
+          actionClassName="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-highlight)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+        />
 
-      <Section
-        title={t('settings.updateLabel')}
-        help={t('settings.updateHelp')}
-      >
-        <button
-          type="button"
-          onClick={handleForceUpdate}
-          disabled={updating}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] disabled:cursor-not-allowed disabled:opacity-60"
-          style={{ background: 'var(--primary)' }}
+        <Section
+          title={t('settings.updateLabel')}
+          help={t('settings.updateHelp')}
         >
-          <RefreshCwIcon
-            size={16}
-            className={updating ? 'animate-spin' : undefined}
-          />
-          {updating ? t('settings.updateChecking') : t('settings.updateButton')}
-        </button>
-      </Section>
+          <button
+            type="button"
+            onClick={handleForceUpdate}
+            disabled={updating}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ background: 'var(--primary)' }}
+          >
+            <RefreshCwIcon
+              size={16}
+              className={updating ? 'animate-spin' : undefined}
+            />
+            {updating
+              ? t('settings.updateChecking')
+              : t('settings.updateButton')}
+          </button>
+        </Section>
+      </div>
 
       {hasKeyboard && (
         <Section title={t('shortcuts.title')}>

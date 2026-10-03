@@ -24,8 +24,8 @@ export function PersistentSidebar() {
       }}
     >
       <div
-        className="mb-1 inline-flex items-center gap-2 px-1 text-lg font-bold"
-        style={{ color: 'var(--primary)' }}
+        className="mb-1 inline-flex items-center gap-2 px-1 text-lg font-extrabold tracking-tight"
+        style={{ color: 'var(--text)' }}
       >
         <Logo size={32} />
         {t('appName')}

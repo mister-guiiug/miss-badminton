@@ -10,6 +10,7 @@ import {
   type MatchFormat,
 } from '../../scoring';
 import { storage } from '../../storage';
+import { useTeamColors } from '../hooks/useTeamColors';
 
 export type MatchType = 'singles' | 'doubles';
 /**
@@ -319,10 +320,12 @@ export function MatchSetupWizard({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative z-10 flex max-h-full w-full max-w-lg flex-col gap-5 overflow-y-auto rounded-2xl shadow-2xl outline-none md:max-w-2xl"
+        className="relative z-10 flex max-h-full w-full max-w-lg flex-col gap-5 overflow-y-auto rounded-2xl outline-none md:max-w-2xl"
         style={{
           background: 'var(--surface)',
           color: 'var(--text)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow)',
           padding: 'clamp(1rem, 3.2vw, 1.75rem)',
         }}
       >
@@ -801,6 +804,7 @@ interface Step3Props {
 
 function Step3({ matchType, team1, team2, onChange }: Step3Props) {
   const { t } = useI18n();
+  const colors = useTeamColors();
   const isDoubles = matchType === 'doubles';
   const datalistId = 'mb-player-suggestions';
   const suggestions = storage.loadPlayerNames();
@@ -813,7 +817,7 @@ function Step3({ matchType, team1, team2, onChange }: Step3Props) {
       </datalist>
       <TeamFieldset
         title={t('wizard.redTeam')}
-        accent="#e53935"
+        accent={colors.team1}
         isDoubles={isDoubles}
         primary={team1.primary}
         partner={team1.partner}
@@ -829,7 +833,7 @@ function Step3({ matchType, team1, team2, onChange }: Step3Props) {
       />
       <TeamFieldset
         title={t('wizard.blueTeam')}
-        accent="#26a3b8"
+        accent={colors.team2}
         isDoubles={isDoubles}
         primary={team2.primary}
         partner={team2.partner}

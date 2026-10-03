@@ -14,8 +14,8 @@
   -->
   <defs>
     <linearGradient id="fav-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#4f46e5" />
-      <stop offset="100%" stop-color="#7c3aed" />
+      <stop offset="0%" stop-color="#0b3d2e" />
+      <stop offset="100%" stop-color="#1a6b52" />
     </linearGradient>
   </defs>
 
@@ -41,7 +41,7 @@
       <path d="M -0.74 -4.32 L -10.1 -22.13 L -16.74 -17.66 L -3.73 -2.31 Z" fill="#ffffff" />
       <path d="M 1.8 -4 L 4 -24 L -4 -24 L -1.8 -4 Z" fill="#ffffff" />
       <path d="M 3.73 -2.31 L 16.74 -17.66 L 10.1 -22.13 L 0.74 -4.32 Z" fill="#ffffff" />
-      <circle cx="0" cy="4" r="8" fill="#fbbf24" />
+      <circle cx="0" cy="4" r="8" fill="#b8f24a" />
     </g>
   </g>
 </svg>

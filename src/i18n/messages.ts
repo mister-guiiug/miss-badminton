@@ -250,8 +250,11 @@ export interface Messages {
   };
   historyExtra: {
     replay: string;
+    tabOverview: string;
+    tabMatches: string;
     statsTitle: string;
     statsTotal: string;
+    statsSets: string;
     statsWinRate: string;
     statsTopPlayer: string;
     statsNone: string;
@@ -325,7 +328,7 @@ const fr: Messages = {
     settings: 'Paramètres — Miss Badminton',
   },
   home: {
-    subtitleEmpty: 'Touchez le tableau pour configurer un nouveau match.',
+    subtitleEmpty: 'Scoreboard club & compétition.',
     subtitleReady:
       "Maintenez la zone d'une équipe pour marquer un point (évite les clics accidentels).",
     newMatch: 'Nouveau match',
@@ -548,8 +551,11 @@ const fr: Messages = {
   },
   historyExtra: {
     replay: 'Rejouer ce match',
+    tabOverview: "Vue d'ensemble",
+    tabMatches: 'Matchs',
     statsTitle: 'Statistiques',
     statsTotal: '{n} match{s, plural, one {} other {s}}',
+    statsSets: 'Sets joués',
     statsWinRate: 'Joueur le plus victorieux',
     statsTopPlayer: '{name} — {wins}/{total}',
     statsNone: 'Pas encore de stats.',
@@ -622,7 +628,7 @@ const en: Messages = {
     settings: 'Settings — Miss Badminton',
   },
   home: {
-    subtitleEmpty: 'Tap the scoreboard to configure a new match.',
+    subtitleEmpty: 'Club & competition scoreboard.',
     subtitleReady: 'Hold a side to add a point (prevents accidental taps).',
     newMatch: 'New match',
     viewHistory: 'View history',
@@ -838,8 +844,11 @@ const en: Messages = {
   },
   historyExtra: {
     replay: 'Replay this match',
+    tabOverview: 'Overview',
+    tabMatches: 'Matches',
     statsTitle: 'Stats',
     statsTotal: '{n} match{s, plural, one {} other {es}}',
+    statsSets: 'Sets played',
     statsWinRate: 'Top player',
     statsTopPlayer: '{name} — {wins}/{total}',
     statsNone: 'No stats yet.',
@@ -912,7 +921,7 @@ const es: Messages = {
     settings: 'Ajustes — Miss Badminton',
   },
   home: {
-    subtitleEmpty: 'Toca el marcador para configurar un nuevo partido.',
+    subtitleEmpty: 'Marcador de club y competición.',
     subtitleReady: 'Mantén pulsada la zona de un equipo para sumar un punto.',
     newMatch: 'Nuevo partido',
     viewHistory: 'Ver historial',
@@ -1132,8 +1141,11 @@ const es: Messages = {
   },
   historyExtra: {
     replay: 'Repetir este partido',
+    tabOverview: 'Resumen',
+    tabMatches: 'Partidos',
     statsTitle: 'Estadísticas',
     statsTotal: '{n} partido{s, plural, one {} other {s}}',
+    statsSets: 'Sets jugados',
     statsWinRate: 'Mejor jugador',
     statsTopPlayer: '{name} — {wins}/{total}',
     statsNone: 'Aún no hay estadísticas.',
