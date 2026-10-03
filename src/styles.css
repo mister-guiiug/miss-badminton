@@ -240,6 +240,15 @@ body {
   aspect-ratio: 16 / 10;
 }
 
+/* Piliers latéraux : masqués hors paysage mobile (voir media query). */
+.mb-scoreboard-pillar {
+  display: none;
+}
+
+.mb-scoreboard-stage {
+  width: 100%;
+}
+
 /* Footer du scoreboard
    - Mobile (< 768px) : overlay absolu en bas du terrain
    - Tablette/desktop (≥ 768px) : sous le terrain (flux normal) */
@@ -273,6 +282,66 @@ body {
   .mb-scoreboard {
     aspect-ratio: auto;
     min-height: calc(100svh - env(safe-area-inset-top, 0px));
+  }
+}
+
+/*
+  PAYSAGE MOBILE — piliers équipe dans le letterbox.
+  Le terrain garde 16:10 (hauteur = viewport, largeur dérivée). Les piliers
+  absorbent le reste en largeur, non interactifs, teintés équipe.
+*/
+@media (orientation: landscape) and (max-width: 767.98px) {
+  .mb-scoreboard-stage {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    min-height: 100svh;
+    width: 100%;
+    background: #0a0c0b;
+  }
+
+  .mb-scoreboard-pillar {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .mb-scoreboard-pillar-label {
+    max-height: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .mb-scoreboard-pillar--start .mb-scoreboard-pillar-label {
+    transform: rotate(180deg);
+  }
+
+  .mb-scoreboard-wrap {
+    flex: 0 0 auto;
+    align-self: center;
+    width: auto;
+    height: min(100svh, calc(100vw / 1.6));
+    aspect-ratio: 16 / 10;
+    max-width: 100%;
+  }
+
+  .mb-scoreboard {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    max-height: none;
   }
 }
 

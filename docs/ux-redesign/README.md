@@ -29,3 +29,10 @@ Accueil · Assistant match · Scoreboard · Fin de match · Historique · Param�
 ## Rendus haute fidélité
 
 Fichiers `.jpg` à côté de `index.html` (accueil, scoreboard, historique, wizard/paramètres).
+
+## Mobile paysage — bandes latérales
+
+Le terrain reste en **16:10** (non étiré). Board dédié :
+
+- [`landscape-mobile.html`](./landscape-mobile.html) — 4 propositions pour les gouttières
+- `miss-badminton-landscape-*.jpg` — rendus A/B/C
