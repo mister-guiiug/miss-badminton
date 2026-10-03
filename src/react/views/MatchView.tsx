@@ -19,20 +19,23 @@ import { useLongPress } from '@mister-guiiug/dev-pwa-config/react/use-long-press
 import { ScoreToast } from '../components/ScoreToast';
 import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { GESTES, trackEvent } from '@mister-guiiug/dev-pwa-config/analytics';
-import { shareOrCopy } from '@mister-guiiug/dev-pwa-config/share';
 import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
 import { MatchDuration } from '../components/MatchDuration';
 import { SetCountdown } from '../components/SetCountdown';
 import {
+  ResultCardSheet,
+  type ResultCardPayload,
+} from '../components/ResultCardSheet';
+import {
   ArrowLeftRightIcon,
   ArrowUpDownIcon,
   FlameIcon,
   HomeIcon,
+  ImageIcon,
   PencilIcon,
   RotateCcwIcon,
   RotateCwIcon,
-  Share2Icon,
   TrophyIcon,
   Undo2Icon,
 } from '../components/icons';
@@ -133,6 +136,7 @@ export function MatchView() {
   const [team2Inverted, setTeam2Inverted] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [resetChronoConfirmOpen, setResetChronoConfirmOpen] = useState(false);
+  const [resultCard, setResultCard] = useState<ResultCardPayload | null>(null);
   const [toast, setToast] = useState<{
     key: number;
     message: string;
@@ -314,25 +318,22 @@ export function MatchView() {
     saveToHistory,
   ]);
 
-  /**
-   * SECONDE copie du partage, recopiée à la main ici alors que `src/share.ts`
-   * en portait déjà une. Les deux avaient le même trou : `navigator.share`
-   * présent mais qui échoue sautait le repli presse-papiers, et l'écran ne
-   * disait rien. `shareOrCopy` du socle ne saute le repli que sur
-   * `AbortError` — la feuille fermée par l'utilisateur — et renvoie ce qui
-   * s'est réellement passé.
-   */
-  const handleShare = async () => {
+  /** Ouvre la carte résultat Broadcast (style A) — PNG partageable. */
+  const handleShare = () => {
     if (!match || !matchWinner) return;
-    const setsText = setScores.map(s => `${s.team1}-${s.team2}`).join(', ');
-    const body = t('scoreboard.shareBody', {
-      a: player1Label,
-      sa: setWins.team1,
-      sb: setWins.team2,
-      b: player2Label,
-      sets: setsText,
+    const durationMs =
+      startedAt && endedAt ? Math.max(0, endedAt - startedAt) : undefined;
+    setResultCard({
+      team1: player1Label,
+      team2: player2Label,
+      setWins,
+      setScores,
+      winner: matchWinner,
+      durationMs,
+      completedAt: endedAt ?? Date.now(),
+      team1Color: colors.team1,
+      team2Color: colors.team2,
     });
-    await shareOrCopy({ title: t('scoreboard.shareTitle'), text: body });
   };
 
   const handleSwapEnhanced = useCallback(() => {
@@ -640,11 +641,6 @@ export function MatchView() {
                 onRematch={handleRematch}
                 onBackHome={handleBackHome}
                 onShare={handleShare}
-                canShare={
-                  typeof navigator !== 'undefined' &&
-                  (typeof navigator.share === 'function' ||
-                    typeof navigator.clipboard?.writeText === 'function')
-                }
               />
             )}
           </section>
@@ -754,6 +750,11 @@ export function MatchView() {
         destructive
         onConfirm={confirmResetChrono}
         onCancel={() => setResetChronoConfirmOpen(false)}
+      />
+      <ResultCardSheet
+        open={resultCard !== null}
+        payload={resultCard}
+        onClose={() => setResultCard(null)}
       />
     </>
   );
@@ -1006,7 +1007,6 @@ interface MatchOverOverlayProps {
   onRematch: () => void;
   onBackHome: () => void;
   onShare: () => void;
-  canShare: boolean;
 }
 
 function MatchOverOverlay({
@@ -1017,7 +1017,6 @@ function MatchOverOverlay({
   onRematch,
   onBackHome,
   onShare,
-  canShare,
 }: MatchOverOverlayProps) {
   const { t } = useI18n();
   const setsLine = setScores.map(s => `${s.team1}-${s.team2}`).join(', ');
@@ -1102,21 +1101,19 @@ function MatchOverOverlay({
             <HomeIcon size={16} />
             {t('matchOverExtra.backHome')}
           </button>
-          {canShare && (
-            <button
-              type="button"
-              onClick={onShare}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold"
-              style={{
-                background: 'var(--surface-highlight)',
-                border: '1px solid var(--border)',
-                color: 'var(--text)',
-              }}
-            >
-              <Share2Icon size={16} />
-              {t('matchOver.share')}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onShare}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold"
+            style={{
+              background: 'var(--surface-highlight)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+            }}
+          >
+            <ImageIcon size={16} />
+            {t('matchOver.share')}
+          </button>
         </div>
       </div>
     </div>

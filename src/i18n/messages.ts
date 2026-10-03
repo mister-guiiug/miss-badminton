@@ -193,19 +193,30 @@ export interface Messages {
     updateHelp: string;
     updateButton: string;
     updateChecking: string;
-    dataLabel: string;
-    dataHelp: string;
-    exportButton: string;
-    importButton: string;
+    shareAppLabel: string;
+    shareAppHelp: string;
+    shareAppLinkLabel: string;
+    shareAppCopy: string;
+    shareAppShare: string;
+    shareAppText: string;
+    shareAppDone: string;
+    shareAppFailed: string;
+    shareAppQrAlt: string;
     playersLabel: string;
     playersHelp: string;
     totalMatches: string;
     playTime: string;
-    importError: string;
-    diagnosticsLabel: string;
-    diagnosticsHelp: string;
-    diagnosticsExport: string;
-    diagnosticsClear: string;
+  };
+  resultCard: {
+    title: string;
+    save: string;
+    share: string;
+    close: string;
+    rendering: string;
+    error: string;
+    previewAlt: string;
+    footer: string;
+    openFromHistory: string;
   };
   shortcuts: {
     title: string;
@@ -489,20 +500,32 @@ const fr: Messages = {
       "Force la recherche d'une nouvelle version et recharge l'application.",
     updateButton: 'Forcer la mise à jour',
     updateChecking: 'Vérification…',
-    dataLabel: 'Gestion des données',
-    dataHelp: 'Exportez ou importez votre historique et vos réglages.',
-    exportButton: 'Exporter (JSON)',
-    importButton: 'Importer (JSON)',
+    shareAppLabel: "Partager l'application",
+    shareAppHelp:
+      'Envoyez le lien ou le QR à un partenaire pour installer Miss Badminton.',
+    shareAppLinkLabel: 'Lien',
+    shareAppCopy: 'Copier le lien',
+    shareAppShare: 'Partager',
+    shareAppText: 'Comptez vos points au badminton avec Miss Badminton.',
+    shareAppDone: 'Lien prêt à partager.',
+    shareAppFailed: 'Impossible de partager le lien.',
+    shareAppQrAlt: 'QR code vers Miss Badminton',
     playersLabel: 'Joueurs enregistrés',
     playersHelp:
       'Gérez la liste des noms suggérés lors de la création d’un match.',
     totalMatches: 'Total Matchs',
     playTime: 'Temps de jeu',
-    importError: 'Erreur lors de l’importation du fichier.',
-    diagnosticsLabel: 'Diagnostics',
-    diagnosticsHelp: '{n} erreurs capturées localement.',
-    diagnosticsExport: 'Exporter le journal',
-    diagnosticsClear: 'Vider',
+  },
+  resultCard: {
+    title: 'Carte résultat',
+    save: "Enregistrer l'image",
+    share: "Partager l'image",
+    close: 'Fermer',
+    rendering: 'Préparation de la carte…',
+    error: "Impossible de générer l'image.",
+    previewAlt: 'Aperçu de la carte résultat',
+    footer: 'Miss Badminton',
+    openFromHistory: 'Exporter la carte résultat',
   },
   shortcuts: {
     title: 'Raccourcis clavier',
@@ -784,19 +807,30 @@ const en: Messages = {
     updateHelp: 'Force a check for a new version and reload the app.',
     updateButton: 'Force update',
     updateChecking: 'Checking…',
-    dataLabel: 'Data Management',
-    dataHelp: 'Export or import your history and settings.',
-    exportButton: 'Export (JSON)',
-    importButton: 'Import (JSON)',
+    shareAppLabel: 'Share the app',
+    shareAppHelp: 'Send the link or QR so a partner can open Miss Badminton.',
+    shareAppLinkLabel: 'Link',
+    shareAppCopy: 'Copy link',
+    shareAppShare: 'Share',
+    shareAppText: 'Keep badminton scores with Miss Badminton.',
+    shareAppDone: 'Link ready to share.',
+    shareAppFailed: 'Could not share the link.',
+    shareAppQrAlt: 'QR code to Miss Badminton',
     playersLabel: 'Saved players',
     playersHelp: 'Manage the list of suggested names during match setup.',
     totalMatches: 'Total Matches',
     playTime: 'Play Time',
-    importError: 'Error importing file.',
-    diagnosticsLabel: 'Diagnostics',
-    diagnosticsHelp: '{n} errors captured locally.',
-    diagnosticsExport: 'Export log',
-    diagnosticsClear: 'Clear',
+  },
+  resultCard: {
+    title: 'Result card',
+    save: 'Save image',
+    share: 'Share image',
+    close: 'Close',
+    rendering: 'Preparing card…',
+    error: 'Could not generate the image.',
+    previewAlt: 'Result card preview',
+    footer: 'Miss Badminton',
+    openFromHistory: 'Export result card',
   },
   shortcuts: {
     title: 'Keyboard shortcuts',
@@ -1080,19 +1114,31 @@ const es: Messages = {
       'Fuerza la búsqueda de una nueva versión y recarga la aplicación.',
     updateButton: 'Forzar actualización',
     updateChecking: 'Comprobando…',
-    dataLabel: 'Gestión de datos',
-    dataHelp: 'Exporta o importa tu historial y ajustes.',
-    exportButton: 'Exportar (JSON)',
-    importButton: 'Importar (JSON)',
+    shareAppLabel: 'Compartir la aplicación',
+    shareAppHelp:
+      'Envía el enlace o el QR para que un compañero abra Miss Badminton.',
+    shareAppLinkLabel: 'Enlace',
+    shareAppCopy: 'Copiar enlace',
+    shareAppShare: 'Compartir',
+    shareAppText: 'Lleva el marcador de bádminton con Miss Badminton.',
+    shareAppDone: 'Enlace listo para compartir.',
+    shareAppFailed: 'No se pudo compartir el enlace.',
+    shareAppQrAlt: 'Código QR hacia Miss Badminton',
     playersLabel: 'Jugadores guardados',
     playersHelp: 'Gestiona la lista de nombres sugeridos.',
     totalMatches: 'Total Partidos',
     playTime: 'Tiempo de Juego',
-    importError: 'Error al importar el archivo.',
-    diagnosticsLabel: 'Diagnósticos',
-    diagnosticsHelp: '{n} errores capturados localmente.',
-    diagnosticsExport: 'Exportar registro',
-    diagnosticsClear: 'Limpiar',
+  },
+  resultCard: {
+    title: 'Tarjeta de resultado',
+    save: 'Guardar imagen',
+    share: 'Compartir imagen',
+    close: 'Cerrar',
+    rendering: 'Preparando la tarjeta…',
+    error: 'No se pudo generar la imagen.',
+    previewAlt: 'Vista previa de la tarjeta',
+    footer: 'Miss Badminton',
+    openFromHistory: 'Exportar tarjeta de resultado',
   },
   shortcuts: {
     title: 'Atajos de teclado',

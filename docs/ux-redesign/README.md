@@ -36,3 +36,8 @@ Le terrain reste en **16:10** (non étiré). Board dédié :
 
 - [`landscape-mobile.html`](./landscape-mobile.html) — 4 propositions pour les gouttières
 - `miss-badminton-landscape-*.jpg` — rendus A/B/C
+
+## Partage app & carte résultat
+
+- [`share-export.html`](./share-export.html) — paramètres (lien + QR), parcours historique, 3 styles de carte
+- `mb-settings-share-qr.jpg`, `mb-history-export-flow.jpg`, `mb-result-card-*.jpg`
