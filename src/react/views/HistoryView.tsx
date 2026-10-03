@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialo
 import {
   FlameIcon,
   HistoryIcon,
+  ImageIcon,
   PencilIcon,
   PlusIcon,
   RotateCwIcon,
@@ -34,6 +35,10 @@ import { buildShareText } from '../../share';
 import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
 import { Sparkline } from '@mister-guiiug/dev-pwa-config/react/sparkline';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
+import {
+  ResultCardSheet,
+  type ResultCardPayload,
+} from '../components/ResultCardSheet';
 
 function formatDate(timestamp: number, locale: Locale): string {
   try {
@@ -232,6 +237,7 @@ export function HistoryView() {
     setIndex: number;
     initial: { team1: number; team2: number };
   } | null>(null);
+  const [resultCard, setResultCard] = useState<ResultCardPayload | null>(null);
 
   const handleClear = () => {
     setClearOpen(true);
@@ -772,6 +778,28 @@ export function HistoryView() {
                       size="sm"
                       iconOnly
                       onClick={() => {
+                        setResultCard({
+                          team1: t1,
+                          team2: t2,
+                          setWins: match.finalSetWins,
+                          setScores: match.setScores,
+                          winner: match.winner,
+                          durationMs: match.durationMs,
+                          completedAt: match.completedAt,
+                          team1Color: colors.team1,
+                          team2Color: colors.team2,
+                        });
+                      }}
+                      aria-label={t('resultCard.openFromHistory')}
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      <ImageIcon size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      onClick={() => {
                         const text = buildShareText(match, {
                           team1: t1,
                           team2: t2,
@@ -981,6 +1009,12 @@ export function HistoryView() {
           }}
         />
       )}
+
+      <ResultCardSheet
+        open={resultCard !== null}
+        payload={resultCard}
+        onClose={() => setResultCard(null)}
+      />
     </PageContainer>
   );
 }

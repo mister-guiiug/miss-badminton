@@ -4,11 +4,6 @@ import {
   useThemeContext,
   type ThemePreference,
 } from '@mister-guiiug/dev-pwa-config/react';
-import {
-  dateSlug,
-  downloadJson,
-  readJsonFile,
-} from '@mister-guiiug/dev-pwa-config/download';
 import { useI18n } from '../../i18n';
 import { FamilyLinks } from '../components/FamilyLinks';
 import {
@@ -32,18 +27,13 @@ import { ConsentSection } from '@mister-guiiug/dev-pwa-config/react/consent-sect
 import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
 import {
-  DownloadIcon,
   PencilIcon,
   RefreshCwIcon,
   Trash2Icon,
-  UploadIcon,
   UserIcon,
 } from '../components/icons';
+import { ShareAppSection } from '../components/ShareAppSection';
 import { useMatchStore } from '../../store/useMatchStore';
-import {
-  clearErrorLog,
-  getErrorLog,
-} from '@mister-guiiug/dev-pwa-config/react/observability';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 
@@ -67,9 +57,7 @@ export function SettingsView() {
     themeCtx?.setTheme(pref);
   };
   const hasKeyboard = useMediaQuery(KEYBOARD_QUERY);
-  const { matchHistory, importBundle, players, renamePlayer, removePlayer } =
-    useMatchStore();
-  const [importError, setImportError] = useState<string | null>(null);
+  const { players, renamePlayer, removePlayer } = useMatchStore();
   /** Le profil en cours de renommage, et l'erreur éventuelle du dernier essai. */
   const [renaming, setRenaming] = useState<{
     id: string;
@@ -100,69 +88,6 @@ export function SettingsView() {
     if (pref === 'light') return t('settings.themeLight');
     if (pref === 'dark') return t('settings.themeDark');
     return t('settings.themeSystem');
-  };
-
-  const handleExport = () => {
-    const data = {
-      history: matchHistory,
-      // DEUX CHAMPS, ET C'EST VOULU (cf. `ExportBundleSchema`) : `players`
-      // reste la liste de NOMS, qu'une version d'avant les profils sait
-      // relire ; `playerProfiles` porte les identifiants, que celle-ci
-      // préfère à la relecture.
-      players: players.map(p => p.name),
-      playerProfiles: players,
-      settings: {
-        theme,
-        locale,
-        team1Color: colors.team1,
-        team2Color: colors.team2,
-        sound: feedback.sound,
-        haptic: feedback.haptic,
-      },
-    };
-    downloadJson(data, `miss-badminton-data-${dateSlug()}.json`);
-  };
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImportError(null);
-    void (async () => {
-      let parsed: unknown;
-      try {
-        parsed = await readJsonFile(file);
-      } catch {
-        setImportError(t('settings.importError'));
-        return;
-      }
-      const result = importBundle(parsed);
-      if (!result.ok) {
-        setImportError(t('settings.importError'));
-        return;
-      }
-      // Réglages "satellites" : ils vivent en dehors du store de match
-      // (thème, locale, couleurs équipes, sound, haptic). On les applique
-      // ici uniquement si présents et bien typés ; les autres restent
-      // inchangés.
-      const settings = (parsed as { settings?: unknown }).settings as
-        | {
-            theme?: 'light' | 'dark' | 'system';
-            team1Color?: string;
-            team2Color?: string;
-            sound?: boolean;
-            haptic?: boolean;
-          }
-        | undefined;
-      if (settings?.theme) setTheme(settings.theme);
-      if (settings?.team1Color) setTeamColor('team1', settings.team1Color);
-      if (settings?.team2Color) setTeamColor('team2', settings.team2Color);
-      if (typeof settings?.sound === 'boolean')
-        feedback.setSound(settings.sound);
-      if (typeof settings?.haptic === 'boolean')
-        feedback.setHaptic(settings.haptic);
-      // Les joueurs : `importBundle` a déjà reconstruit le registre dans le
-      // magasin (profils du fichier, ou migration des noms hérités).
-    })();
   };
 
   /**
@@ -210,7 +135,7 @@ export function SettingsView() {
           {t('nav.settings')}
         </h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
-          {t('settings.dataHelp')}
+          {t('settings.shareAppHelp')}
         </p>
       </header>
 
@@ -436,55 +361,9 @@ export function SettingsView() {
         )}
       </Section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Section title={t('settings.dataLabel')} help={t('settings.dataHelp')}>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleExport}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
-              style={{
-                borderColor: 'var(--border)',
-                background: 'var(--surface-highlight)',
-                color: 'var(--text)',
-              }}
-            >
-              <DownloadIcon size={16} />
-              {t('settings.exportButton')}
-            </button>
-            <label
-              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
-              style={{
-                borderColor: 'var(--border)',
-                background: 'var(--surface-highlight)',
-                color: 'var(--text)',
-              }}
-            >
-              <UploadIcon size={16} />
-              {t('settings.importButton')}
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                className="hidden"
-              />
-            </label>
-          </div>
-          {importError && (
-            <p
-              role="alert"
-              className="mt-2 rounded-lg px-3 py-2 text-xs"
-              style={{
-                background: 'rgba(220,38,38,0.08)',
-                border: '1px solid var(--danger)',
-                color: 'var(--danger)',
-              }}
-            >
-              {importError}
-            </p>
-          )}
-        </Section>
+      <ShareAppSection />
 
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Revenir sur son choix de mesure d’audience : le retrait se fait ici, en
           un clic (RGPD, art. 7.3). Mêmes clé et chargeur que le bandeau. Les
           classes redisent l'habit de `Section`, qui le pose en style en ligne. */}
@@ -530,8 +409,6 @@ export function SettingsView() {
         </Section>
       )}
 
-      <DiagnosticsSection />
-
       {/* Les deux liens de la règle famille ne sont plus ici : la coquille les
           rend hors des routes, donc sur cet écran comme sur le premier. */}
 
@@ -570,56 +447,6 @@ export function SettingsView() {
           écran de match compris. */}
       <FamilyLinks />
     </PageContainer>
-  );
-}
-
-function DiagnosticsSection() {
-  const { t } = useI18n();
-  const [count, setCount] = useState(() => getErrorLog().length);
-
-  const handleExport = () => {
-    downloadJson(getErrorLog(), `miss-badminton-errors-${dateSlug()}.json`);
-  };
-  const handleClear = () => {
-    clearErrorLog();
-    setCount(0);
-  };
-
-  if (count === 0) return null;
-  return (
-    <Section
-      title={t('settings.diagnosticsLabel')}
-      help={t('settings.diagnosticsHelp', { n: count })}
-    >
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={handleExport}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
-          style={{
-            borderColor: 'var(--border)',
-            background: 'var(--surface-highlight)',
-            color: 'var(--text)',
-          }}
-        >
-          <DownloadIcon size={16} />
-          {t('settings.diagnosticsExport')}
-        </button>
-        <button
-          type="button"
-          onClick={handleClear}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold"
-          style={{
-            borderColor: 'var(--border)',
-            background: 'var(--surface-highlight)',
-            color: 'var(--muted)',
-          }}
-        >
-          <Trash2Icon size={16} />
-          {t('settings.diagnosticsClear')}
-        </button>
-      </div>
-    </Section>
   );
 }
 
