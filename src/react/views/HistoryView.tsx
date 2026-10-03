@@ -248,6 +248,8 @@ export function HistoryView() {
   };
 
   const [period, setPeriod] = useState<PeriodFilter>('all');
+  /** Vue d'ensemble (KPIs, heatmap, classement) ou liste des matchs. */
+  const [tab, setTab] = useState<'overview' | 'matches'>('overview');
   /**
    * LE FILTRE PAR JOUEUR — « tous mes matchs contre X ».
    *
@@ -265,6 +267,10 @@ export function HistoryView() {
   const stats = useMemo(
     () => computeStats(filteredMatches, byId),
     [filteredMatches, byId]
+  );
+  const totalSets = useMemo(
+    () => filteredMatches.reduce((n, m) => n + m.setScores.length, 0),
+    [filteredMatches]
   );
   /** Les noms proposés à la saisie : ceux du registre, tels quels. */
   const suggestions = useMemo(() => players.map(p => p.name), [players]);
@@ -307,25 +313,30 @@ export function HistoryView() {
 
   return (
     <PageContainer width="xl">
-      <header className="flex items-center justify-between gap-3">
-        <h1
-          className="flex items-baseline gap-2 font-bold"
-          style={{
-            color: 'var(--primary)',
-            fontSize: 'clamp(1.5rem, 4.5vw, 2.25rem)',
-          }}
-        >
-          {t('history.title')}
-          {!historyHydrated && (
-            <span
-              role="status"
-              aria-live="polite"
-              className="text-xs font-medium opacity-60"
-            >
-              {t('historyExtra.syncing')}
-            </span>
-          )}
-        </h1>
+      <header className="flex items-end justify-between gap-3">
+        <div>
+          <h1
+            className="flex items-baseline gap-2 font-extrabold tracking-tight"
+            style={{
+              color: 'var(--text)',
+              fontSize: 'clamp(1.5rem, 4.5vw, 2.25rem)',
+            }}
+          >
+            {t('history.title')}
+            {!historyHydrated && (
+              <span
+                role="status"
+                aria-live="polite"
+                className="text-xs font-medium opacity-60"
+              >
+                {t('historyExtra.syncing')}
+              </span>
+            )}
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
+            {t('historyExtra.statsTitle')}
+          </p>
+        </div>
         {matches.length > 0 && (
           <button
             type="button"
@@ -334,6 +345,7 @@ export function HistoryView() {
             style={{
               borderColor: 'var(--border)',
               color: 'var(--muted)',
+              background: 'var(--surface)',
             }}
           >
             {t('history.clearAll')}
@@ -356,8 +368,7 @@ export function HistoryView() {
               className="inline-flex min-h-9 items-center rounded-full border px-3 py-1 text-xs font-semibold transition-colors"
               style={{
                 borderColor: period === p ? 'var(--primary)' : 'var(--border)',
-                background:
-                  period === p ? 'var(--primary)' : 'var(--surface-highlight)',
+                background: period === p ? 'var(--primary)' : 'var(--surface)',
                 color: period === p ? 'var(--primary-ink)' : 'var(--text)',
               }}
             >
@@ -374,10 +385,10 @@ export function HistoryView() {
       {matches.length > 0 && (
         <div className="flex items-center gap-2">
           <label
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-full border px-3 py-1.5"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border px-3 py-1.5"
             style={{
               borderColor: 'var(--border)',
-              background: 'var(--surface-highlight)',
+              background: 'var(--surface)',
             }}
           >
             <UserIcon size={15} aria-hidden />
@@ -414,59 +425,131 @@ export function HistoryView() {
         </div>
       )}
 
-      {filteredMatches.length > 0 && (
+      {matches.length > 0 && (
+        <div
+          role="tablist"
+          aria-label={t('history.title')}
+          className="grid grid-cols-2 gap-1 rounded-xl p-1"
+          style={{ background: 'var(--surface-highlight)' }}
+        >
+          {(
+            [
+              ['overview', t('historyExtra.tabOverview')],
+              ['matches', t('historyExtra.tabMatches')],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className="min-h-10 rounded-lg px-3 text-sm font-semibold transition-colors"
+              style={{
+                background: tab === id ? 'var(--surface)' : 'transparent',
+                color: tab === id ? 'var(--text)' : 'var(--muted)',
+                boxShadow: tab === id ? 'var(--shadow)' : 'none',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === 'overview' && filteredMatches.length > 0 && (
         <section
           aria-label={t('historyExtra.statsTitle')}
-          className="grid grid-cols-2 gap-4 rounded-3xl border md:grid-cols-3"
-          style={{
-            background: 'var(--surface)',
-            borderColor: 'var(--border)',
-            padding: '1.5rem',
-          }}
+          className="grid grid-cols-2 gap-3 md:grid-cols-4"
         >
-          <div className="flex flex-col gap-1">
+          <div
+            className="flex flex-col gap-1 rounded-2xl border p-4"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+            }}
+          >
             <p
-              className="text-[0.65rem] font-bold uppercase tracking-widest"
+              className="text-[0.65rem] font-semibold uppercase tracking-widest"
               style={{ color: 'var(--muted)' }}
             >
               {t('settings.totalMatches')}
             </p>
             <p
-              className="text-3xl font-black"
+              className="font-mono text-3xl font-bold tracking-tight"
               style={{ color: 'var(--primary)' }}
             >
               {stats.total}
             </p>
           </div>
 
-          <div className="flex flex-col gap-1">
+          <div
+            className="flex flex-col gap-1 rounded-2xl border p-4"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+            }}
+          >
             <p
-              className="text-[0.65rem] font-bold uppercase tracking-widest"
+              className="text-[0.65rem] font-semibold uppercase tracking-widest"
+              style={{ color: 'var(--muted)' }}
+            >
+              {t('historyExtra.statsSets')}
+            </p>
+            <p
+              className="font-mono text-3xl font-bold tracking-tight"
+              style={{ color: 'var(--text)' }}
+            >
+              {totalSets}
+            </p>
+          </div>
+
+          <div
+            className="flex flex-col gap-1 rounded-2xl border p-4"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <p
+              className="text-[0.65rem] font-semibold uppercase tracking-widest"
               style={{ color: 'var(--muted)' }}
             >
               {t('settings.playTime')}
             </p>
-            <p className="text-3xl font-black" style={{ color: 'var(--text)' }}>
+            <p
+              className="font-mono text-3xl font-bold tracking-tight"
+              style={{ color: 'var(--text)' }}
+            >
               {formatDuration(stats.totalDurationMs)}
             </p>
           </div>
 
-          <div className="col-span-2 flex flex-col gap-1 md:col-span-1">
+          <div
+            className="col-span-2 flex flex-col gap-1 rounded-2xl border p-4 md:col-span-1"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+            }}
+          >
             <p
-              className="text-[0.65rem] font-bold uppercase tracking-widest"
+              className="text-[0.65rem] font-semibold uppercase tracking-widest"
               style={{ color: 'var(--muted)' }}
             >
               {t('historyExtra.statsWinRate')}
             </p>
             {stats.topPlayer ? (
-              <div className="flex items-baseline gap-2">
+              <div className="flex flex-col gap-1">
                 <p
-                  className="text-2xl font-black"
+                  className="truncate text-lg font-bold"
                   style={{ color: 'var(--primary)' }}
                 >
                   {stats.topPlayer.name}
                 </p>
-                <p className="text-sm font-bold opacity-60">
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: 'var(--muted)' }}
+                >
                   {stats.topPlayer.wins}/{stats.topPlayer.total} (
                   {stats.topPlayer.winRate.toFixed(0)}%)
                 </p>
@@ -478,10 +561,6 @@ export function HistoryView() {
             )}
             {topPlayerSparkline && (
               <div className="mt-2">
-                {/* Sparkline du socle : SVG décoratif + alternative textuelle
-                    calculée par describeSeries (points, bornes, tendance) —
-                    plus riche que l'ancien aria-label seul. La couleur vient
-                    de components.css (--dwc-primary). */}
                 <Sparkline
                   values={topPlayerSparkline}
                   width={160}
@@ -497,10 +576,10 @@ export function HistoryView() {
         </section>
       )}
 
-      {heatmapTimestamps.length > 0 && (
+      {tab === 'overview' && heatmapTimestamps.length > 0 && (
         <section
           aria-labelledby="heatmap-title"
-          className="rounded-3xl border"
+          className="rounded-2xl border"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
@@ -523,10 +602,10 @@ export function HistoryView() {
         </section>
       )}
 
-      {stats.leaderboard.length >= 2 && (
+      {tab === 'overview' && stats.leaderboard.length >= 2 && (
         <section
           aria-labelledby="leaderboard-title"
-          className="rounded-3xl border"
+          className="rounded-2xl border"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
@@ -552,7 +631,10 @@ export function HistoryView() {
                     ses matchs. Le bouton remplit la boîte de recherche. */}
                 <button
                   type="button"
-                  onClick={() => setPlayerQuery(p.name)}
+                  onClick={() => {
+                    setPlayerQuery(p.name);
+                    setTab('matches');
+                  }}
                   aria-label={t('historyExtra.playerFilterApply', {
                     name: p.name,
                   })}
@@ -593,10 +675,10 @@ export function HistoryView() {
         </section>
       )}
 
-      {stats.headToHead.length > 0 && (
+      {tab === 'overview' && stats.headToHead.length > 0 && (
         <section
           aria-labelledby="h2h-title"
-          className="rounded-3xl border"
+          className="rounded-2xl border"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
@@ -633,7 +715,7 @@ export function HistoryView() {
 
       {filteredMatches.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center rounded-3xl border py-16 text-center"
+          className="flex flex-col items-center justify-center rounded-2xl border py-16 text-center"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
@@ -651,8 +733,8 @@ export function HistoryView() {
                 : t('historyExtra.periodEmpty')}
           </p>
         </div>
-      ) : (
-        <ul className="grid gap-4 md:grid-cols-2">
+      ) : tab === 'matches' ? (
+        <ul className="grid gap-3 md:grid-cols-2">
           {filteredMatches.map(match => {
             const t1 = teamLabel(
               match.config.team1,
@@ -668,12 +750,12 @@ export function HistoryView() {
             return (
               <li
                 key={match.id}
-                className="group relative flex flex-col gap-4 rounded-3xl border transition-all hover:shadow-lg"
+                className="group relative flex flex-col gap-3 rounded-2xl border"
                 style={{
                   background: 'var(--surface)',
                   borderColor: 'var(--border)',
                   color: 'var(--text)',
-                  padding: '1.25rem',
+                  padding: '1.1rem',
                 }}
               >
                 <div className="flex items-center justify-between">
@@ -827,7 +909,7 @@ export function HistoryView() {
             );
           })}
         </ul>
-      )}
+      ) : null}
       {/* ConfirmDialog du socle : `z-[80]` (utilitaire, donc prioritaire sur
           le z-60 de components.css) pour rester au-dessus du tiroir de
           navigation (70) et des bandeaux (55-75), comme l'ancienne copie

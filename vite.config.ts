@@ -128,7 +128,7 @@ export default defineConfig(({ command }) => {
         // Deux <meta name="theme-color"> par schéma (attribut media) : la
         // barre du navigateur suit le système dès le premier rendu ; le choix
         // explicite contraire au système est couvert par ThemeProvider.
-        themeColor: { light: '#4f46e5', dark: '#0f172a' },
+        themeColor: { light: '#0b3d2e', dark: '#0e1512' },
       }),
       // CSP durcie : script-src par hash SHA-256 des scripts inline (plus de
       // 'unsafe-inline' en prod). Placé après pwaSeoPlugin pour hasher le
@@ -201,8 +201,8 @@ export default defineConfig(({ command }) => {
           name: 'Miss Badminton',
           short_name: 'Miss Badminton',
           description: 'Suivi simplifié de scores de badminton et plus encore',
-          theme_color: '#4f46e5',
-          background_color: '#f8fafc',
+          theme_color: '#0b3d2e',
+          background_color: '#f4f6f3',
           display: 'standalone',
           orientation: 'portrait-primary',
           start_url: basePath,

@@ -10,12 +10,7 @@ import {
   type MatchConfig,
 } from '../components/MatchSetupWizard';
 import { useMatchStore } from '../../store/useMatchStore';
-import {
-  HistoryIcon,
-  PlayIcon,
-  PlusIcon,
-  TrophyIcon,
-} from '../components/icons';
+import { PlayIcon, PlusIcon } from '../components/icons';
 import { Logo } from '../components/Logo';
 import { WelcomeTutorial } from '../components/WelcomeTutorial';
 import { readReplayFromUrl } from '../../share';
@@ -86,180 +81,154 @@ export function HomeView() {
   return (
     <PageContainer width="lg">
       {/*
-       * L'ACCUEIL TIENT DANS UN ÉCRAN DE TÉLÉPHONE, et c'est une contrainte,
-       * pas une préférence. Mesuré le 19/09/2026 en 375 × 812 : la page
-       * faisait 982 px pour 812 de fenêtre — 170 px de trop, donc un défilement
-       * pour atteindre « Voir l'historique » et les statistiques. Sur un vrai
-       * appareil c'est pire : la barre d'adresse mange encore de la hauteur.
-       *
-       * Les tailles sont donc DEUX FOIS écrites : compactes par défaut,
-       * confortables à partir de `sm:` (640 px). Rien n'est retiré — ni le
-       * sous-titre, ni un bouton : ce qui change, c'est ce que chaque chose
-       * occupe là où la place manque.
-       */}
-      <header className="flex flex-col items-center justify-center gap-2 py-4 text-center sm:gap-4 sm:py-8">
-        {/* `size` reste à 80 : au-dessus de 32, le logo prend son tracé dense
-            (cordage visible). La classe rétrécit l'affichage sans changer le
-            dessin choisi. */}
-        <Logo size={80} className="size-16 sm:size-20" />
-        <h1
-          className="text-3xl font-black tracking-tight sm:text-4xl"
-          style={{ color: 'var(--primary)' }}
-        >
-          {t('appName')}
-        </h1>
-        <p
-          className="max-w-md text-base sm:text-lg"
-          style={{ color: 'var(--muted)' }}
-        >
-          {t('home.subtitleEmpty')}
-        </p>
+        HUB COURT PRO — un viewport, une action. La marque porte l'écran ;
+        l'historique vit dans la navigation, pas en second CTA géant.
+      */}
+      <header className="flex flex-col items-start gap-3 pt-2 pb-1 sm:items-center sm:pt-6 sm:text-center">
+        <Logo size={80} className="size-14 sm:size-16" />
+        <div className="flex flex-col gap-1.5">
+          <h1
+            className="text-[clamp(2rem,7vw,2.75rem)] font-extrabold tracking-tight"
+            style={{ color: 'var(--text)' }}
+          >
+            {t('appName')}
+          </h1>
+          <p
+            className="max-w-md text-sm sm:text-base"
+            style={{ color: 'var(--muted)' }}
+          >
+            {t('home.subtitleEmpty')}
+          </p>
+        </div>
       </header>
 
-      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-        <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => setWizardOpen(true)}
+          className="flex min-h-[3.5rem] w-full items-center justify-center gap-3 rounded-2xl px-5 py-4 text-lg font-bold transition-transform hover:scale-[1.01] active:scale-[0.99] sm:min-h-16"
+          style={{
+            background: 'var(--cta)',
+            color: 'var(--cta-ink)',
+            boxShadow: 'var(--shadow)',
+          }}
+        >
+          <PlusIcon size={24} strokeWidth={3} />
+          {t('home.newMatch')}
+        </button>
+
+        {hasActiveMatch && (
           <button
             type="button"
-            onClick={() => setWizardOpen(true)}
-            className="flex min-h-20 w-full items-center justify-center gap-4 rounded-3xl p-5 sm:min-h-24 sm:p-6 text-xl font-bold text-[var(--primary-ink)] shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: 'var(--primary)' }}
-          >
-            <PlusIcon size={32} strokeWidth={3} />
-            {t('home.newMatch')}
-          </button>
-
-          {hasActiveMatch && (
-            <button
-              type="button"
-              onClick={() => navigate('/match')}
-              className="flex min-h-20 w-full items-center justify-center gap-4 rounded-3xl border-2 p-5 sm:min-h-24 sm:p-6 text-xl font-bold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
-              style={{
-                borderColor: 'var(--primary)',
-                background: 'var(--surface)',
-                color: 'var(--primary)',
-              }}
-            >
-              <PlayIcon size={32} fill="currentColor" />
-              {t('nav.match')}
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => navigate('/historique')}
-            className="flex min-h-20 w-full items-center justify-center gap-4 rounded-3xl border p-5 sm:min-h-24 sm:p-6 text-xl font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            onClick={() => navigate('/match')}
+            className="flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border px-5 py-3 text-base font-semibold transition-colors"
             style={{
-              borderColor: 'var(--border)',
-              background: 'var(--surface-highlight)',
-              color: 'var(--text)',
+              borderColor: 'var(--primary)',
+              background: 'var(--surface)',
+              color: 'var(--primary)',
             }}
           >
-            <HistoryIcon size={32} />
-            {t('home.viewHistory')}
+            <PlayIcon size={20} fill="currentColor" />
+            {t('nav.match')}
           </button>
+        )}
+      </section>
 
-          {templates.length > 0 && (
-            <div
-              className="flex flex-col gap-2 rounded-3xl border p-4"
-              style={{
-                background: 'var(--surface)',
-                borderColor: 'var(--border)',
-              }}
-              aria-labelledby="templates-title"
-            >
-              <h3
-                id="templates-title"
-                className="text-xs font-bold uppercase tracking-widest opacity-60"
-              >
-                {t('home.templatesTitle')}
-              </h3>
-              <ul className="flex flex-col gap-1">
-                {templates.map(tpl => (
-                  <li key={tpl.id} className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleUseTemplate(tpl)}
-                      className="flex flex-1 items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors hover:bg-black/[0.03]"
-                      style={{
-                        borderColor: 'var(--border)',
-                        background: 'var(--surface-highlight)',
-                      }}
-                    >
-                      <span className="truncate">{tpl.name}</span>
-                      <span className="text-xs font-medium opacity-50">
-                        {tpl.config.type === 'doubles' ? '2v2' : '1v1'} ·{' '}
-                        {tpl.config.points} pts
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteTemplate(tpl.id)}
-                      aria-label={t('home.templatesDelete')}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-black/5"
-                      style={{ color: 'var(--muted)' }}
-                    >
-                      <Trash2Icon size={14} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
-
-        <section
-          className="flex flex-col gap-3 rounded-3xl border p-5 sm:gap-4 sm:p-6"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-        >
-          <h2 className="flex items-center gap-2 text-lg font-bold uppercase tracking-wider opacity-60">
-            <TrophyIcon size={20} />
+      {recentMatches.length > 0 && (
+        <section className="flex flex-col gap-2" aria-labelledby="recent-title">
+          <h2
+            id="recent-title"
+            className="text-[0.7rem] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: 'var(--muted)' }}
+          >
             {t('historyExtra.statsTitle')}
           </h2>
-
-          {recentMatches.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center py-5 text-center sm:py-8">
-              {/* L'état vide ne mérite pas la place d'un contenu : sur
-                  téléphone, ces trente pixels sont ceux qui font défiler. */}
-              <HistoryIcon
-                size={48}
-                className="mb-2 size-10 opacity-40 sm:size-12"
-              />
-              {/* opacity-70 (pas 40) : garde ~4.5:1 de contraste (axe color-contrast). */}
-              <p className="opacity-70">{t('history.empty')}</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {recentMatches.map(m => (
-                <div
-                  key={m.id}
-                  className="flex items-center justify-between rounded-2xl border p-3 sm:p-4"
+          <ul className="flex flex-col gap-1.5">
+            {recentMatches.map(m => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate('/historique')}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]"
                   style={{
                     borderColor: 'var(--border)',
-                    background: 'var(--surface-highlight)',
+                    background: 'var(--surface)',
                   }}
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">
                       {teamLabel(m.config.team1, t('players.player1'), byId)}
                       {' vs '}
                       {teamLabel(m.config.team2, t('players.player2'), byId)}
                     </p>
-                    <p className="text-xs opacity-60">
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>
                       {new Date(m.completedAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div
-                    className="text-right font-black"
+                    className="shrink-0 font-mono text-sm font-bold tabular-nums"
                     style={{ color: 'var(--primary)' }}
                   >
-                    {m.finalSetWins.team1} – {m.finalSetWins.team2}
+                    {m.finalSetWins.team1}–{m.finalSetWins.team2}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                </button>
+              </li>
+            ))}
+          </ul>
         </section>
-      </div>
+      )}
+
+      {templates.length > 0 && (
+        <section
+          className="flex flex-col gap-2"
+          aria-labelledby="templates-title"
+        >
+          <h2
+            id="templates-title"
+            className="text-[0.7rem] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: 'var(--muted)' }}
+          >
+            {t('home.templatesTitle')}
+          </h2>
+          <ul className="flex flex-col gap-1.5">
+            {templates.map(tpl => (
+              <li key={tpl.id} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleUseTemplate(tpl)}
+                  className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left text-sm font-semibold transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]"
+                  style={{
+                    borderColor: 'var(--border)',
+                    background: 'var(--surface)',
+                  }}
+                >
+                  <span className="truncate">{tpl.name}</span>
+                  <span
+                    className="shrink-0 text-xs font-medium"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    {tpl.config.type === 'doubles' ? '2v2' : '1v1'} ·{' '}
+                    {tpl.config.points} pts
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTemplate(tpl.id)}
+                  aria-label={t('home.templatesDelete')}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border"
+                  style={{
+                    color: 'var(--muted)',
+                    borderColor: 'var(--border)',
+                    background: 'var(--surface)',
+                  }}
+                >
+                  <Trash2Icon size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {wizardOpen && (
         <MatchSetupWizard
@@ -288,8 +257,7 @@ export function HomeView() {
       <PwaInstallPrompt dismissKey="mb_pwa_install_dismissed" />
 
       {/* La règle famille veut ces trois liens sur le premier écran ET sur les
-          Paramètres — deux écrans, nulle part ailleurs. Ils étaient rendus par
-          la coquille, donc partout, jusqu'en plein match. */}
+          Paramètres — deux écrans, nulle part ailleurs. */}
       <FamilyLinks />
     </PageContainer>
   );
