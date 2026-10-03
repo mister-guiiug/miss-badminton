@@ -265,7 +265,13 @@ body {
   );
 }
 
-@media (min-width: 768px) {
+/*
+  Footer sous le terrain : tablette/desktop assez HAUTS.
+  PAS `min-width: 768` seul — un iPhone en paysage fait ~844×390 : large
+  assez pour basculer le footer en flux, trop bas pour les piliers si on
+  filtrait encore sur `max-width: 767`. On tranche sur la HAUTEUR.
+*/
+@media (min-width: 768px) and (min-height: 500px) {
   .mb-scoreboard-footer {
     position: static;
     border-bottom-left-radius: 0.75rem;
@@ -286,11 +292,13 @@ body {
 }
 
 /*
-  PAYSAGE MOBILE — piliers équipe dans le letterbox.
-  Le terrain garde 16:10 (hauteur = viewport, largeur dérivée). Les piliers
-  absorbent le reste en largeur, non interactifs, teintés équipe.
+  PAYSAGE « TÉLÉPHONE » — piliers équipe dans le letterbox.
+  On cible la HAUTEUR, pas la largeur : en paysage un iPhone moderne fait
+  800–930 px de large (> 768) pour ~390 px de haut. Filtrer sur max-width
+  laissait les piliers éteints et les bandes blanches visibles en prod.
+  Le terrain garde 16:10 ; les piliers absorbent le reste, hors zone de tap.
 */
-@media (orientation: landscape) and (max-width: 767.98px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .mb-scoreboard-stage {
     display: flex;
     flex-direction: row;
@@ -345,9 +353,8 @@ body {
   }
 }
 
-/* Tablette et plus en paysage : on borne la hauteur du *wrapper* pour
-   conserver le scoreboard + footer dans le viewport, et on centre. */
-@media (orientation: landscape) and (min-width: 768px) {
+/* Tablette et plus en paysage (assez hauts) : borne le wrapper, centre. */
+@media (orientation: landscape) and (min-width: 768px) and (min-height: 500px) {
   .mb-scoreboard-wrap {
     max-width: min(
       100%,
