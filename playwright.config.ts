@@ -18,6 +18,6 @@ export default defineConfig(
     preview: true,
     port: 4173,
     command:
-      'cross-env VITE_POSTHOG_KEY=phc_e2e0000000000000000000000 VITE_BASE_PATH=/ npm run build && cross-env VITE_BASE_PATH=/ vite preview --port 4173 --strictPort',
+      'node scripts/with-env.mjs VITE_POSTHOG_KEY=phc_e2e0000000000000000000000 VITE_BASE_PATH=/ -- npm run build && node scripts/with-env.mjs VITE_BASE_PATH=/ -- vite preview --port 4173 --strictPort',
   })
 );
