@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RiveScene } from '../components/RiveScene';
+import { RiveAnimation } from '@mister-guiiug/dev-pwa-config/react/rive';
 import {
   MatchSetupWizard,
   type MatchConfig,
@@ -578,7 +578,7 @@ export function MatchView() {
               }}
             >
               {RIVE_SRC ? (
-                <RiveScene
+                <RiveAnimation
                   src={RIVE_SRC}
                   ariaLabel={t('home.scoreboardLabel')}
                   className="h-full w-full"
