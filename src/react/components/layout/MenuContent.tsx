@@ -179,7 +179,14 @@ export function MenuContent() {
                 type="button"
                 onClick={() => setLocale(l)}
                 aria-pressed={selected}
-                aria-label={LOCALE_LABELS[l]}
+                /*
+                  LE NOM COMMENCE PAR CE QUI EST ÉCRIT. Le bouton montre « FR »,
+                  et un nom « Français » seul laissait cette étiquette visible
+                  hors du nom accessible : qui pilote à la voix dit ce qu'il voit,
+                  et « FR » ne trouvait rien (WCAG 2.5.3, Label in Name ; axe 4.14,
+                  `label-content-name-mismatch`, le 28/10/2026).
+                */
+                aria-label={`${l.toUpperCase()}, ${LOCALE_LABELS[l]}`}
                 title={LOCALE_LABELS[l]}
                 className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-colors"
                 /*

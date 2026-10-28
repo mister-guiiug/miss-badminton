@@ -47,7 +47,7 @@ describe('les deux menus offrent la même chose', () => {
       expect(within(menu).getByRole('link', { name: nom })).toBeTruthy();
     }
     // Le réglage qui n'existait que sur mobile.
-    expect(within(menu).getByRole('button', { name: 'Español' })).toBeTruthy();
+    expect(within(menu).getByRole('button', { name: /Español/ })).toBeTruthy();
   });
 
   it('le tiroir porte exactement les mêmes', () => {
@@ -61,7 +61,7 @@ describe('les deux menus offrent la même chose', () => {
       expect(within(tiroir).getByRole('link', { name: nom })).toBeTruthy();
     }
     expect(
-      within(tiroir).getByRole('button', { name: 'Español' })
+      within(tiroir).getByRole('button', { name: /Español/ })
     ).toBeTruthy();
   });
 
