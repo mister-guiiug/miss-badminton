@@ -24,6 +24,7 @@ import { useAppUpdates } from '@mister-guiiug/dev-pwa-config/react/app-updates';
 import { useUpdatePrompt } from '@mister-guiiug/dev-pwa-config/react/use-update-prompt';
 import { useMediaQuery } from '@mister-guiiug/dev-pwa-config/react/use-media-query';
 import { ConsentSection } from '@mister-guiiug/dev-pwa-config/react/consent-section';
+import { PrivacyNotice } from '@mister-guiiug/dev-pwa-config/react/privacy-notice';
 import { PageContainer } from '../components/layout/PageContainer';
 import { COLOR_CLOSE_THRESHOLD, colorDistance } from '../../color-distance';
 import {
@@ -364,6 +365,11 @@ export function SettingsView() {
       <ShareAppSection />
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <PrivacyNotice
+          env={import.meta.env}
+          className="gap-3 rounded-2xl lg:col-span-2 border border-[var(--border)] bg-[var(--surface)] p-[clamp(0.75rem,2.4vw,1.25rem)]"
+          titleClassName="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]"
+        />
         {/* Revenir sur son choix de mesure d’audience : le retrait se fait ici, en
           un clic (RGPD, art. 7.3). Mêmes clé et chargeur que le bandeau. Les
           classes redisent l'habit de `Section`, qui le pose en style en ligne. */}
