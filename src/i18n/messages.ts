@@ -555,7 +555,7 @@ const fr: Messages = {
       'Le bouton ↶ revient sur le dernier point. Tu peux aussi éditer un set passé depuis l’historique.',
     step4Title: 'Tout est local',
     step4Body:
-      'Pas de compte, pas de cloud. Tes matches sont stockés sur ton appareil — exporte-les depuis les réglages.',
+      'Pas de compte, pas de cloud. Tes matches sont stockés sur cet appareil, et seulement là.',
     skip: 'Passer',
     next: 'Suivant',
     start: 'C’est parti',
@@ -859,7 +859,7 @@ const en: Messages = {
       'The ↶ button reverts the last point. You can also edit a past set from the history.',
     step4Title: 'Fully local',
     step4Body:
-      'No account, no cloud. Your matches live on your device — export them from the settings.',
+      'No account, no cloud. Your matches are stored on this device, and only there.',
     skip: 'Skip',
     next: 'Next',
     start: 'Let’s go',
@@ -1168,7 +1168,7 @@ const es: Messages = {
       'El botón ↶ deshace el último punto. También puedes editar un set pasado desde el historial.',
     step4Title: 'Todo local',
     step4Body:
-      'Sin cuenta, sin nube. Tus partidos viven en tu dispositivo — expórtalos desde los ajustes.',
+      'Sin cuenta, sin nube. Tus partidos se guardan en este dispositivo, y solo ahí.',
     skip: 'Saltar',
     next: 'Siguiente',
     start: 'Empezar',

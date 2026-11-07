@@ -12,7 +12,7 @@ Par défaut, l'app joue le format de 2026, dit « 3 × 15 » : deux sets gagnant
 
 ## Vos données
 
-Aucun compte, aucun serveur : joueurs et matchs restent dans le navigateur de votre appareil, et s'exportent dans un fichier. Sentry, hébergé dans l'Union européenne, démarre à l'ouverture et reçoit un rapport technique quand une erreur survient. PostHog, en Europe lui aussi, ne mesure la fréquentation qu'après votre accord, sans noms ni scores.
+Aucun compte, aucun serveur : joueurs et matchs restent dans le navigateur de votre appareil, et seulement là. Ils ne suivent pas un changement de téléphone, et disparaissent avec les données du navigateur. Sentry, hébergé dans l'Union européenne, démarre à l'ouverture et reçoit un rapport technique quand une erreur survient. PostHog, en Europe lui aussi, ne mesure la fréquentation qu'après votre accord, sans noms ni scores.
 
 ## Prix
 
