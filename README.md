@@ -55,6 +55,12 @@ la FFBaD dans eBad :
   l'historique, avec des suggestions (noms, discipline, jour). La carte donne
   alors le score à saisir dans eBad, remis dans l'ordre des équipes eBad, et
   signale un écart avec le score qui y a été saisi.
+- **Importer** les matchs d'un tournoi depuis la FFBaD, via un connecteur
+  (proxy serveur qui garde les identifiants). Un nouvel import met à jour les
+  horaires et les résultats officiels. L'accès aux WebServices FFBaD demande
+  une convention avec la fédération : voir
+  [`docs/ebad-connecteur.md`](docs/ebad-connecteur.md). Sans connecteur
+  configuré (`VITE_EBAD_PROXY_URL`), l'import ne s'affiche pas.
 
 ## 🔒 Données
 
@@ -64,6 +70,10 @@ européenne : **Sentry** démarre à l'ouverture, sans demander d'accord, et ne
 reçoit un rapport technique que lorsqu'une erreur survient ;
 **PostHog** ne mesure la fréquentation qu'après accord dans le bandeau de
 consentement.
+
+Si le connecteur eBad est configuré, la recherche d'un tournoi interroge le
+proxy FFBaD de l'exploitant (nom du tournoi ou de la ville, date). Les matchs
+importés restent sur l'appareil.
 
 ## 🌐 Déploiement
 

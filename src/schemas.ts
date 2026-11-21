@@ -241,6 +241,13 @@ export const EbadMatchSchema = z.object({
   reportedScore: z.array(SetScoreSchema).optional(),
   /** L'identifiant du match de l'historique (`SavedMatch.id`) lié. */
   linkedMatchId: z.string().optional(),
+  /**
+   * L'identifiant du match à sa source, pour un match importé par le
+   * connecteur (`ffbad:<tournoi>:<match>`, cf. `ebad-connector.ts`). Un
+   * second import le met à jour au lieu de le dupliquer. Absent : saisi à la
+   * main.
+   */
+  remoteId: z.string().optional(),
 });
 export const EbadMatchArraySchema = z.array(EbadMatchSchema);
 export type EbadMatch = z.infer<typeof EbadMatchSchema>;

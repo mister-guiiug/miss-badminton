@@ -21,6 +21,29 @@ import {
 
 const analyze = process.env.ANALYZE === '1';
 
+/**
+ * L'ORIGINE DU PROXY eBad / FFBaD, à ouvrir dans `connect-src`.
+ *
+ * Lue au build comme les autres `VITE_…` posées par la CI. Absente, vide,
+ * `mock` (démonstration en mémoire, aucun appel réseau) ou illisible : on ne
+ * touche pas à `connect-src` — une directive inventée à partir d'une valeur
+ * fausse ferait taire toute la politique. Seule l'ORIGINE est ouverte, pas
+ * un domaine entier.
+ */
+function origineDuProxyEbad(): string | null {
+  const brut = (process.env.VITE_EBAD_PROXY_URL ?? '').trim();
+  if (brut === '' || brut === 'mock') return null;
+  try {
+    const url = new URL(brut);
+    return url.protocol === 'https:' || url.protocol === 'http:'
+      ? url.origin
+      : null;
+  } catch {
+    return null;
+  }
+}
+const proxyEbad = origineDuProxyEbad();
+
 // GitHub Pages : https://mister-guiiug.github.io/miss-badminton/
 // `VITE_BASE_PATH` permet d'override (ex. Lighthouse CI sert le dist/ à
 // la racine, donc on lui passe `/` au build). Sans la variable, on garde
@@ -125,6 +148,10 @@ export default defineConfig(({ command }) => {
         // l'accord serait refusée par la politique — et l'échec ne se verrait
         // qu'en console, sur le site déployé, une fois le consentement donné.
         analytics: true,
+        // Le connecteur eBad, seulement s'il est configuré : sans lui, la
+        // politique reste celle du socle, à l'octet près. Le socle ajoute
+        // de lui-même l'hôte du DSN Sentry et ceux de PostHog.
+        ...(proxyEbad ? { connectSrc: ["'self'", proxyEbad] } : {}),
         extraDirectives: {
           'frame-ancestors': "'none'",
         },

@@ -381,6 +381,24 @@ export interface Messages {
     courtShort: string;
     refShort: string;
     activeMatchWarning: string;
+    importOpen: string;
+    importTitle: string;
+    importSearchPlaceholder: string;
+    importFrom: string;
+    importSearch: string;
+    importLoading: string;
+    importNoTournament: string;
+    importBack: string;
+    importSelectAll: string;
+    importSelectNone: string;
+    importSubmit: string;
+    importNoMatch: string;
+    importAlready: string;
+    importDone: string;
+    importErrorNetwork: string;
+    importErrorUnavailable: string;
+    importErrorInvalid: string;
+    importErrorHttp: string;
   };
 }
 
@@ -773,6 +791,25 @@ const fr: Messages = {
     refShort: 'n° {n}',
     activeMatchWarning:
       'Un match est déjà en cours : le préparer le remplacera.',
+    importOpen: 'Importer depuis la FFBaD',
+    importTitle: 'Importer des matchs (FFBaD)',
+    importSearchPlaceholder: 'Nom ou ville',
+    importFrom: 'À partir du',
+    importSearch: 'Rechercher',
+    importLoading: 'Chargement…',
+    importNoTournament: 'Aucun tournoi trouvé.',
+    importBack: 'Autres tournois',
+    importSelectAll: 'Tout sélectionner',
+    importSelectNone: 'Ne rien sélectionner',
+    importSubmit: 'Importer ({n})',
+    importNoMatch: 'Aucun match publié pour ce tournoi.',
+    importAlready: 'déjà importé, sera mis à jour',
+    importDone: '{added} match(s) ajouté(s), {updated} mis à jour.',
+    importErrorNetwork: 'Connexion impossible au connecteur.',
+    importErrorUnavailable:
+      'Le connecteur FFBaD n’est pas encore branché (convention avec la FFBaD requise).',
+    importErrorInvalid: 'Réponse inattendue du connecteur.',
+    importErrorHttp: 'Le connecteur a répondu une erreur ({status}).',
   },
 };
 
@@ -1154,6 +1191,25 @@ const en: Messages = {
     refShort: 'no. {n}',
     activeMatchWarning:
       'A match is already in progress: preparing this one will replace it.',
+    importOpen: 'Import from FFBaD',
+    importTitle: 'Import matches (FFBaD)',
+    importSearchPlaceholder: 'Name or city',
+    importFrom: 'From',
+    importSearch: 'Search',
+    importLoading: 'Loading…',
+    importNoTournament: 'No tournament found.',
+    importBack: 'Other tournaments',
+    importSelectAll: 'Select all',
+    importSelectNone: 'Select none',
+    importSubmit: 'Import ({n})',
+    importNoMatch: 'No match published for this tournament.',
+    importAlready: 'already imported, will be updated',
+    importDone: '{added} match(es) added, {updated} updated.',
+    importErrorNetwork: 'Could not reach the connector.',
+    importErrorUnavailable:
+      'The FFBaD connector is not set up yet (an agreement with FFBaD is required).',
+    importErrorInvalid: 'Unexpected response from the connector.',
+    importErrorHttp: 'The connector returned an error ({status}).',
   },
 };
 
@@ -1541,6 +1597,25 @@ const es: Messages = {
     refShort: 'n.º {n}',
     activeMatchWarning:
       'Ya hay un partido en curso: preparar este lo sustituirá.',
+    importOpen: 'Importar desde la FFBaD',
+    importTitle: 'Importar partidos (FFBaD)',
+    importSearchPlaceholder: 'Nombre o ciudad',
+    importFrom: 'Desde',
+    importSearch: 'Buscar',
+    importLoading: 'Cargando…',
+    importNoTournament: 'No se encontró ningún torneo.',
+    importBack: 'Otros torneos',
+    importSelectAll: 'Seleccionar todo',
+    importSelectNone: 'No seleccionar nada',
+    importSubmit: 'Importar ({n})',
+    importNoMatch: 'No hay partidos publicados para este torneo.',
+    importAlready: 'ya importado, se actualizará',
+    importDone: '{added} partido(s) añadido(s), {updated} actualizado(s).',
+    importErrorNetwork: 'No se puede conectar con el conector.',
+    importErrorUnavailable:
+      'El conector FFBaD aún no está configurado (se requiere un convenio con la FFBaD).',
+    importErrorInvalid: 'Respuesta inesperada del conector.',
+    importErrorHttp: 'El conector devolvió un error ({status}).',
   },
 };
 
