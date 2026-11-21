@@ -25,7 +25,8 @@ import { useI18n } from '../i18n';
 const chargeMatch = () => import('./views/MatchView');
 const chargeHistory = () => import('./views/HistoryView');
 const chargeSettings = () => import('./views/SettingsView');
-const CHARGEURS = [chargeMatch, chargeHistory, chargeSettings];
+const chargeEbad = () => import('./views/EbadView');
+const CHARGEURS = [chargeMatch, chargeHistory, chargeSettings, chargeEbad];
 
 const MatchView = lazy(() =>
   chargeMatch().then(m => ({ default: m.MatchView }))
@@ -36,6 +37,7 @@ const HistoryView = lazy(() =>
 const SettingsView = lazy(() =>
   chargeSettings().then(m => ({ default: m.SettingsView }))
 );
+const EbadView = lazy(() => chargeEbad().then(m => ({ default: m.EbadView })));
 
 /**
  * PRÉCHARGE LES TROIS VUES DÈS QUE LE FIL PRINCIPAL SOUFFLE.
@@ -86,13 +88,16 @@ function DocumentTitle() {
   const { t, locale } = useI18n();
 
   useEffect(() => {
-    const routeMap: Record<string, 'home' | 'match' | 'history' | 'settings'> =
-      {
-        '/': 'home',
-        '/match': 'match',
-        '/historique': 'history',
-        '/parametres': 'settings',
-      };
+    const routeMap: Record<
+      string,
+      'home' | 'match' | 'history' | 'ebad' | 'settings'
+    > = {
+      '/': 'home',
+      '/match': 'match',
+      '/historique': 'history',
+      '/tournois': 'ebad',
+      '/parametres': 'settings',
+    };
     const route = routeMap[location.pathname] ?? 'home';
     document.title = t(`documentTitle.${route}`);
   }, [location.pathname, t, locale]);
@@ -173,6 +178,8 @@ function AppRoutes() {
             path="/history"
             element={<Navigate to="/historique" replace />}
           />
+          <Route path="/tournois" element={<EbadView />} />
+          <Route path="/ebad" element={<Navigate to="/tournois" replace />} />
           <Route path="/parametres" element={<SettingsView />} />
           <Route
             path="/settings"

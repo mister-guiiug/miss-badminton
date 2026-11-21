@@ -10,6 +10,18 @@ import {
   type MatchFormat,
 } from '../../scoring';
 import { storage } from '../../storage';
+import { indexById, playerKey, type Player } from '../../players';
+import {
+  filterPlayers,
+  nextEmptySlot,
+  playersByRecentUse,
+  prefillFromHistory,
+  slotsFor,
+  slotValue,
+  targetSlot,
+  withSlot,
+  type SlotKey,
+} from '../../player-picker';
 import { useTeamColors } from '../hooks/useTeamColors';
 
 export type MatchType = 'singles' | 'doubles';
@@ -102,6 +114,11 @@ export interface MatchConfig {
   timeLimitMin?: TimeLimitMin;
   /** Optionnel : comportement de départage. Défaut implicite : 'none'. */
   tieBreak?: TieBreak;
+  /**
+   * Optionnel : le match eBad préparé d'où vient ce match (cf. `ebad.ts`).
+   * L'assistant le conserve quand on modifie le match en cours.
+   */
+  ebadMatchId?: string;
 }
 
 /**
@@ -216,8 +233,27 @@ export function MatchSetupWizard({
 }: MatchSetupWizardProps): ReactElement {
   const { t } = useI18n();
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [draft, setDraft] = useState<WizardDraft>(() =>
-    initial ? draftFromConfig(initial) : { ...DEFAULT_DRAFT }
+  /*
+   * LE PRÉ-REMPLISSAGE. Un nouveau match reprend les joueurs du dernier match
+   * joué : au club, c'est le plus souvent la même table qui rejoue. Un match
+   * rejoué, préparé depuis eBad ou modifié arrive avec ses propres joueurs
+   * (`initial`) et n'est pas touché. Calculé une fois, à l'ouverture.
+   */
+  const [opening] = useState(() => {
+    if (initial) return { draft: draftFromConfig(initial), prefilled: false };
+    const teams = prefillFromHistory(
+      storage.loadHistory(),
+      indexById(storage.loadPlayers())
+    );
+    return teams
+      ? { draft: { ...DEFAULT_DRAFT, ...teams }, prefilled: true }
+      : { draft: { ...DEFAULT_DRAFT }, prefilled: false };
+  });
+  const [draft, setDraft] = useState<WizardDraft>(opening.draft);
+  const [prefilled, setPrefilled] = useState(opening.prefilled);
+  /** Les joueurs enregistrés, les plus récemment joués d'abord. */
+  const [knownPlayers] = useState<Player[]>(() =>
+    playersByRecentUse(storage.loadPlayers(), storage.loadHistory())
   );
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -281,6 +317,7 @@ export function MatchSetupWizard({
       ...sideChangeOf(draft),
       timeLimitMin: draft.timeLimitMin,
       tieBreak: draft.tieBreak,
+      ...(initial?.ebadMatchId ? { ebadMatchId: initial.ebadMatchId } : {}),
       team1: {
         primary: draft.team1.primary.trim(),
         partner: isDoubles ? draft.team1.partner.trim() : undefined,
@@ -413,6 +450,16 @@ export function MatchSetupWizard({
             matchType={draft.type ?? 'singles'}
             team1={draft.team1}
             team2={draft.team2}
+            players={knownPlayers}
+            prefilled={prefilled}
+            onClear={() => {
+              setPrefilled(false);
+              setDraft(d => ({
+                ...d,
+                team1: { primary: '', partner: '' },
+                team2: { primary: '', partner: '' },
+              }));
+            }}
             onChange={patch => setDraft(d => ({ ...d, ...patch }))}
           />
         )}
@@ -799,54 +846,180 @@ interface Step3Props {
   matchType: MatchType;
   team1: { primary: string; partner: string };
   team2: { primary: string; partner: string };
+  /** Les joueurs enregistrés, dans l'ordre où les proposer. */
+  players: Player[];
+  /** Les noms viennent du dernier match (pré-remplissage). */
+  prefilled: boolean;
+  onClear: () => void;
   onChange: (patch: Partial<Pick<WizardDraft, 'team1' | 'team2'>>) => void;
 }
 
-function Step3({ matchType, team1, team2, onChange }: Step3Props) {
+/** Le nombre de joueurs proposés d'un coup : deux rangées sur un téléphone. */
+const MAX_PLAYER_CHIPS = 12;
+
+function Step3({
+  matchType,
+  team1,
+  team2,
+  players,
+  prefilled,
+  onClear,
+  onChange,
+}: Step3Props) {
   const { t } = useI18n();
   const colors = useTeamColors();
   const isDoubles = matchType === 'doubles';
-  const datalistId = 'mb-player-suggestions';
-  const suggestions = storage.loadPlayerNames();
+  /*
+   * LA PLACE QUE REMPLIT UN TOUCHER sur un joueur enregistré : le dernier
+   * champ touché, sinon la première place vide. Gardée dans un état et non
+   * lue sur le focus — toucher un bouton fait perdre le focus au champ avant
+   * que le clic n'arrive.
+   */
+  const [active, setActive] = useState<SlotKey | null>(null);
+  const teams = { team1, team2 };
+  const target = targetSlot(matchType, teams, active);
+
+  const slotLabel: Record<SlotKey, string> = {
+    t1p: t('players.player1'),
+    t1q: t('players.partner1'),
+    t2p: t('players.player2'),
+    t2q: t('players.partner2'),
+  };
+  const usedKeys = new Map<string, SlotKey>();
+  for (const slot of slotsFor(matchType)) {
+    const v = slotValue(teams, slot).trim();
+    if (v) usedKeys.set(playerKey(v), slot);
+  }
+  const shown = filterPlayers(
+    players,
+    target ? slotValue(teams, target) : ''
+  ).slice(0, MAX_PLAYER_CHIPS);
+
+  const pick = (name: string) => {
+    if (!target) return;
+    const next = withSlot(teams, target, name);
+    onChange(next);
+    setActive(nextEmptySlot(matchType, next, target));
+  };
+
+  const field = (slot: SlotKey) => ({
+    active: target === slot,
+    onFocus: () => setActive(slot),
+  });
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <datalist id={datalistId}>
-        {suggestions.map(name => (
-          <option key={name} value={name} />
-        ))}
-      </datalist>
-      <TeamFieldset
-        title={t('wizard.redTeam')}
-        accent={colors.team1}
-        isDoubles={isDoubles}
-        primary={team1.primary}
-        partner={team1.partner}
-        primaryPlaceholder={t('players.player1')}
-        partnerPlaceholder={t('players.partner1')}
-        listId={datalistId}
-        onPrimary={v =>
-          onChange({ team1: { primary: v, partner: team1.partner } })
-        }
-        onPartner={v =>
-          onChange({ team1: { primary: team1.primary, partner: v } })
-        }
-      />
-      <TeamFieldset
-        title={t('wizard.blueTeam')}
-        accent={colors.team2}
-        isDoubles={isDoubles}
-        primary={team2.primary}
-        partner={team2.partner}
-        primaryPlaceholder={t('players.player2')}
-        partnerPlaceholder={t('players.partner2')}
-        listId={datalistId}
-        onPrimary={v =>
-          onChange({ team2: { primary: v, partner: team2.partner } })
-        }
-        onPartner={v =>
-          onChange({ team2: { primary: team2.primary, partner: v } })
-        }
-      />
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <TeamFieldset
+          title={t('wizard.redTeam')}
+          accent={colors.team1}
+          isDoubles={isDoubles}
+          primary={team1.primary}
+          partner={team1.partner}
+          primaryPlaceholder={t('players.player1')}
+          partnerPlaceholder={t('players.partner1')}
+          primaryField={field('t1p')}
+          partnerField={field('t1q')}
+          onPrimary={v =>
+            onChange({ team1: { primary: v, partner: team1.partner } })
+          }
+          onPartner={v =>
+            onChange({ team1: { primary: team1.primary, partner: v } })
+          }
+        />
+        <TeamFieldset
+          title={t('wizard.blueTeam')}
+          accent={colors.team2}
+          isDoubles={isDoubles}
+          primary={team2.primary}
+          partner={team2.partner}
+          primaryPlaceholder={t('players.player2')}
+          partnerPlaceholder={t('players.partner2')}
+          primaryField={field('t2p')}
+          partnerField={field('t2q')}
+          onPrimary={v =>
+            onChange({ team2: { primary: v, partner: team2.partner } })
+          }
+          onPartner={v =>
+            onChange({ team2: { primary: team2.primary, partner: v } })
+          }
+        />
+      </div>
+
+      {prefilled && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs"
+          style={{
+            background: 'var(--surface-highlight)',
+            color: 'var(--muted)',
+          }}
+        >
+          <span>{t('wizardExtra.prefilledHint')}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setActive(null);
+              onClear();
+            }}
+            className="inline-flex min-h-9 items-center rounded-lg border px-3 py-1 text-xs font-semibold"
+            style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+          >
+            {t('wizardExtra.clearPlayers')}
+          </button>
+        </div>
+      )}
+
+      {players.length > 0 && (
+        <section
+          className="flex flex-col gap-2"
+          aria-label={t('wizardExtra.savedPlayers')}
+        >
+          <p className="flex flex-col text-xs">
+            <span
+              className="text-[0.7rem] font-semibold uppercase tracking-wide"
+              style={{ color: 'var(--muted)' }}
+            >
+              {t('wizardExtra.savedPlayers')}
+            </span>
+            <span style={{ color: 'var(--muted)' }} aria-live="polite">
+              {target
+                ? t('wizardExtra.savedPlayersHint', {
+                    slot: slotLabel[target],
+                  })
+                : t('wizardExtra.savedPlayersFull')}
+            </span>
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {shown.map(player => {
+              const usedIn = usedKeys.get(playerKey(player.name));
+              const inTarget = usedIn !== undefined && usedIn === target;
+              const usedElsewhere = usedIn !== undefined && !inTarget;
+              return (
+                <li key={player.id}>
+                  <button
+                    type="button"
+                    onClick={() => pick(player.name)}
+                    disabled={!target || usedElsewhere}
+                    aria-pressed={usedIn !== undefined}
+                    className="inline-flex min-h-10 items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      borderColor:
+                        usedIn !== undefined
+                          ? 'var(--primary)'
+                          : 'var(--border)',
+                      background: inTarget ? 'var(--primary)' : 'transparent',
+                      color: inTarget ? 'var(--primary-ink)' : 'var(--text)',
+                    }}
+                  >
+                    {usedIn !== undefined && <span aria-hidden>✓</span>}
+                    {player.name}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
@@ -859,7 +1032,8 @@ interface TeamFieldsetProps {
   partner: string;
   primaryPlaceholder: string;
   partnerPlaceholder: string;
-  listId?: string;
+  primaryField: { active: boolean; onFocus: () => void };
+  partnerField: { active: boolean; onFocus: () => void };
   onPrimary: (value: string) => void;
   onPartner: (value: string) => void;
 }
@@ -872,7 +1046,8 @@ function TeamFieldset({
   partner,
   primaryPlaceholder,
   partnerPlaceholder,
-  listId,
+  primaryField,
+  partnerField,
   onPrimary,
   onPartner,
 }: TeamFieldsetProps) {
@@ -897,7 +1072,7 @@ function TeamFieldset({
         placeholder={primaryPlaceholder}
         ariaLabel={primaryPlaceholder}
         onChange={onPrimary}
-        listId={listId}
+        {...primaryField}
       />
       {isDoubles && (
         <PlayerField
@@ -905,7 +1080,7 @@ function TeamFieldset({
           placeholder={partnerPlaceholder}
           ariaLabel={partnerPlaceholder}
           onChange={onPartner}
-          listId={listId}
+          {...partnerField}
         />
       )}
     </fieldset>
@@ -1025,7 +1200,9 @@ interface PlayerFieldProps {
   placeholder: string;
   ariaLabel: string;
   onChange: (value: string) => void;
-  listId?: string;
+  /** Le champ que remplira un toucher sur un joueur enregistré. */
+  active: boolean;
+  onFocus: () => void;
 }
 
 function PlayerField({
@@ -1033,7 +1210,8 @@ function PlayerField({
   placeholder,
   ariaLabel,
   onChange,
-  listId,
+  active,
+  onFocus,
 }: PlayerFieldProps) {
   return (
     <input
@@ -1042,13 +1220,14 @@ function PlayerField({
       placeholder={placeholder}
       aria-label={ariaLabel}
       onChange={e => onChange(e.target.value)}
+      onFocus={onFocus}
       maxLength={40}
-      list={listId}
       autoComplete="off"
       className="min-h-11 rounded-xl border px-3 py-2 outline-none focus:ring-2"
       style={{
         background: 'var(--surface-input)',
-        borderColor: 'var(--border)',
+        borderColor: active ? 'var(--primary)' : 'var(--border)',
+        boxShadow: active ? '0 0 0 1px var(--primary)' : undefined,
         color: 'var(--text)',
       }}
     />

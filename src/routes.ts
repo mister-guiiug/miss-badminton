@@ -2,7 +2,7 @@
  * Métadonnées et types pour les routes de l'application
  */
 
-export type AppRoute = 'home' | 'match' | 'history' | 'settings';
+export type AppRoute = 'home' | 'match' | 'history' | 'ebad' | 'settings';
 
 export const ROUTE_META: Record<
   AppRoute,
@@ -19,6 +19,10 @@ export const ROUTE_META: Record<
   history: {
     documentTitle: 'Historique — Miss Badminton',
     breadcrumb: 'Historique',
+  },
+  ebad: {
+    documentTitle: 'Tournois eBad — Miss Badminton',
+    breadcrumb: 'Tournois eBad',
   },
   settings: {
     documentTitle: 'Paramètres — Miss Badminton',
