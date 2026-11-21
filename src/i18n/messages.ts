@@ -304,6 +304,11 @@ export interface Messages {
     quickStart: string;
     quickStartHint: string;
     quickStartAlt: string;
+    savedPlayers: string;
+    savedPlayersHint: string;
+    savedPlayersFull: string;
+    prefilledHint: string;
+    clearPlayers: string;
   };
   settingsExtra: {
     contrastWarning: string;
@@ -682,6 +687,12 @@ const fr: Messages = {
     quickStart: 'Match standard',
     quickStartHint: 'Simple · 2 sets gagnants · {points} pts · plafond {cap}',
     quickStartAlt: 'Format 21 points',
+    savedPlayers: 'Joueurs enregistrés',
+    savedPlayersHint: 'Touchez un nom pour remplir « {slot} ».',
+    savedPlayersFull:
+      'Toutes les places sont remplies : touchez un champ pour le changer.',
+    prefilledHint: 'Joueurs du dernier match repris.',
+    clearPlayers: 'Vider',
   },
   settingsExtra: {
     contrastWarning:
@@ -1058,6 +1069,11 @@ const en: Messages = {
     quickStart: 'Standard match',
     quickStartHint: 'Singles · Best of 3 · {points} pts · cap {cap}',
     quickStartAlt: '21-point format',
+    savedPlayers: 'Saved players',
+    savedPlayersHint: 'Tap a name to fill “{slot}”.',
+    savedPlayersFull: 'Every spot is filled: tap a field to change it.',
+    prefilledHint: 'Players from your last match were filled in.',
+    clearPlayers: 'Clear',
   },
   settingsExtra: {
     contrastWarning:
@@ -1439,6 +1455,12 @@ const es: Messages = {
     quickStart: 'Partido estándar',
     quickStartHint: 'Individual · Al mejor de 3 · {points} pts · tope {cap}',
     quickStartAlt: 'Formato a 21 puntos',
+    savedPlayers: 'Jugadores guardados',
+    savedPlayersHint: 'Toca un nombre para rellenar «{slot}».',
+    savedPlayersFull:
+      'Todos los puestos están completos: toca un campo para cambiarlo.',
+    prefilledHint: 'Se han recuperado los jugadores del último partido.',
+    clearPlayers: 'Vaciar',
   },
   settingsExtra: {
     contrastWarning:

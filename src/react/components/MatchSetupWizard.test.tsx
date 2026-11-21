@@ -217,3 +217,108 @@ describe('un match d’avant, rejoué', () => {
     expect(config.sideChangeAt).toBeUndefined();
   });
 });
+
+describe('les joueurs enregistrés', () => {
+  const JOUEURS = [
+    { id: 'p-lea', name: 'Léa', createdAt: 3 },
+    { id: 'p-tom', name: 'Tom', createdAt: 2 },
+    { id: 'p-zoe', name: 'Zoé', createdAt: 1 },
+  ];
+
+  function semer(historique: unknown[] = []) {
+    localStorage.setItem('mb_players', JSON.stringify(JOUEURS));
+    localStorage.setItem('mb_match_history', JSON.stringify(historique));
+  }
+
+  const DERNIER_MATCH = {
+    id: 'm-1',
+    completedAt: 1_700_000_000_000,
+    config: {
+      type: 'singles',
+      sets: 2,
+      points: 15,
+      cap: 21,
+      sideChange: 'each-set',
+      team1: { primary: 'Léa', id: 'A', primaryId: 'p-lea' },
+      team2: { primary: 'Tom', id: 'B', primaryId: 'p-tom' },
+    },
+    setScores: [
+      { team1: 15, team2: 10 },
+      { team1: 15, team2: 12 },
+    ],
+    finalSetWins: { team1: 2, team2: 0 },
+    winner: 'team1',
+  };
+
+  function champ(nom: string): HTMLInputElement {
+    return screen.getByLabelText(nom) as HTMLInputElement;
+  }
+
+  it('un nouveau match reprend les joueurs du dernier match', () => {
+    semer([DERNIER_MATCH]);
+    const onComplete = ouvrir();
+    fireEvent.click(screen.getByRole('button', { name: /Match standard/ }));
+    expect(champ('joueur 1').value).toBe('Léa');
+    expect(champ('joueur 2').value).toBe('Tom');
+    expect(screen.getByText('Joueurs du dernier match repris.')).toBeTruthy();
+    const config = demarrer(onComplete);
+    expect(config.team1).toMatchObject({ primary: 'Léa', primaryId: 'p-lea' });
+    expect(config.team2).toMatchObject({ primary: 'Tom', primaryId: 'p-tom' });
+  });
+
+  it('« Vider » efface le pré-remplissage', () => {
+    semer([DERNIER_MATCH]);
+    ouvrir();
+    fireEvent.click(screen.getByRole('button', { name: /Match standard/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Vider' }));
+    expect(champ('joueur 1').value).toBe('');
+    expect(champ('joueur 2').value).toBe('');
+  });
+
+  it('un match rejoué garde ses propres joueurs', () => {
+    semer([DERNIER_MATCH]);
+    ouvrir(matchDAvant({ team1: { primary: 'Zoé', id: 'A' } }));
+    suivant();
+    suivant();
+    expect(champ('joueur 1').value).toBe('Zoé');
+    expect(screen.queryByText('Joueurs du dernier match repris.')).toBeNull();
+  });
+
+  it('un toucher sur un joueur remplit la place vide suivante', () => {
+    semer();
+    const onComplete = ouvrir();
+    fireEvent.click(screen.getByRole('button', { name: /Match standard/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zoé' }));
+    expect(champ('joueur 1').value).toBe('Zoé');
+    fireEvent.click(screen.getByRole('button', { name: 'Tom' }));
+    expect(champ('joueur 2').value).toBe('Tom');
+    const config = demarrer(onComplete);
+    expect(config.team1).toMatchObject({ primary: 'Zoé', primaryId: 'p-zoe' });
+    expect(config.team2).toMatchObject({ primary: 'Tom', primaryId: 'p-tom' });
+  });
+
+  it('touché après un champ, le joueur remplace celui de ce champ', () => {
+    semer([DERNIER_MATCH]);
+    ouvrir();
+    fireEvent.click(screen.getByRole('button', { name: /Match standard/ }));
+    // Tout est rempli : un joueur déjà placé ailleurs n'est pas proposé.
+    fireEvent.focus(champ('joueur 2'));
+    expect(
+      (screen.getByRole('button', { name: /Léa/ }) as HTMLButtonElement)
+        .disabled
+    ).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Zoé' }));
+    expect(champ('joueur 2').value).toBe('Zoé');
+    expect(champ('joueur 1').value).toBe('Léa');
+  });
+
+  it('la frappe filtre les joueurs proposés, accents ignorés', () => {
+    semer();
+    ouvrir();
+    fireEvent.click(screen.getByRole('button', { name: /Match standard/ }));
+    fireEvent.focus(champ('joueur 1'));
+    fireEvent.change(champ('joueur 1'), { target: { value: 'zo' } });
+    expect(screen.getByRole('button', { name: 'Zoé' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Tom' })).toBeNull();
+  });
+});
