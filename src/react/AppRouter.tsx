@@ -5,7 +5,9 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
 } from 'react-router-dom';
+import { isOAuthCallback } from '../ebad-oauth';
 import { Shell } from './components/layout/Shell';
 import { ConsentBanner } from '@mister-guiiug/dev-pwa-config/react/consent-banner';
 import { usePageViews } from '@mister-guiiug/dev-pwa-config/react/use-page-views';
@@ -71,6 +73,23 @@ const EbadView = lazy(() => chargeEbad().then(m => ({ default: m.EbadView })));
 const chargeLesVues = () =>
   Promise.allSettled(CHARGEURS.map(charge => charge()));
 
+/**
+ * LE RETOUR DE « SE CONNECTER AVEC MyFFBaD » arrive à la racine de l'app
+ * (GitHub Pages n'a pas de page de secours pour `/tournois`) : on le renvoie,
+ * paramètres compris, vers la page eBad qui termine la connexion. Seul un
+ * retour attendu par CET onglet est suivi (`isOAuthCallback`).
+ */
+function EbadOAuthReturn() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (location.pathname !== '/tournois' && isOAuthCallback(location.search)) {
+      navigate(`/tournois${location.search}`, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
+  return null;
+}
+
 function DocumentTitle() {
   const location = useLocation();
 
@@ -133,6 +152,7 @@ function AppRoutes() {
   return (
     <Shell>
       <DocumentTitle />
+      <EbadOAuthReturn />
       {/* Une `region`, pas une boîte modale : elle ne piège pas le focus. Ne
           rend RIEN tant que `VITE_POSTHOG_KEY` n'est pas posée : sans
           identifiant, il n'y a rien à demander.

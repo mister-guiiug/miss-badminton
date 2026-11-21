@@ -11,10 +11,26 @@ import type {
   TournamentQuery,
 } from '../ebad-contract';
 
+/**
+ * Ce que le proxy sait de l'appelant. `accessToken` : le jeton OAuth de
+ * l'UTILISATEUR (« Se connecter avec MyFFBaD »), transmis par l'application
+ * en `Authorization: Bearer`. Absent : appel anonyme, ou avec les
+ * identifiants de convention du serveur.
+ */
+export interface UpstreamContext {
+  accessToken?: string;
+}
+
 export interface EbadUpstream {
-  searchTournaments(query: TournamentQuery): Promise<RemoteTournament[]>;
+  searchTournaments(
+    query: TournamentQuery,
+    context?: UpstreamContext
+  ): Promise<RemoteTournament[]>;
   /** `null` : tournoi inconnu (le proxy répond 404). */
-  tournamentMatches(tournamentId: string): Promise<TournamentMatches | null>;
+  tournamentMatches(
+    tournamentId: string,
+    context?: UpstreamContext
+  ): Promise<TournamentMatches | null>;
 }
 
 /**
@@ -26,5 +42,16 @@ export class UpstreamNotConfiguredError extends Error {
   constructor(reason: string) {
     super(reason);
     this.name = 'UpstreamNotConfiguredError';
+  }
+}
+
+/**
+ * La source refuse l'appelant : jeton absent, expiré ou révoqué. Le proxy
+ * répond 401 et l'application propose de se reconnecter.
+ */
+export class UpstreamUnauthorizedError extends Error {
+  constructor() {
+    super('unauthorized');
+    this.name = 'UpstreamUnauthorizedError';
   }
 }

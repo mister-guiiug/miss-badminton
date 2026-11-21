@@ -29,6 +29,7 @@ import {
   type TournamentMatches,
   type TournamentQuery,
 } from './ebad-contract';
+import { currentAccessToken } from './ebad-oauth';
 
 export type {
   RemoteMatch,
@@ -42,12 +43,15 @@ export type {
  * - `network` : le proxy n'a pas répondu (hors ligne, CORS, DNS) ;
  * - `unavailable` : le proxy répond 501 — il existe, mais n'est pas encore
  *   branché sur la FFBaD (convention, identifiants) ;
+ * - `unauthorized` : le proxy répond 401 — jeton absent, expiré ou refusé :
+ *   il faut (re)passer par « Se connecter avec MyFFBaD » ;
  * - `http` : une autre erreur HTTP ;
  * - `invalid` : la réponse ne respecte pas le contrat.
  */
 export class EbadConnectorError extends Error {
   constructor(
-    readonly kind: 'network' | 'unavailable' | 'http' | 'invalid',
+    readonly kind:
+      'network' | 'unavailable' | 'unauthorized' | 'http' | 'invalid',
     readonly status?: number
   ) {
     super(`ebad-connector: ${kind}${status ? ` (${status})` : ''}`);
@@ -58,36 +62,57 @@ export class EbadConnectorError extends Error {
 export interface EbadConnector {
   searchTournaments(query: TournamentQuery): Promise<RemoteTournament[]>;
   tournamentMatches(tournamentId: string): Promise<TournamentMatches>;
+  /** Échange un code OAuth contre un jeton, via le proxy (`/oauth/token`). */
+  exchangeCode(request: {
+    code: string;
+    codeVerifier: string;
+    redirectUri: string;
+  }): Promise<{ access_token: string; expires_in?: number }>;
 }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
-/** Un client du contrat, sur n'importe quelle implémentation de `fetch`. */
+/**
+ * Un client du contrat, sur n'importe quelle implémentation de `fetch`.
+ * `getToken` rend le jeton OAuth de l'utilisateur s'il est connecté : il part
+ * en `Authorization: Bearer`, et seulement vers le proxy.
+ */
 export function createEbadConnector(
   baseUrl: string,
-  fetchImpl: FetchLike = (input, init) => fetch(input, init)
+  fetchImpl: FetchLike = (input, init) => fetch(input, init),
+  getToken: () => string | null = () => null
 ): EbadConnector {
   const base = baseUrl.replace(/\/+$/, '');
 
-  async function getJson<T>(path: string, schema: z.ZodType<T>): Promise<T> {
+  async function call(path: string, init: RequestInit): Promise<unknown> {
     let response: Response;
     try {
-      response = await fetchImpl(`${base}${path}`, {
-        headers: { Accept: 'application/json' },
-      });
+      response = await fetchImpl(`${base}${path}`, init);
     } catch {
       throw new EbadConnectorError('network');
     }
     if (response.status === 501) {
       throw new EbadConnectorError('unavailable', 501);
     }
+    if (response.status === 401) {
+      throw new EbadConnectorError('unauthorized', 401);
+    }
     if (!response.ok) throw new EbadConnectorError('http', response.status);
-    let body: unknown;
     try {
-      body = await response.json();
+      return await response.json();
     } catch {
       throw new EbadConnectorError('invalid');
     }
+  }
+
+  async function getJson<T>(path: string, schema: z.ZodType<T>): Promise<T> {
+    const token = getToken();
+    const body = await call(path, {
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
     const parsed = schema.safeParse(body);
     if (!parsed.success) throw new EbadConnectorError('invalid');
     return parsed.data;
@@ -111,6 +136,32 @@ export function createEbadConnector(
         `/tournaments/${encodeURIComponent(tournamentId)}/matches`,
         TournamentMatchesSchema
       );
+    },
+    async exchangeCode({ code, codeVerifier, redirectUri }) {
+      const body = (await call('/oauth/token', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          code_verifier: codeVerifier,
+          redirect_uri: redirectUri,
+        }),
+      })) as { access_token?: unknown; expires_in?: unknown } | null;
+      if (
+        !body ||
+        typeof body.access_token !== 'string' ||
+        !body.access_token
+      ) {
+        throw new EbadConnectorError('invalid');
+      }
+      return {
+        access_token: body.access_token,
+        expires_in:
+          typeof body.expires_in === 'number' ? body.expires_in : undefined,
+      };
     },
   };
 }
@@ -169,19 +220,32 @@ export function configuredProxyUrl(): string | null {
 export async function loadConfiguredConnector(): Promise<EbadConnector | null> {
   const url = configuredProxyUrl();
   if (!url) return null;
-  if (url !== 'mock') return createEbadConnector(url);
+  if (url !== 'mock') {
+    return createEbadConnector(
+      url,
+      (input, init) => fetch(input, init),
+      () => currentAccessToken()
+    );
+  }
   // La démonstration n'existe qu'en développement : le build de production
   // n'embarque ni le jeu fictif ni le gestionnaire du proxy.
   if (!import.meta.env.DEV) return null;
-  const [{ handleEbadProxy }, { createMockUpstream }] = await Promise.all([
-    import('./ebad-proxy/handler'),
-    import('./ebad-proxy/mock-upstream'),
-  ]);
+  const [{ handleEbadProxy }, { createMockUpstream }, { createMockExchanger }] =
+    await Promise.all([
+      import('./ebad-proxy/handler'),
+      import('./ebad-proxy/mock-upstream'),
+      import('./ebad-proxy/oauth'),
+    ]);
   const upstream = createMockUpstream();
-  return createEbadConnector('https://mock.invalid', (input, init) =>
-    handleEbadProxy(new Request(input, init), {
-      upstream,
-      allowedOrigins: [],
-    })
+  const oauth = createMockExchanger();
+  return createEbadConnector(
+    'https://mock.invalid',
+    (input, init) =>
+      handleEbadProxy(new Request(input, init), {
+        upstream,
+        oauth,
+        allowedOrigins: [],
+      }),
+    () => currentAccessToken()
   );
 }
