@@ -38,6 +38,15 @@ interface EbadState {
   unlink: (ebadId: string) => void;
   /** Retire toute liaison vers ce match de l'historique (il a été supprimé). */
   forgetSavedMatch: (savedMatchId: string) => void;
+  /**
+   * Importe des matchs venus du connecteur. Un match déjà importé (même
+   * `remoteId`) est mis à jour — horaires, terrain, résultat officiel — sans
+   * perdre sa liaison au match scoré ; les autres sont ajoutés. Rend le
+   * décompte, ou `null` si l'écriture a échoué.
+   */
+  importMatches: (
+    inputs: EbadMatchInput[]
+  ) => { added: number; updated: number } | null;
 }
 
 /** Écrit puis relit : l'état reflète ce qui est réellement persisté. */
@@ -72,6 +81,7 @@ function clean(input: EbadMatchInput): EbadMatchInput {
         ? input.reportedScore
         : undefined,
     linkedMatchId: input.linkedMatchId,
+    remoteId: input.remoteId,
   };
 }
 
@@ -91,7 +101,11 @@ export const useEbadStore = create<EbadState>()((set, get) => ({
     const current = get().matches.find(m => m.id === id);
     if (!current) return false;
     const updated: EbadMatch = {
-      ...clean({ ...input, linkedMatchId: current.linkedMatchId }),
+      ...clean({
+        ...input,
+        linkedMatchId: current.linkedMatchId,
+        remoteId: current.remoteId,
+      }),
       id,
       createdAt: current.createdAt,
     };
@@ -134,6 +148,48 @@ export const useEbadStore = create<EbadState>()((set, get) => ({
       )
     );
     if (next) set({ matches: next });
+  },
+
+  importMatches: inputs => {
+    const byRemote = new Map(
+      get()
+        .matches.filter(m => m.remoteId)
+        .map(m => [m.remoteId as string, m])
+    );
+    let added = 0;
+    let updated = 0;
+    const now = Date.now();
+    const fresh: EbadMatch[] = [];
+    const replaced = new Map<string, EbadMatch>();
+    inputs.forEach((input, index) => {
+      const existing = input.remoteId
+        ? byRemote.get(input.remoteId)
+        : undefined;
+      if (existing) {
+        replaced.set(existing.id, {
+          ...clean({
+            ...input,
+            // Pas encore de résultat officiel : on garde celui recopié à la main.
+            reportedScore: input.reportedScore ?? existing.reportedScore,
+            linkedMatchId: existing.linkedMatchId,
+          }),
+          id: existing.id,
+          createdAt: existing.createdAt,
+        });
+        updated += 1;
+      } else {
+        // `now + index` : un ordre de saisie stable dans le lot importé.
+        fresh.push({ ...clean(input), id: createId(), createdAt: now + index });
+        added += 1;
+      }
+    });
+    const next = persist([
+      ...fresh,
+      ...get().matches.map(m => replaced.get(m.id) ?? m),
+    ]);
+    if (!next) return null;
+    set({ matches: next });
+    return { added, updated };
   },
 
   forgetSavedMatch: savedMatchId => {

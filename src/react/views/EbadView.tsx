@@ -10,6 +10,8 @@ import {
   type Team,
 } from '../components/MatchSetupWizard';
 import { EbadMatchForm } from '../components/EbadMatchForm';
+import { EbadImportSheet } from '../components/EbadImportSheet';
+import { configuredProxyUrl } from '../../ebad-connector';
 import {
   EbadLinkSheet,
   type EbadLinkCandidate,
@@ -115,6 +117,13 @@ export function EbadView() {
   const [confirmPrepare, setConfirmPrepare] = useState<EbadMatch | null>(null);
   const [wizardConfig, setWizardConfig] = useState<MatchConfig | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  /** L'import n'existe que si un connecteur est configuré au build. */
+  const canImport = configuredProxyUrl() !== null;
+  const [importOpen, setImportOpen] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    added: number;
+    updated: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!copiedId) return;
@@ -194,6 +203,29 @@ export function EbadView() {
         <PlusIcon size={20} strokeWidth={3} />
         {t('ebad.add')}
       </button>
+
+      {canImport && (
+        <button
+          type="button"
+          onClick={() => {
+            setImportResult(null);
+            setImportOpen(true);
+          }}
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border px-5 py-2.5 text-sm font-semibold sm:w-auto sm:self-start"
+          style={{
+            borderColor: 'var(--primary)',
+            background: 'var(--surface)',
+            color: 'var(--primary)',
+          }}
+        >
+          {t('ebad.importOpen')}
+        </button>
+      )}
+      {importResult && (
+        <p role="status" className="text-sm" style={{ color: 'var(--muted)' }}>
+          {t('ebad.importDone', importResult)}
+        </p>
+      )}
 
       {groups.length === 0 ? (
         <p
@@ -442,6 +474,13 @@ export function EbadView() {
             else addMatch(input);
             setForm(null);
           }}
+        />
+      )}
+
+      {importOpen && (
+        <EbadImportSheet
+          onClose={() => setImportOpen(false)}
+          onImported={setImportResult}
         />
       )}
 

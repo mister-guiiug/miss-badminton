@@ -112,3 +112,58 @@ describe('liaison automatique en fin de match', () => {
     expect(useEbadStore.getState().matches[0]?.linkedMatchId).toBeUndefined();
   });
 });
+
+describe('import depuis le connecteur', () => {
+  it('ajoute les nouveaux matchs et met à jour ceux déjà importés', () => {
+    const store = useEbadStore.getState();
+    const first = store.importMatches([
+      input({ remoteId: 'ffbad:t:1', court: '1' }),
+      input({ remoteId: 'ffbad:t:2' }),
+    ]);
+    expect(first).toEqual({ added: 2, updated: 0 });
+    const imported = useEbadStore
+      .getState()
+      .matches.find(m => m.remoteId === 'ffbad:t:1');
+    if (!imported) throw new Error('match importé introuvable');
+    useEbadStore.getState().link(imported.id, 's1');
+
+    const second = useEbadStore.getState().importMatches([
+      input({
+        remoteId: 'ffbad:t:1',
+        court: '5',
+        reportedScore: [
+          { team1: 15, team2: 10 },
+          { team1: 15, team2: 12 },
+        ],
+      }),
+    ]);
+    expect(second).toEqual({ added: 0, updated: 1 });
+    const matches = useEbadStore.getState().matches;
+    expect(matches).toHaveLength(2);
+    const updated = matches.find(m => m.remoteId === 'ffbad:t:1');
+    expect(updated?.id).toBe(imported.id);
+    expect(updated?.court).toBe('5');
+    expect(updated?.linkedMatchId).toBe('s1');
+    expect(updated?.reportedScore).toHaveLength(2);
+  });
+
+  it('sans résultat officiel, garde le score recopié à la main', () => {
+    const score = [
+      { team1: 15, team2: 3 },
+      { team1: 15, team2: 4 },
+    ];
+    useEbadStore
+      .getState()
+      .importMatches([input({ remoteId: 'ffbad:t:9', reportedScore: score })]);
+    useEbadStore.getState().importMatches([input({ remoteId: 'ffbad:t:9' })]);
+    expect(useEbadStore.getState().matches[0]?.reportedScore).toEqual(score);
+  });
+
+  it('une modification à la main garde l’identifiant distant', () => {
+    useEbadStore.getState().importMatches([input({ remoteId: 'ffbad:t:3' })]);
+    const [m] = useEbadStore.getState().matches;
+    if (!m) throw new Error('match importé introuvable');
+    useEbadStore.getState().updateMatch(m.id, input({ court: '7' }));
+    expect(useEbadStore.getState().matches[0]?.remoteId).toBe('ffbad:t:3');
+  });
+});
