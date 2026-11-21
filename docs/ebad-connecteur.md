@@ -47,7 +47,9 @@ acceptable.
 VITE_EBAD_PROXY_URL=mock npm run dev
 ```
 
-Le bouton « Importer depuis la FFBaD » apparaît sur `/tournois`. Il interroge
+Le bouton « Importer depuis la FFBaD » apparaît sur `/tournois` (en
+développement seulement : le build de production n'embarque pas la
+démonstration). Il interroge
 des tournois et des joueurs **fictifs**, à travers le vrai gestionnaire du
 proxy, en mémoire, sans aucun appel réseau.
 

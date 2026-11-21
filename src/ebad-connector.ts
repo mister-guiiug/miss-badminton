@@ -155,18 +155,24 @@ export function importedRemoteIds(matches: readonly EbadMatch[]): Set<string> {
 /** L'adresse du proxy configurée au build, ou `null` : pas de connecteur. */
 export function configuredProxyUrl(): string | null {
   const raw = (import.meta.env.VITE_EBAD_PROXY_URL ?? '').trim();
-  return raw === '' ? null : raw;
+  if (raw === '') return null;
+  // `mock` hors développement : pas de connecteur, donc pas de bouton.
+  if (raw === 'mock' && !import.meta.env.DEV) return null;
+  return raw;
 }
 
 /**
- * Le connecteur de l'app, d'après la configuration. `mock` charge à la
- * demande le jeu de démonstration et le vrai gestionnaire du proxy : rien
- * de tout cela n'entre dans le bundle tant qu'on ne s'en sert pas.
+ * Le connecteur de l'app, d'après la configuration. `mock` (développement
+ * seulement) charge à la demande le jeu de démonstration et le vrai
+ * gestionnaire du proxy.
  */
 export async function loadConfiguredConnector(): Promise<EbadConnector | null> {
   const url = configuredProxyUrl();
   if (!url) return null;
   if (url !== 'mock') return createEbadConnector(url);
+  // La démonstration n'existe qu'en développement : le build de production
+  // n'embarque ni le jeu fictif ni le gestionnaire du proxy.
+  if (!import.meta.env.DEV) return null;
   const [{ handleEbadProxy }, { createMockUpstream }] = await Promise.all([
     import('./ebad-proxy/handler'),
     import('./ebad-proxy/mock-upstream'),
