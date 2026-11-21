@@ -23,6 +23,8 @@ import { OnboardingHint } from '../components/OnboardingHint';
 import { Logo } from '../components/Logo';
 import { MatchDuration } from '../components/MatchDuration';
 import { SetCountdown } from '../components/SetCountdown';
+import { useEbadStore } from '../../store/useEbadStore';
+import { describeEbad } from '../../ebad';
 import {
   ResultCardSheet,
   type ResultCardPayload,
@@ -130,6 +132,24 @@ export function MatchView() {
     saveToHistory,
     closeCurrentSet,
   } = useMatchStore();
+
+  /*
+   * LE CONTEXTE eBad : un match préparé depuis un tournoi rappelle, au pied
+   * du tableau de score, où il se joue (tournoi · discipline · tableau ·
+   * terrain). Utile à qui arbitre trois matchs d'affilée sur deux terrains.
+   */
+  const ebadMatches = useEbadStore(s => s.matches);
+  const ebadMatch = match?.ebadMatchId
+    ? ebadMatches.find(e => e.id === match.ebadMatchId)
+    : undefined;
+  const ebadContext = ebadMatch
+    ? [
+        describeEbad(ebadMatch),
+        ebadMatch.court ? t('ebad.courtShort', { n: ebadMatch.court }) : '',
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : null;
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [team1Inverted, setTeam1Inverted] = useState(false);
@@ -648,9 +668,18 @@ export function MatchView() {
           <footer className="mb-scoreboard-footer flex items-center justify-between gap-2 bg-black/55 px-4 text-white backdrop-blur-sm">
             <span className="flex min-w-0 items-center gap-2 truncate text-sm font-medium">
               <Logo size={18} />
-              <span className="hidden truncate sm:inline">
-                {t('scoreboard.title')}
-              </span>
+              {ebadContext ? (
+                <span
+                  className="min-w-0 truncate text-xs font-semibold opacity-90"
+                  title={ebadContext}
+                >
+                  {ebadContext}
+                </span>
+              ) : (
+                <span className="hidden truncate sm:inline">
+                  {t('scoreboard.title')}
+                </span>
+              )}
               <MatchDuration
                 startedAt={startedAt}
                 endedAt={endedAt}

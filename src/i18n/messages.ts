@@ -47,6 +47,9 @@ export interface Messages {
     scoreboardLabel: string;
     templatesTitle: string;
     templatesDelete: string;
+    ebadUpcoming: string;
+    ebadAll: string;
+    ebadToday: string;
   };
   scoreboard: {
     title: string;
@@ -309,6 +312,7 @@ export interface Messages {
     savedPlayersFull: string;
     prefilledHint: string;
     clearPlayers: string;
+    usualPartnerHint: string;
   };
   settingsExtra: {
     contrastWarning: string;
@@ -447,6 +451,9 @@ const fr: Messages = {
     scoreboardLabel: 'Tableau de score',
     templatesTitle: 'Modèles favoris',
     templatesDelete: 'Supprimer ce modèle',
+    ebadUpcoming: 'Prochains matchs eBad',
+    ebadAll: 'Tous les matchs eBad',
+    ebadToday: 'Aujourd’hui',
   },
   scoreboard: {
     title: 'Miss Badminton',
@@ -721,6 +728,7 @@ const fr: Messages = {
       'Toutes les places sont remplies : touchez un champ pour le changer.',
     prefilledHint: 'Joueurs du dernier match repris.',
     clearPlayers: 'Vider',
+    usualPartnerHint: '★ : partenaire habituel de {name}',
   },
   settingsExtra: {
     contrastWarning:
@@ -867,6 +875,9 @@ const en: Messages = {
     scoreboardLabel: 'Scoreboard',
     templatesTitle: 'Favorite templates',
     templatesDelete: 'Delete template',
+    ebadUpcoming: 'Upcoming eBad matches',
+    ebadAll: 'All eBad matches',
+    ebadToday: 'Today',
   },
   scoreboard: {
     title: 'Miss Badminton',
@@ -1133,6 +1144,7 @@ const en: Messages = {
     savedPlayersFull: 'Every spot is filled: tap a field to change it.',
     prefilledHint: 'Players from your last match were filled in.',
     clearPlayers: 'Clear',
+    usualPartnerHint: '★: usual partner of {name}',
   },
   settingsExtra: {
     contrastWarning:
@@ -1279,6 +1291,9 @@ const es: Messages = {
     scoreboardLabel: 'Marcador',
     templatesTitle: 'Plantillas favoritas',
     templatesDelete: 'Eliminar plantilla',
+    ebadUpcoming: 'Próximos partidos eBad',
+    ebadAll: 'Todos los partidos eBad',
+    ebadToday: 'Hoy',
   },
   scoreboard: {
     title: 'Miss Badminton',
@@ -1551,6 +1566,7 @@ const es: Messages = {
       'Todos los puestos están completos: toca un campo para cambiarlo.',
     prefilledHint: 'Se han recuperado los jugadores del último partido.',
     clearPlayers: 'Vaciar',
+    usualPartnerHint: '★: pareja habitual de {name}',
   },
   settingsExtra: {
     contrastWarning:

@@ -147,3 +147,64 @@ export function prefillFromHistory(
   ].some(Boolean);
   return any ? teams : null;
 }
+
+/**
+ * LES PARTENAIRES HABITUELS, d'après l'historique des doubles : pour un nom,
+ * ses partenaires du plus fréquent au moins fréquent (à égalité, le plus
+ * récent d'abord). Les noms sont ceux du registre quand le match porte un
+ * identifiant (un renommage se voit), et comparés par `playerKey`.
+ *
+ * Rend une fonction : l'historique n'est parcouru qu'une fois, à l'ouverture
+ * de l'assistant, et la question se pose ensuite à chaque toucher.
+ */
+export function usualPartners(
+  history: readonly SavedMatch[],
+  byId: Map<string, Player>
+): (name: string) => string[] {
+  const byPlayer = new Map<
+    string,
+    Map<string, { name: string; count: number; last: number }>
+  >();
+  const note = (a: string, b: string, index: number) => {
+    const ka = playerKey(a);
+    const kb = playerKey(b);
+    if (!ka || !kb || ka === kb) return;
+    const partners = byPlayer.get(ka) ?? new Map();
+    const entry = partners.get(kb) ?? { name: b, count: 0, last: index };
+    entry.count += 1;
+    entry.last = Math.min(entry.last, index);
+    partners.set(kb, entry);
+    byPlayer.set(ka, partners);
+  };
+  history.forEach((match, index) => {
+    if (match.config.type !== 'doubles') return;
+    for (const team of [match.config.team1, match.config.team2]) {
+      const primary = displayName(team, 'primary', byId).trim();
+      const partner = displayName(team, 'partner', byId).trim();
+      if (!primary || !partner) continue;
+      note(primary, partner, index);
+      note(partner, primary, index);
+    }
+  });
+  return name => {
+    const partners = byPlayer.get(playerKey(name));
+    if (!partners) return [];
+    return [...partners.values()]
+      .sort((a, b) => b.count - a.count || a.last - b.last)
+      .map(p => p.name);
+  };
+}
+
+/** Le coéquipier d'une place : le partenaire pour le joueur, et inversement. */
+export function teammateSlot(slot: SlotKey): SlotKey {
+  switch (slot) {
+    case 't1p':
+      return 't1q';
+    case 't1q':
+      return 't1p';
+    case 't2p':
+      return 't2q';
+    default:
+      return 't2p';
+  }
+}
