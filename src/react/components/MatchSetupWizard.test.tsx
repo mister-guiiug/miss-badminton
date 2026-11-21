@@ -322,3 +322,52 @@ describe('les joueurs enregistrés', () => {
     expect(screen.queryByRole('button', { name: 'Tom' })).toBeNull();
   });
 });
+
+describe('le partenaire habituel', () => {
+  it('passe en tête, marqué, quand son coéquipier est choisi', () => {
+    localStorage.setItem(
+      'mb_players',
+      JSON.stringify([
+        { id: 'p-ana', name: 'Ana', createdAt: 4 },
+        { id: 'p-bob', name: 'Bob', createdAt: 3 },
+        { id: 'p-cid', name: 'Cid', createdAt: 2 },
+        { id: 'p-dan', name: 'Dan', createdAt: 1 },
+      ])
+    );
+    const double = (id: string, partner: string) => ({
+      id,
+      completedAt: 1_700_000_000_000,
+      config: {
+        type: 'doubles',
+        sets: 2,
+        points: 15,
+        cap: 21,
+        sideChange: 'each-set',
+        team1: { primary: 'Dan', partner, id: 'A' },
+        team2: { primary: 'X', partner: 'Y', id: 'B' },
+      },
+      setScores: [
+        { team1: 15, team2: 10 },
+        { team1: 15, team2: 12 },
+      ],
+      finalSetWins: { team1: 2, team2: 0 },
+      winner: 'team1',
+    });
+    localStorage.setItem(
+      'mb_match_history',
+      JSON.stringify([double('m1', 'Cid'), double('m2', 'Cid')])
+    );
+    ouvrir();
+    fireEvent.click(screen.getByRole('button', { name: /^En double/ }));
+    suivant();
+    suivant();
+    // Le pré-remplissage reprend le dernier match : on repart à vide.
+    fireEvent.click(screen.getByRole('button', { name: 'Vider' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dan' }));
+    const chips = within(
+      screen.getByRole('region', { name: 'Joueurs enregistrés' })
+    ).getAllByRole('button');
+    expect(chips[0]?.textContent).toBe('★Cid');
+    expect(screen.getByText('★ : partenaire habituel de Dan')).toBeTruthy();
+  });
+});

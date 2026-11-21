@@ -6,6 +6,8 @@ import {
   prefillFromHistory,
   slotsFor,
   targetSlot,
+  teammateSlot,
+  usualPartners,
   withSlot,
   type DraftTeams,
 } from './player-picker';
@@ -132,5 +134,55 @@ describe('prefillFromHistory', () => {
         new Map()
       )
     ).toBeNull();
+  });
+});
+
+describe('usualPartners', () => {
+  const doubles = (
+    id: string,
+    a: [string, string],
+    b: [string, string]
+  ): SavedMatch =>
+    match(
+      id,
+      { primary: a[0], partner: a[1] },
+      { primary: b[0], partner: b[1] },
+      'doubles'
+    );
+
+  it('le partenaire le plus fréquent d’abord, dans les deux sens', () => {
+    const partnersOf = usualPartners(
+      [
+        doubles('m3', ['Léa', 'Tom'], ['Zoé', 'Max']),
+        doubles('m2', ['Léa', 'Zoé'], ['Tom', 'Max']),
+        doubles('m1', ['Tom', 'Léa'], ['Zoé', 'Max']),
+      ],
+      new Map()
+    );
+    expect(partnersOf('Léa')).toEqual(['Tom', 'Zoé']);
+    expect(partnersOf('léa')).toEqual(['Tom', 'Zoé']);
+    expect(partnersOf('Max')).toEqual(['Zoé', 'Tom']);
+    expect(partnersOf('Inconnu')).toEqual([]);
+  });
+
+  it('ignore les simples, et suit les renommages du registre', () => {
+    const partnersOf = usualPartners(
+      [
+        match('s', { primary: 'Léa' }, { primary: 'Tom' }),
+        match(
+          'd',
+          { primary: 'Léa', partner: 'Zoé', partnerId: 'p-zoe' },
+          { primary: 'A', partner: 'B' },
+          'doubles'
+        ),
+      ],
+      indexById([{ ...ZOE, name: 'Zoé M.' }])
+    );
+    expect(partnersOf('Léa')).toEqual(['Zoé M.']);
+  });
+
+  it('le coéquipier d’une place', () => {
+    expect(teammateSlot('t1p')).toBe('t1q');
+    expect(teammateSlot('t2q')).toBe('t2p');
   });
 });

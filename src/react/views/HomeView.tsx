@@ -17,7 +17,18 @@ import { readReplayFromUrl } from '../../share';
 import { MatchConfigSchema, type MatchTemplate } from '../../schemas';
 import { indexById, teamLabel } from '../../players';
 import { storage } from '../../storage';
-import { Trash2Icon } from '../components/icons';
+import { CalendarIcon, Trash2Icon } from '../components/icons';
+import { useEbadStore } from '../../store/useEbadStore';
+import {
+  configFromEbad,
+  ebadTeamLabel,
+  localDateKey,
+  sortEbadMatches,
+  type EbadMatch,
+} from '../../ebad';
+
+/** Combien de matchs eBad l'accueil propose d'un coup. */
+const MAX_UPCOMING_EBAD = 3;
 
 export function HomeView() {
   const { t } = useI18n();
@@ -67,6 +78,27 @@ export function HomeView() {
   const [templates, setTemplates] = useState<MatchTemplate[]>(() =>
     storage.loadTemplates()
   );
+
+  /*
+   * LES PROCHAINS MATCHS eBad, à préparer en un toucher : ceux d'aujourd'hui
+   * et des jours suivants qui n'ont pas encore de match scoré, dans l'ordre
+   * du programme. Le jour est lu une fois, à l'affichage de l'accueil.
+   */
+  const ebadMatches = useEbadStore(s => s.matches);
+  const [today] = useState(() => localDateKey(Date.now()));
+  const upcomingEbad = useMemo(
+    () =>
+      sortEbadMatches(
+        ebadMatches.filter(
+          e => !e.linkedMatchId && e.date !== undefined && e.date >= today
+        )
+      ).slice(0, MAX_UPCOMING_EBAD),
+    [ebadMatches, today]
+  );
+  const prepareEbad = (e: EbadMatch) => {
+    setReplayInitial(configFromEbad(e));
+    setWizardOpen(true);
+  };
 
   const handleUseTemplate = (template: MatchTemplate) => {
     setMatch(template.config);
@@ -133,6 +165,73 @@ export function HomeView() {
           </button>
         )}
       </section>
+
+      {upcomingEbad.length > 0 && (
+        <section
+          className="flex flex-col gap-2"
+          aria-labelledby="ebad-upcoming-title"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <h2
+              id="ebad-upcoming-title"
+              className="text-[0.7rem] font-semibold uppercase tracking-[0.08em]"
+              style={{ color: 'var(--muted)' }}
+            >
+              {t('home.ebadUpcoming')}
+            </h2>
+            <button
+              type="button"
+              onClick={() => navigate('/tournois')}
+              className="text-xs font-semibold"
+              style={{ color: 'var(--primary)' }}
+            >
+              {t('home.ebadAll')}
+            </button>
+          </div>
+          <ul className="flex flex-col gap-1.5">
+            {upcomingEbad.map(e => (
+              <li key={e.id}>
+                <button
+                  type="button"
+                  onClick={() => prepareEbad(e)}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]"
+                  style={{
+                    borderColor: 'var(--border)',
+                    background: 'var(--surface)',
+                  }}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">
+                      {ebadTeamLabel(e.team1)} vs {ebadTeamLabel(e.team2)}
+                    </p>
+                    <p
+                      className="truncate text-xs"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      {[
+                        e.date === today ? t('home.ebadToday') : e.date,
+                        e.time,
+                        e.discipline,
+                        e.round,
+                        e.court ? t('ebad.courtShort', { n: e.court }) : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  </div>
+                  <span
+                    className="flex shrink-0 items-center gap-1 text-xs font-bold"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    <CalendarIcon size={14} />
+                    {t('ebad.prepare')}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {recentMatches.length > 0 && (
         <section className="flex flex-col gap-2" aria-labelledby="recent-title">

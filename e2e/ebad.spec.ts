@@ -91,3 +91,49 @@ test.describe('Tournois eBad @critical', () => {
     await expect(page.getByText('12-15 9-15')).toBeVisible();
   });
 });
+
+test.describe('Accueil : prochains matchs eBad @critical', () => {
+  test('un match eBad du jour se prépare depuis l’accueil', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      try {
+        const d = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        localStorage.setItem(
+          'mb_ebad_matches',
+          JSON.stringify([
+            {
+              id: 'e-today',
+              createdAt: Date.now() - 1000,
+              tournament: 'Tournoi du jour',
+              date: today,
+              time: '10:30',
+              discipline: 'SD',
+              court: '2',
+              team1: { primary: 'ALPHA Léa' },
+              team2: { primary: 'BRAVO Zoé' },
+            },
+          ])
+        );
+        localStorage.setItem('mb_data_version', '2');
+        localStorage.setItem('mb_welcome_tutorial_done', '1');
+      } catch {
+        /* ignore */
+      }
+    });
+    await page.goto('/');
+
+    await expect(
+      page.getByRole('heading', {
+        name: /prochains matchs ebad|upcoming ebad matches|próximos partidos ebad/i,
+      })
+    ).toBeVisible();
+    await page.getByRole('button', { name: /ALPHA Léa vs BRAVO Zoé/ }).click();
+
+    // L'assistant s'ouvre, prérempli avec les joueurs du match eBad.
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+  });
+});

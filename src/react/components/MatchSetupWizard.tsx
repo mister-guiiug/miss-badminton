@@ -19,6 +19,8 @@ import {
   slotsFor,
   slotValue,
   targetSlot,
+  teammateSlot,
+  usualPartners,
   withSlot,
   type SlotKey,
 } from '../../player-picker';
@@ -255,6 +257,10 @@ export function MatchSetupWizard({
   const [knownPlayers] = useState<Player[]>(() =>
     playersByRecentUse(storage.loadPlayers(), storage.loadHistory())
   );
+  /** Les partenaires habituels de chacun, d'après les doubles déjà joués. */
+  const [partnersOf] = useState(() =>
+    usualPartners(storage.loadHistory(), indexById(storage.loadPlayers()))
+  );
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -451,6 +457,7 @@ export function MatchSetupWizard({
             team1={draft.team1}
             team2={draft.team2}
             players={knownPlayers}
+            partnersOf={partnersOf}
             prefilled={prefilled}
             onClear={() => {
               setPrefilled(false);
@@ -848,6 +855,8 @@ interface Step3Props {
   team2: { primary: string; partner: string };
   /** Les joueurs enregistrés, dans l'ordre où les proposer. */
   players: Player[];
+  /** Les partenaires habituels d'un joueur, le plus fréquent d'abord. */
+  partnersOf: (name: string) => string[];
   /** Les noms viennent du dernier match (pré-remplissage). */
   prefilled: boolean;
   onClear: () => void;
@@ -862,6 +871,7 @@ function Step3({
   team1,
   team2,
   players,
+  partnersOf,
   prefilled,
   onClear,
   onChange,
@@ -890,10 +900,32 @@ function Step3({
     const v = slotValue(teams, slot).trim();
     if (v) usedKeys.set(playerKey(v), slot);
   }
-  const shown = filterPlayers(
+  /*
+   * LE PARTENAIRE HABITUEL. En double, quand la place visée a un coéquipier
+   * déjà choisi, ceux qui ont le plus souvent joué avec lui passent en tête,
+   * marqués d'une étoile : choisir Léa, puis toucher Tom, son partenaire de
+   * toujours, en deux gestes.
+   */
+  const mate =
+    isDoubles && target ? slotValue(teams, teammateSlot(target)).trim() : '';
+  const usualKeys = mate ? partnersOf(mate).map(playerKey) : [];
+  const rank = (p: Player) => {
+    const i = usualKeys.indexOf(playerKey(p.name));
+    return i === -1 ? Number.POSITIVE_INFINITY : i;
+  };
+  const filtered = filterPlayers(
     players,
     target ? slotValue(teams, target) : ''
+  );
+  const shown = (
+    usualKeys.length > 0
+      ? [...filtered].sort((a, b) => rank(a) - rank(b))
+      : filtered
   ).slice(0, MAX_PLAYER_CHIPS);
+  const hasUsual = shown.some(
+    p =>
+      rank(p) !== Number.POSITIVE_INFINITY && !usedKeys.has(playerKey(p.name))
+  );
 
   const pick = (name: string) => {
     if (!target) return;
@@ -988,12 +1020,20 @@ function Step3({
                   })
                 : t('wizardExtra.savedPlayersFull')}
             </span>
+            {hasUsual && (
+              <span style={{ color: 'var(--muted)' }}>
+                {t('wizardExtra.usualPartnerHint', { name: mate })}
+              </span>
+            )}
           </p>
           <ul className="flex flex-wrap gap-2">
             {shown.map(player => {
               const usedIn = usedKeys.get(playerKey(player.name));
               const inTarget = usedIn !== undefined && usedIn === target;
               const usedElsewhere = usedIn !== undefined && !inTarget;
+              const usual =
+                usedIn === undefined &&
+                rank(player) !== Number.POSITIVE_INFINITY;
               return (
                 <li key={player.id}>
                   <button
@@ -1001,6 +1041,11 @@ function Step3({
                     onClick={() => pick(player.name)}
                     disabled={!target || usedElsewhere}
                     aria-pressed={usedIn !== undefined}
+                    title={
+                      usual
+                        ? t('wizardExtra.usualPartnerHint', { name: mate })
+                        : undefined
+                    }
                     className="inline-flex min-h-10 items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
                       borderColor:
@@ -1012,6 +1057,7 @@ function Step3({
                     }}
                   >
                     {usedIn !== undefined && <span aria-hidden>✓</span>}
+                    {usual && <span aria-hidden>★</span>}
                     {player.name}
                   </button>
                 </li>
