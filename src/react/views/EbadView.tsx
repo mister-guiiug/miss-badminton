@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { useI18n } from '../../i18n';
 import type { Locale } from '../../i18n/messages';
@@ -11,7 +11,16 @@ import {
 } from '../components/MatchSetupWizard';
 import { EbadMatchForm } from '../components/EbadMatchForm';
 import { EbadImportSheet } from '../components/EbadImportSheet';
-import { configuredProxyUrl } from '../../ebad-connector';
+import {
+  configuredProxyUrl,
+  loadConfiguredConnector,
+} from '../../ebad-connector';
+import {
+  appRedirectUri,
+  completeLogin,
+  isOAuthCallback,
+  type LoginOutcome,
+} from '../../ebad-oauth';
 import {
   EbadLinkSheet,
   type EbadLinkCandidate,
@@ -125,6 +134,37 @@ export function EbadView() {
     updated: number;
   } | null>(null);
 
+  /*
+   * LE RETOUR DE « SE CONNECTER AVEC MyFFBaD ». La racine de l'app nous a
+   * renvoyé l'adresse de retour (`EbadOAuthReturn`) : on fait échanger le
+   * code par le proxy, on retire `code` et `state` de l'adresse, puis on
+   * rouvre l'import si la connexion a réussi.
+   */
+  const location = useLocation();
+  const [oauthOutcome, setOauthOutcome] = useState<LoginOutcome | null>(null);
+  useEffect(() => {
+    if (!isOAuthCallback(location.search)) return;
+    const search = location.search;
+    let alive = true;
+    void (async () => {
+      const connector = await loadConfiguredConnector();
+      const outcome = connector
+        ? await completeLogin(
+            search,
+            request => connector.exchangeCode(request),
+            appRedirectUri()
+          )
+        : 'error';
+      if (!alive) return;
+      setOauthOutcome(outcome);
+      if (outcome === 'ok') setImportOpen(true);
+      navigate('/tournois', { replace: true });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [location.search, navigate]);
+
   useEffect(() => {
     if (!copiedId) return;
     const timer = setTimeout(() => setCopiedId(null), 2000);
@@ -220,6 +260,28 @@ export function EbadView() {
         >
           {t('ebad.importOpen')}
         </button>
+      )}
+      {oauthOutcome && (
+        <p
+          role="status"
+          className="text-sm font-semibold"
+          style={{
+            color:
+              oauthOutcome === 'ok'
+                ? 'var(--success, #16a34a)'
+                : 'var(--danger, #dc2626)',
+          }}
+        >
+          {oauthOutcome === 'ok'
+            ? t('ebad.oauthDone')
+            : oauthOutcome === 'denied'
+              ? t('ebad.oauthDenied')
+              : oauthOutcome === 'state'
+                ? t('ebad.oauthStateError')
+                : oauthOutcome === 'expired'
+                  ? t('ebad.oauthExpired')
+                  : t('ebad.oauthError')}
+        </p>
       )}
       {importResult && (
         <p role="status" className="text-sm" style={{ color: 'var(--muted)' }}>

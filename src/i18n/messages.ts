@@ -399,6 +399,16 @@ export interface Messages {
     importErrorUnavailable: string;
     importErrorInvalid: string;
     importErrorHttp: string;
+    importErrorUnauthorized: string;
+    oauthLogin: string;
+    oauthLoginHint: string;
+    oauthConnected: string;
+    oauthLogout: string;
+    oauthDone: string;
+    oauthDenied: string;
+    oauthStateError: string;
+    oauthExpired: string;
+    oauthError: string;
   };
 }
 
@@ -810,6 +820,18 @@ const fr: Messages = {
       'Le connecteur FFBaD n’est pas encore branché (convention avec la FFBaD requise).',
     importErrorInvalid: 'Réponse inattendue du connecteur.',
     importErrorHttp: 'Le connecteur a répondu une erreur ({status}).',
+    importErrorUnauthorized:
+      'Connexion MyFFBaD requise ou expirée : reconnectez-vous.',
+    oauthLogin: 'Se connecter avec MyFFBaD',
+    oauthLoginHint:
+      'Vous vous identifiez sur le site de la FFBaD : Miss Badminton ne voit jamais votre mot de passe.',
+    oauthConnected: 'Connecté à MyFFBaD',
+    oauthLogout: 'Se déconnecter',
+    oauthDone: 'Connexion à MyFFBaD réussie.',
+    oauthDenied: 'Connexion refusée sur le site de la FFBaD.',
+    oauthStateError: 'Retour de connexion inattendu : recommencez.',
+    oauthExpired: 'La demande de connexion a expiré : recommencez.',
+    oauthError: 'La connexion à MyFFBaD a échoué.',
   },
 };
 
@@ -1210,6 +1232,18 @@ const en: Messages = {
       'The FFBaD connector is not set up yet (an agreement with FFBaD is required).',
     importErrorInvalid: 'Unexpected response from the connector.',
     importErrorHttp: 'The connector returned an error ({status}).',
+    importErrorUnauthorized:
+      'MyFFBaD sign-in required or expired: please sign in again.',
+    oauthLogin: 'Sign in with MyFFBaD',
+    oauthLoginHint:
+      'You sign in on the FFBaD website: Miss Badminton never sees your password.',
+    oauthConnected: 'Signed in to MyFFBaD',
+    oauthLogout: 'Sign out',
+    oauthDone: 'Signed in to MyFFBaD.',
+    oauthDenied: 'Sign-in was declined on the FFBaD website.',
+    oauthStateError: 'Unexpected sign-in response: please try again.',
+    oauthExpired: 'The sign-in request expired: please try again.',
+    oauthError: 'Signing in to MyFFBaD failed.',
   },
 };
 
@@ -1616,6 +1650,20 @@ const es: Messages = {
       'El conector FFBaD aún no está configurado (se requiere un convenio con la FFBaD).',
     importErrorInvalid: 'Respuesta inesperada del conector.',
     importErrorHttp: 'El conector devolvió un error ({status}).',
+    importErrorUnauthorized:
+      'Se requiere iniciar sesión en MyFFBaD o la sesión caducó: vuelve a conectarte.',
+    oauthLogin: 'Iniciar sesión con MyFFBaD',
+    oauthLoginHint:
+      'Te identificas en el sitio de la FFBaD: Miss Badminton nunca ve tu contraseña.',
+    oauthConnected: 'Conectado a MyFFBaD',
+    oauthLogout: 'Cerrar sesión',
+    oauthDone: 'Sesión iniciada en MyFFBaD.',
+    oauthDenied: 'Inicio de sesión rechazado en el sitio de la FFBaD.',
+    oauthStateError:
+      'Respuesta de inicio de sesión inesperada: inténtalo de nuevo.',
+    oauthExpired:
+      'La solicitud de inicio de sesión caducó: inténtalo de nuevo.',
+    oauthError: 'No se pudo iniciar sesión en MyFFBaD.',
   },
 };
 

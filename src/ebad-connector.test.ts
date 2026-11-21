@@ -189,3 +189,143 @@ describe('vers le registre eBad', () => {
     expect([...ids]).toEqual(['ffbad:t:1']);
   });
 });
+
+describe('OAuth à travers le proxy', () => {
+  async function importOAuth() {
+    return import('./ebad-proxy/oauth');
+  }
+
+  it('échange le code de démonstration contre un jeton', async () => {
+    const { createMockExchanger } = await importOAuth();
+    const c = createEbadConnector('https://p', (input, init) =>
+      handleEbadProxy(new Request(input, init), {
+        upstream: createMockUpstream(NOW),
+        oauth: createMockExchanger(),
+        allowedOrigins: [],
+      })
+    );
+    await expect(
+      c.exchangeCode({
+        code: 'mock-code',
+        codeVerifier: 'v',
+        redirectUri: 'https://app.example/',
+      })
+    ).resolves.toEqual({ access_token: 'mock-token', expires_in: 3600 });
+    await expect(
+      c.exchangeCode({
+        code: 'faux',
+        codeVerifier: 'v',
+        redirectUri: 'https://app.example/',
+      })
+    ).rejects.toMatchObject({ kind: 'unauthorized' });
+  });
+
+  it('refuse une adresse de retour hors des origines autorisées', async () => {
+    const { createMockExchanger } = await importOAuth();
+    const res = await handleEbadProxy(
+      new Request('https://p/oauth/token', {
+        method: 'POST',
+        headers: { Origin: ORIGIN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: 'mock-code',
+          code_verifier: 'v',
+          redirect_uri: 'https://ailleurs.example/',
+        }),
+      }),
+      {
+        upstream: createMockUpstream(NOW),
+        oauth: createMockExchanger(),
+        allowedOrigins: [ORIGIN],
+      }
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('sans client OAuth, l’échange répond « unavailable »', async () => {
+    const c = viaProxy(createMockUpstream(NOW));
+    await expect(
+      c.exchangeCode({
+        code: 'x',
+        codeVerifier: 'v',
+        redirectUri: 'https://app.example/',
+      })
+    ).rejects.toMatchObject({ kind: 'unavailable' });
+  });
+
+  it('le jeton de l’utilisateur va jusqu’à la source, en cache privé', async () => {
+    let seen: string | undefined;
+    const upstream: EbadUpstream = {
+      searchTournaments: (_q, ctx) => {
+        seen = ctx?.accessToken;
+        return Promise.resolve([]);
+      },
+      tournamentMatches: () => Promise.resolve(null),
+    };
+    const res = await handleEbadProxy(
+      new Request('https://p/tournaments', {
+        headers: { Authorization: 'Bearer abc' },
+      }),
+      { upstream, allowedOrigins: [] }
+    );
+    expect(seen).toBe('abc');
+    expect(res.headers.get('Cache-Control')).toMatch(/^private/);
+    const c = createEbadConnector(
+      'https://p',
+      (input, init) =>
+        handleEbadProxy(new Request(input, init), {
+          upstream,
+          allowedOrigins: [],
+        }),
+      () => 'jeton-app'
+    );
+    await c.searchTournaments({});
+    expect(seen).toBe('jeton-app');
+  });
+
+  it('une source qui refuse le jeton donne « unauthorized »', async () => {
+    const { UpstreamUnauthorizedError } = await import('./ebad-proxy/upstream');
+    const c = viaProxy({
+      searchTournaments: () => Promise.reject(new UpstreamUnauthorizedError()),
+      tournamentMatches: () => Promise.resolve(null),
+    });
+    await expect(c.searchTournaments({})).rejects.toMatchObject({
+      kind: 'unauthorized',
+    });
+  });
+
+  it('l’échange standard poste le formulaire OAuth au point de jeton', async () => {
+    const { createTokenEndpointExchanger } = await importOAuth();
+    let posted: URLSearchParams | null = null;
+    const exchanger = createTokenEndpointExchanger(
+      {
+        FFBAD_OAUTH_TOKEN_URL: 'https://auth.example/token',
+        FFBAD_OAUTH_CLIENT_ID: 'mb',
+        FFBAD_OAUTH_CLIENT_SECRET: 's3cret',
+      },
+      (_input, init) => {
+        posted = new URLSearchParams(String(init?.body));
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ access_token: 'at', expires_in: 120 }),
+            { status: 200 }
+          )
+        );
+      }
+    );
+    await expect(
+      exchanger.exchange({
+        code: 'c',
+        codeVerifier: 'v',
+        redirectUri: 'https://app.example/',
+      })
+    ).resolves.toEqual({ accessToken: 'at', expiresIn: 120 });
+    expect(Object.fromEntries(posted ?? [])).toEqual({
+      grant_type: 'authorization_code',
+      code: 'c',
+      redirect_uri: 'https://app.example/',
+      client_id: 'mb',
+      code_verifier: 'v',
+      client_secret: 's3cret',
+    });
+  });
+});

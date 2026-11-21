@@ -20,6 +20,18 @@ interface ImportMetaEnv {
    * `mock` branche le jeu de démonstration (en développement seulement).
    */
   readonly VITE_EBAD_PROXY_URL?: string;
+  /**
+   * « Se connecter avec MyFFBaD » (`src/ebad-oauth.ts`) : l'adresse
+   * d'autorisation OAuth 2.0 de la FFBaD et l'identifiant client qu'elle
+   * délivre en enregistrant l'app. Publics par nature (ils partent dans
+   * l'adresse de connexion) ; le secret client, s'il existe, reste au proxy.
+   * Absents, le bouton ne s'affiche pas ; `mock` simule le fournisseur en
+   * développement.
+   */
+  readonly VITE_EBAD_OAUTH_AUTHORIZE_URL?: string;
+  readonly VITE_EBAD_OAUTH_CLIENT_ID?: string;
+  /** Portées OAuth demandées, séparées par des espaces (facultatif). */
+  readonly VITE_EBAD_OAUTH_SCOPE?: string;
 }
 
 interface ImportMeta {

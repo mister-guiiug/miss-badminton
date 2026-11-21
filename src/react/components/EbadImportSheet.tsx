@@ -12,6 +12,12 @@ import {
   type TournamentMatches,
 } from '../../ebad-connector';
 import { ebadTeamLabel, localDateKey } from '../../ebad';
+import {
+  beginLogin,
+  configuredOAuth,
+  currentAccessToken,
+  logout,
+} from '../../ebad-oauth';
 import { useEbadStore } from '../../store/useEbadStore';
 
 interface EbadImportSheetProps {
@@ -65,14 +71,30 @@ export function EbadImportSheet({ onClose, onImported }: EbadImportSheetProps) {
     };
   }, []);
 
-  const fail = (error: unknown) =>
-    setStatus({
-      kind: 'error',
-      error:
-        error instanceof EbadConnectorError
-          ? error
-          : new EbadConnectorError('network'),
-    });
+  /*
+   * « SE CONNECTER AVEC MyFFBaD », si l'app a un client OAuth. L'utilisateur
+   * part s'identifier sur le site de la FFBaD et revient sur `/tournois`
+   * (cf. `ebad-oauth.ts`) : aucun mot de passe ne passe par ici.
+   */
+  const oauth = configuredOAuth();
+  const [connected, setConnected] = useState(() => !!currentAccessToken());
+  const login = async () => {
+    if (!oauth) return;
+    window.location.assign(await beginLogin(oauth));
+  };
+
+  const fail = (error: unknown) => {
+    const e =
+      error instanceof EbadConnectorError
+        ? error
+        : new EbadConnectorError('network');
+    // Un jeton refusé ne sert plus : on l'oublie, le bouton revient.
+    if (e.kind === 'unauthorized') {
+      logout();
+      setConnected(false);
+    }
+    setStatus({ kind: 'error', error: e });
+  };
 
   const search = async () => {
     if (!connector) return;
@@ -120,6 +142,8 @@ export function EbadImportSheet({ onClose, onImported }: EbadImportSheetProps) {
     switch (error.kind) {
       case 'unavailable':
         return t('ebad.importErrorUnavailable');
+      case 'unauthorized':
+        return t('ebad.importErrorUnauthorized');
       case 'invalid':
         return t('ebad.importErrorInvalid');
       case 'http':
@@ -162,6 +186,50 @@ export function EbadImportSheet({ onClose, onImported }: EbadImportSheetProps) {
       }
     >
       <div className="flex flex-col gap-3">
+        {oauth && !detail && (
+          <div
+            className="flex flex-col gap-2 rounded-xl px-3 py-2.5 text-xs"
+            style={{
+              background: 'var(--surface-highlight)',
+              color: 'var(--muted)',
+            }}
+          >
+            {connected ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span
+                  className="font-semibold"
+                  style={{ color: 'var(--text)' }}
+                >
+                  ✓ {t('ebad.oauthConnected')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    setConnected(false);
+                  }}
+                  className="rounded-lg border px-2.5 py-1 font-semibold"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                >
+                  {t('ebad.oauthLogout')}
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void login()}
+                  className="self-start rounded-lg px-4 py-2 text-sm font-bold text-[var(--primary-ink)]"
+                  style={{ background: 'var(--primary)' }}
+                >
+                  {t('ebad.oauthLogin')}
+                </button>
+                <span>{t('ebad.oauthLoginHint')}</span>
+              </>
+            )}
+          </div>
+        )}
+
         {!detail && (
           <form
             className="flex flex-col gap-2"

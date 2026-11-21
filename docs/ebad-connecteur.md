@@ -41,11 +41,71 @@ et le format de l'API FFBaD ne sont volontairement **pas devinés** : appeler de
 routes non documentées, ou internes à eBad, sans autorisation n'est pas
 acceptable.
 
+## « Se connecter avec MyFFBaD » (OAuth)
+
+Plutôt que des identifiants de convention partagés par le serveur, chaque
+utilisateur peut se connecter **avec son propre compte MyFFBaD**, selon le flux
+standard **OAuth 2.0 Authorization Code + PKCE** :
+
+```
+1. App ──redirection──▶ Page de connexion FFBaD   (l'utilisateur s'y identifie)
+2. FFBaD ──redirection──▶ App (racine) ?code=…&state=…   → renvoi vers /tournois
+3. App ──POST /oauth/token (code + vérificateur PKCE)──▶ Proxy ──▶ Point de jeton FFBaD
+4. App ──GET /tournaments (Authorization: Bearer <jeton>)──▶ Proxy ──▶ API FFBaD
+```
+
+- **Aucun mot de passe ne passe par Miss Badminton** : l'utilisateur s'identifie
+  sur le site de la FFBaD. Demander ses identifiants dans l'app pour les rejouer
+  sur l'API interne d'eBad serait une collecte de mots de passe par un tiers :
+  ce n'est pas fait, et ne doit pas l'être.
+- `state` aléatoire vérifié au retour (CSRF), vérificateur PKCE gardé dans
+  l'onglet (un code intercepté est inutilisable), demande valable 10 minutes,
+  consommée au premier retour.
+- Le code est échangé par le **proxy** (`src/ebad-proxy/oauth.ts`), qui garde
+  le secret client s'il y en a un ; il refuse une adresse de retour hors des
+  origines autorisées.
+- Le jeton vit dans `sessionStorage` (il disparaît avec l'onglet) et n'est
+  envoyé qu'au proxy ; un 401 l'efface et le bouton de connexion revient.
+- L'**adresse de retour est la racine de l'app** (GitHub Pages n'a pas de page
+  de secours pour `/tournois`) : la racine repère le retour attendu et renvoie
+  vers `/tournois`, qui termine la connexion.
+
+Ce qu'il faut obtenir de la FFBaD : l'enregistrement de Miss Badminton comme
+**client OAuth** (identifiant client, adresse d'autorisation, point de jeton,
+portées) avec l'adresse de retour `https://mister-guiiug.github.io/miss-badminton/`.
+
+| Variable                        | Où                      | Rôle                                  |
+| ------------------------------- | ----------------------- | ------------------------------------- |
+| `VITE_EBAD_OAUTH_AUTHORIZE_URL` | app (variable publique) | adresse d'autorisation FFBaD          |
+| `VITE_EBAD_OAUTH_CLIENT_ID`     | app (variable publique) | identifiant client                    |
+| `VITE_EBAD_OAUTH_SCOPE`         | app (variable publique) | portées demandées (facultatif)        |
+| `FFBAD_OAUTH_TOKEN_URL`         | proxy (secret serveur)  | point de jeton FFBaD                  |
+| `FFBAD_OAUTH_CLIENT_ID`         | proxy (secret serveur)  | identifiant client                    |
+| `FFBAD_OAUTH_CLIENT_SECRET`     | proxy (secret serveur)  | seulement pour un client confidentiel |
+
+Côté proxy, passer l'échangeur au gestionnaire :
+
+```ts
+import { createTokenEndpointExchanger } from './src/ebad-proxy/oauth';
+// …
+handleEbadProxy(request, {
+  upstream: createFfbadUpstream(env),
+  oauth: createTokenEndpointExchanger(env),
+  allowedOrigins: (env.ALLOWED_ORIGINS ?? '').split(',').filter(Boolean),
+});
+```
+
+L'adaptateur FFBaD reçoit alors le jeton de l'utilisateur dans
+`context.accessToken` et le présente à l'API FFBaD.
+
 ## Essayer sans convention
 
 ```bash
-VITE_EBAD_PROXY_URL=mock npm run dev
+VITE_EBAD_PROXY_URL=mock VITE_EBAD_OAUTH_AUTHORIZE_URL=mock npm run dev
 ```
+
+`VITE_EBAD_OAUTH_AUTHORIZE_URL=mock` simule aussi la connexion MyFFBaD (aller,
+retour, échange du code, jeton) sans quitter l'app.
 
 Le bouton « Importer depuis la FFBaD » apparaît sur `/tournois` (en
 développement seulement : le build de production n'embarque pas la

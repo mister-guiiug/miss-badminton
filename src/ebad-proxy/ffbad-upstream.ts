@@ -22,7 +22,11 @@
  *     documentation reçue, en traduisant vers le contrat
  *     (`ebad-contract.ts`) — le gestionnaire revalide la sortie ;
  *  3. ne garder que les champs du contrat : aucune donnée personnelle
- *     au-delà des noms (pas de licence, de date de naissance, de club…).
+ *     au-delà des noms (pas de licence, de date de naissance, de club…) ;
+ *  4. si la FFBaD délivre un client OAuth (« Se connecter avec MyFFBaD »),
+ *     présenter `context.accessToken` — le jeton de l'utilisateur — au lieu
+ *     des identifiants de convention, et lever `UpstreamUnauthorizedError`
+ *     quand l'API le refuse (cf. `oauth.ts`).
  */
 import type { RemoteTournament, TournamentMatches } from '../ebad-contract';
 import { UpstreamNotConfiguredError, type EbadUpstream } from './upstream';
