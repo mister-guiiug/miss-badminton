@@ -79,6 +79,11 @@ export default defineConfig(({ command }) => {
             // téléchargée chez un visiteur qui refuse. C'est `preloadGzipKb`
             // qui le voit, jamais le total.
             if (norm.includes('/posthog-js/')) return 'posthog';
+            // LE MODULE DES ERREURS POSTHOG DU SOCLE (6.38.0) reste hors de
+            // `vendor` : il n'est importé qu'à la demande, si l'app fournit
+            // `errorTrackingLoader`. Rangé dans `vendor`, il serait PRÉCHARGÉ
+            // chez tous les visiteurs, option activée ou non (1,8 kB gzip).
+            if (norm.includes('/dev-pwa-config/analytics-erreurs')) return;
             // ET RIVE, POUR LA RAISON DE SENTRY. `RiveAnimation` du socle
             // charge le runtime par un `lazy(() => import(…))` — mais tout ce
             // qui vient de node_modules tombe ici dans `vendor`, PRÉCHARGÉ, et
