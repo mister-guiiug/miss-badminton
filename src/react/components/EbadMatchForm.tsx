@@ -196,12 +196,16 @@ export function EbadMatchForm({
       >
         <datalist id={tournamentsList}>
           {tournaments.map(name => (
-            <option key={name} value={name} />
+            <option key={name} value={name}>
+              {name}
+            </option>
           ))}
         </datalist>
         <datalist id={playersList}>
           {players.map(name => (
-            <option key={name} value={name} />
+            <option key={name} value={name}>
+              {name}
+            </option>
           ))}
         </datalist>
 
@@ -328,7 +332,9 @@ export function EbadMatchForm({
           </p>
         )}
         {/* Valider au clavier (Entrée) sans dupliquer le bouton du pied. */}
-        <button type="submit" hidden />
+        <button type="submit" hidden>
+          {t('ebad.save')}
+        </button>
       </form>
     </Sheet>
   );
