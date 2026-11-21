@@ -1,11 +1,13 @@
 import type { MatchConfig } from './react/components/MatchSetupWizard';
 import {
+  EbadMatchArraySchema,
   MatchConfigSchema,
   MatchTemplateArraySchema,
   PersistedGameStateSchema,
   PlayerArraySchema,
   PlayerNamesSchema,
   SavedMatchArraySchema,
+  type EbadMatch,
   type MatchTemplate,
   type Player,
   type SavedMatch,
@@ -45,6 +47,8 @@ const LS = {
   /** Marqueur de la migration noms → profils, indépendant de `dataVersion`. */
   playersVersion: 'mb_players_version',
   templates: 'mb_match_templates',
+  /** Les matchs recopiés depuis eBad (`ebad.ts`). */
+  ebad: 'mb_ebad_matches',
   sound: 'mb_sound_enabled',
   haptic: 'mb_haptic_enabled',
   dataVersion: 'mb_data_version',
@@ -61,6 +65,12 @@ const LS = {
 const MAX_PLAYERS = 200;
 const MAX_HISTORY = 200;
 const MAX_TEMPLATES = 12;
+/**
+ * Plafond du registre eBad : quelques tournois d'une saison. Il ne sert qu'à
+ * borner une donnée aberrante ; les plus anciens matchs saisis partent en
+ * premier.
+ */
+const MAX_EBAD_MATCHES = 300;
 
 /**
  * Bump when the shape/sémantique des données persistées change de façon
@@ -380,6 +390,21 @@ export const storage = {
   removeTemplate: (id: string): void => {
     const next = storage.loadTemplates().filter(t => t.id !== id);
     safeWrite(LS.templates, next);
+  },
+
+  /** Les matchs eBad saisis, dans l'ordre de saisie (le plus récent d'abord). */
+  loadEbadMatches: (): EbadMatch[] =>
+    safeReadValidated(LS.ebad, EbadMatchArraySchema, []) ?? [],
+  /**
+   * Remplace tout le registre eBad. Passe par la validation : une liste qui
+   * ne la passe pas n'est pas écrite (`false`).
+   */
+  saveEbadMatches: (matches: unknown): boolean => {
+    const result = EbadMatchArraySchema.safeParse(matches);
+    if (!result.success) return false;
+    const sorted = [...result.data].sort((a, b) => b.createdAt - a.createdAt);
+    safeWrite(LS.ebad, sorted.slice(0, MAX_EBAD_MATCHES));
+    return true;
   },
 
   loadBoolPref: (key: 'sound' | 'haptic', fallback: boolean): boolean => {

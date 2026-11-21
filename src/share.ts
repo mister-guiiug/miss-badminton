@@ -2,6 +2,7 @@
 // ^ `Buffer` (branche non-navigateur de buildReplayUrl) : type-only, aucun effet
 //   runtime. Nécessaire depuis Vite 8 (vite/client n'inclut plus les globals Node).
 import { currentAppUrl } from '@mister-guiiug/dev-pwa-config/share';
+import { withoutEbad } from './ebad';
 import type { SavedMatch } from './storage';
 
 /**
@@ -53,7 +54,8 @@ export function buildShareText(
  */
 export function buildReplayUrl(config: SavedMatch['config']): string {
   try {
-    const json = JSON.stringify(config);
+    // Sans l'indice eBad : le destinataire ne joue pas le match du tableau.
+    const json = JSON.stringify(withoutEbad(config));
     // btoa ne gère pas UTF-8 directement (les noms peuvent contenir accents).
     const utf8Safe =
       typeof window === 'undefined'

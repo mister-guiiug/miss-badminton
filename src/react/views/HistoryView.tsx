@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
 import { type SavedMatch } from '../../storage';
@@ -11,6 +11,7 @@ import {
   FlameIcon,
   HistoryIcon,
   ImageIcon,
+  LinkIcon,
   PencilIcon,
   PlusIcon,
   RotateCwIcon,
@@ -39,6 +40,15 @@ import {
   ResultCardSheet,
   type ResultCardPayload,
 } from '../components/ResultCardSheet';
+import { EbadLinkSheet } from '../components/EbadLinkSheet';
+import type { Team } from '../components/MatchSetupWizard';
+import {
+  describeEbad,
+  ebadTeamLabel,
+  suggestEbadMatches,
+  withoutEbad,
+} from '../../ebad';
+import { ebadForSavedMatch, useEbadStore } from '../../store/useEbadStore';
 
 function formatDate(timestamp: number, locale: Locale): string {
   try {
@@ -239,6 +249,23 @@ export function HistoryView() {
   } | null>(null);
   const [resultCard, setResultCard] = useState<ResultCardPayload | null>(null);
 
+  /*
+   * eBad : le match scoré se rattache à un match de tournoi recopié depuis
+   * eBad (page « Tournois eBad »). La liaison vit sur le match eBad ; ici, on
+   * la retrouve et on propose de la poser, suggestions en tête.
+   */
+  const ebadMatches = useEbadStore(s => s.matches);
+  const linkEbad = useEbadStore(s => s.link);
+  const unlinkEbad = useEbadStore(s => s.unlink);
+  const [ebadTarget, setEbadTarget] = useState<SavedMatch | null>(null);
+  const namesOf = useCallback(
+    (team: Team) => teamDisplayNames(team, byId),
+    [byId]
+  );
+  const ebadTargetLinked = ebadTarget
+    ? ebadForSavedMatch(ebadMatches, ebadTarget.id)
+    : undefined;
+
   const handleClear = () => {
     setClearOpen(true);
   };
@@ -249,7 +276,8 @@ export function HistoryView() {
   };
 
   const handleReplay = (m: SavedMatch) => {
-    setMatch(m.config);
+    // Une revanche n'est pas le match eBad : elle part sans sa liaison.
+    setMatch(withoutEbad(m.config));
     navigate('/match');
   };
 
@@ -757,6 +785,7 @@ export function HistoryView() {
               byId
             );
             const winnerName = match.winner === 'team1' ? t1 : t2;
+            const linkedEbad = ebadForSavedMatch(ebadMatches, match.id);
             return (
               <li
                 key={match.id}
@@ -825,7 +854,7 @@ export function HistoryView() {
                           id: `${match.id}-tpl`,
                           name,
                           createdAt: Date.now(),
-                          config: match.config,
+                          config: withoutEbad(match.config),
                         });
                       }}
                       aria-label={t('historyExtra.saveTemplate')}
@@ -833,6 +862,19 @@ export function HistoryView() {
                       style={{ color: 'var(--muted)' }}
                     >
                       <PlusIcon size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      onClick={() => setEbadTarget(match)}
+                      aria-label={t('ebad.historyLinkAria')}
+                      title={t('ebad.historyLinkAria')}
+                      style={{
+                        color: linkedEbad ? 'var(--primary)' : 'var(--muted)',
+                      }}
+                    >
+                      <LinkIcon size={16} />
                     </Button>
                     <Button
                       variant="ghost"
@@ -884,6 +926,24 @@ export function HistoryView() {
                     {match.finalSetWins.team2}
                   </div>
                 </div>
+
+                {linkedEbad && (
+                  <button
+                    type="button"
+                    onClick={() => setEbadTarget(match)}
+                    className="flex items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-xs font-semibold"
+                    style={{
+                      background:
+                        'color-mix(in srgb, var(--primary) 12%, transparent)',
+                      color: 'var(--primary)',
+                    }}
+                  >
+                    <LinkIcon size={12} />
+                    <span className="truncate">
+                      {t('ebad.linkedTo', { label: describeEbad(linkedEbad) })}
+                    </span>
+                  </button>
+                )}
 
                 <div
                   className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3"
@@ -1007,6 +1067,62 @@ export function HistoryView() {
             );
             setEditTarget(null);
           }}
+        />
+      )}
+
+      {ebadTarget && (
+        <EbadLinkSheet
+          title={t('ebad.linkEbadTitle')}
+          closeLabel={t('ebad.cancel')}
+          suggestedLabel={t('ebad.suggested')}
+          emptyText={t('ebad.noEbadCandidates')}
+          candidates={suggestEbadMatches(ebadTarget, ebadMatches, namesOf).map(
+            ({ ebad, assessment }) => ({
+              id: ebad.id,
+              primary: `${ebadTeamLabel(ebad.team1)} vs ${ebadTeamLabel(ebad.team2)}`,
+              secondary: [describeEbad(ebad), ebad.date, ebad.time]
+                .filter(Boolean)
+                .join(' · '),
+              likely: assessment.likely,
+              current: ebad.linkedMatchId === ebadTarget.id,
+            })
+          )}
+          onPick={id => {
+            linkEbad(id, ebadTarget.id);
+            setEbadTarget(null);
+          }}
+          onClose={() => setEbadTarget(null)}
+          footer={
+            <>
+              {ebadTargetLinked && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    unlinkEbad(ebadTargetLinked.id);
+                    setEbadTarget(null);
+                  }}
+                  className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
+                  style={{
+                    borderColor: 'var(--border)',
+                    color: 'var(--muted)',
+                  }}
+                >
+                  {t('ebad.unlink')}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate('/tournois')}
+                className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
+                style={{
+                  borderColor: 'var(--border)',
+                  color: 'var(--primary)',
+                }}
+              >
+                {t('ebad.manage')}
+              </button>
+            </>
+          }
         />
       )}
 

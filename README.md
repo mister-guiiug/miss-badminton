@@ -40,6 +40,22 @@ npm run dev
 - **@mister-guiiug/dev-pwa-config** (configurations partagées)
 - **Sentry** (rapports d'erreur) et **PostHog** (mesure d'audience, après accord)
 
+## 🏸 Tournois eBad
+
+La page **Tournois eBad** (`/tournois`) relie l'app au suivi des tournois de
+la FFBaD dans eBad :
+
+- **Saisir** les matchs suivis dans eBad (tournoi, tableau, terrain, horaire,
+  joueurs, et au besoin le score qui y a été saisi). eBad n'expose pas d'API
+  publique : la saisie est manuelle et reste sur l'appareil.
+- **Préparer** un match : l'assistant s'ouvre prérempli (simple ou double
+  selon la discipline, joueurs, format 15 ou 21 points). En fin de partie, le
+  match scoré se lie tout seul à son match eBad.
+- **Associer** un match scoré à un match eBad, depuis cette page ou depuis
+  l'historique, avec des suggestions (noms, discipline, jour). La carte donne
+  alors le score à saisir dans eBad, remis dans l'ordre des équipes eBad, et
+  signale un écart avec le score qui y a été saisi.
+
 ## 🔒 Données
 
 Pas de compte ni de serveur : les matchs restent sur l'appareil (stockage du

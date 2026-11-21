@@ -1,7 +1,7 @@
-import { HistoryIcon, HomeIcon, SettingsIcon } from '../icons';
+import { CalendarIcon, HistoryIcon, HomeIcon, SettingsIcon } from '../icons';
 
 /**
- * LES TROIS DESTINATIONS, ÉCRITES UNE FOIS.
+ * LES DESTINATIONS, ÉCRITES UNE FOIS.
  *
  * Le tiroir et la barre latérale portaient chacun sa copie de cette liste :
  * deux fichiers à modifier pour une route de plus, et rien pour rappeler le
@@ -15,6 +15,12 @@ export const NAV_ITEMS = [
     end: false,
     key: 'nav.history' as const,
     Icon: HistoryIcon,
+  },
+  {
+    to: '/tournois',
+    end: false,
+    key: 'nav.ebad' as const,
+    Icon: CalendarIcon,
   },
   {
     to: '/parametres',

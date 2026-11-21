@@ -77,6 +77,14 @@ export const MatchConfigSchema = z.object({
   // dans l'historique, un modèle ou un lien « rejouer ».
   winBy: WinBySchema.optional(),
   sideChangeAt: SideChangeAtSchema.optional(),
+  /**
+   * Le match eBad préparé qui a lancé ce match (cf. `ebad.ts`). Un simple
+   * INDICE : à la fin du match, il sert à lier le résultat au match eBad s'il
+   * est encore libre. La liaison elle-même vit sur le match eBad
+   * (`EbadMatch.linkedMatchId`) — une seule source de vérité. Optionnel, donc
+   * une version antérieure le retire à la lecture sans rien rejeter.
+   */
+  ebadMatchId: z.string().optional(),
 });
 
 const SetScoreSchema = z.object({
@@ -192,3 +200,48 @@ export const ExportBundleSchema = z.object({
 });
 
 export type ExportBundle = z.infer<typeof ExportBundleSchema>;
+
+/**
+ * LES MATCHS SUIVIS DANS eBad (l'application de la FFBaD), recopiés à la main.
+ *
+ * eBad n'expose aucune API publique, et l'app n'a pas de serveur : on ne peut
+ * donc pas aller y chercher les matchs. L'utilisateur saisit ce qu'il y lit —
+ * tournoi, tableau, terrain, joueurs — et ce registre sert à deux choses :
+ * PRÉPARER un match (l'assistant s'ouvre prérempli) et RAPPROCHER un match
+ * scoré en direct du match eBad, pour savoir quel score y reporter et
+ * vérifier celui qui y a été saisi.
+ */
+export const EbadDisciplineSchema = z.enum(['SH', 'SD', 'DH', 'DD', 'DX']);
+export type EbadDiscipline = z.infer<typeof EbadDisciplineSchema>;
+
+const EbadTeamSchema = z.object({
+  primary: z.string(),
+  partner: z.string().optional(),
+});
+
+export const EbadMatchSchema = z.object({
+  id: z.string().min(1),
+  createdAt: z.number().int().positive(),
+  tournament: z.string().min(1),
+  /** Jour du match, `AAAA-MM-JJ`. */
+  date: z.string().optional(),
+  discipline: EbadDisciplineSchema,
+  /** Tableau et tour, tels qu'eBad les affiche (« SH P10 — Poule A »). */
+  round: z.string().optional(),
+  court: z.string().optional(),
+  /** Heure prévue, `HH:MM`. */
+  time: z.string().optional(),
+  /** Le numéro du match dans eBad. */
+  reference: z.string().optional(),
+  /** Le format annoncé : 15 points (défaut FFBaD depuis 09/2026) ou 21. */
+  points: z.union([z.literal(15), z.literal(21)]).optional(),
+  team1: EbadTeamSchema,
+  team2: EbadTeamSchema,
+  /** Le score tel qu'il a été saisi dans eBad, dans l'ordre des équipes eBad. */
+  reportedScore: z.array(SetScoreSchema).optional(),
+  /** L'identifiant du match de l'historique (`SavedMatch.id`) lié. */
+  linkedMatchId: z.string().optional(),
+});
+export const EbadMatchArraySchema = z.array(EbadMatchSchema);
+export type EbadMatch = z.infer<typeof EbadMatchSchema>;
+export type EbadSetScore = z.infer<typeof SetScoreSchema>;

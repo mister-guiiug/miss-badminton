@@ -22,6 +22,7 @@ export interface Messages {
     match: string;
     history: string;
     settings: string;
+    ebad: string;
     openMenu: string;
     closeMenu: string;
     menuLabel: string;
@@ -36,6 +37,7 @@ export interface Messages {
     match: string;
     history: string;
     settings: string;
+    ebad: string;
   };
   home: {
     subtitleEmpty: string;
@@ -312,6 +314,69 @@ export interface Messages {
     renameDuplicate: string;
     playerDelete: string;
   };
+  ebad: {
+    title: string;
+    intro: string;
+    noApi: string;
+    add: string;
+    empty: string;
+    formTitleAdd: string;
+    formTitleEdit: string;
+    tournament: string;
+    date: string;
+    time: string;
+    discipline: string;
+    disciplineSH: string;
+    disciplineSD: string;
+    disciplineDH: string;
+    disciplineDD: string;
+    disciplineDX: string;
+    round: string;
+    roundPlaceholder: string;
+    court: string;
+    reference: string;
+    format: string;
+    format15: string;
+    format21: string;
+    team1: string;
+    team2: string;
+    player: string;
+    partner: string;
+    reportedScore: string;
+    reportedScoreHint: string;
+    reportedScoreInvalid: string;
+    required: string;
+    save: string;
+    cancel: string;
+    edit: string;
+    delete: string;
+    confirmDelete: string;
+    prepare: string;
+    link: string;
+    changeLink: string;
+    unlink: string;
+    statusToPlay: string;
+    statusLinked: string;
+    statusMissing: string;
+    scoreToReport: string;
+    copy: string;
+    copied: string;
+    reportedOk: string;
+    reportedMismatch: string;
+    reportedNone: string;
+    swappedNote: string;
+    linkTitle: string;
+    linkEbadTitle: string;
+    suggested: string;
+    noCandidates: string;
+    noEbadCandidates: string;
+    manage: string;
+    historyLinkAria: string;
+    linkedTo: string;
+    courtShort: string;
+    refShort: string;
+    activeMatchWarning: string;
+  };
 }
 
 const fr: Messages = {
@@ -321,6 +386,7 @@ const fr: Messages = {
     match: 'Match',
     history: 'Historique',
     settings: 'Paramètres',
+    ebad: 'Tournois eBad',
     openMenu: 'Ouvrir le menu',
     closeMenu: 'Fermer le menu',
     menuLabel: 'Menu de navigation',
@@ -337,6 +403,7 @@ const fr: Messages = {
     match: 'Match en cours — Miss Badminton',
     history: 'Historique — Miss Badminton',
     settings: 'Paramètres — Miss Badminton',
+    ebad: 'Tournois eBad — Miss Badminton',
   },
   home: {
     subtitleEmpty: 'Scoreboard club & compétition.',
@@ -626,6 +693,76 @@ const fr: Messages = {
     renameDuplicate: 'Un autre joueur porte déjà ce nom.',
     playerDelete: 'Supprimer le joueur {name}',
   },
+  ebad: {
+    title: 'Tournois eBad',
+    intro:
+      'Recopiez ici les matchs que vous suivez dans eBad : préparez-les en un geste, puis associez le match scoré en direct au match eBad pour y reporter le bon score.',
+    noApi:
+      'eBad ne laisse pas une autre application lire ses matchs : la saisie se fait à la main et reste sur cet appareil.',
+    add: 'Ajouter un match eBad',
+    empty: 'Aucun match eBad pour l’instant.',
+    formTitleAdd: 'Nouveau match eBad',
+    formTitleEdit: 'Modifier le match eBad',
+    tournament: 'Tournoi',
+    date: 'Date',
+    time: 'Heure',
+    discipline: 'Discipline',
+    disciplineSH: 'Simple hommes',
+    disciplineSD: 'Simple dames',
+    disciplineDH: 'Double hommes',
+    disciplineDD: 'Double dames',
+    disciplineDX: 'Double mixte',
+    round: 'Tableau / tour',
+    roundPlaceholder: 'ex. P10 — Poule A',
+    court: 'Terrain',
+    reference: 'N° du match',
+    format: 'Format',
+    format15: '3 × 15 points',
+    format21: '3 × 21 points',
+    team1: 'Équipe 1 (ordre eBad)',
+    team2: 'Équipe 2 (ordre eBad)',
+    player: 'Joueur',
+    partner: 'Partenaire',
+    reportedScore: 'Score saisi dans eBad',
+    reportedScoreHint: 'Facultatif — ex. 15-12 13-15 15-9',
+    reportedScoreInvalid:
+      'Score illisible : écrivez chaque set « 15-12 », séparés par des espaces.',
+    required: 'Renseignez le tournoi et un joueur de chaque équipe.',
+    save: 'Enregistrer',
+    cancel: 'Annuler',
+    edit: 'Modifier',
+    delete: 'Supprimer',
+    confirmDelete:
+      'Supprimer ce match eBad ? Le match scoré associé reste dans l’historique.',
+    prepare: 'Préparer le match',
+    link: 'Associer un match scoré',
+    changeLink: 'Changer d’association',
+    unlink: 'Dissocier',
+    statusToPlay: 'À jouer',
+    statusLinked: 'Match scoré associé',
+    statusMissing: 'Le match associé n’est plus dans l’historique',
+    scoreToReport: 'Score à saisir dans eBad',
+    copy: 'Copier',
+    copied: 'Copié',
+    reportedOk: 'Score eBad conforme',
+    reportedMismatch: 'Score eBad différent : {reported}',
+    reportedNone: 'Pas encore saisi dans eBad',
+    swappedNote:
+      'Équipes inversées par rapport au match scoré : le score est remis dans l’ordre eBad.',
+    linkTitle: 'Associer à un match scoré',
+    linkEbadTitle: 'Associer à un match eBad',
+    suggested: 'Suggéré',
+    noCandidates: 'Aucun match scoré libre dans l’historique.',
+    noEbadCandidates:
+      'Aucun match eBad libre. Ajoutez-le depuis la page Tournois eBad.',
+    manage: 'Gérer les matchs eBad',
+    historyLinkAria: 'Associer à un match eBad',
+    linkedTo: 'eBad : {label}',
+    courtShort: 'Terrain {n}',
+    refShort: 'n° {n}',
+    activeMatchWarning:
+      'Un match est déjà en cours : le préparer le remplacera.',
+  },
 };
 
 const en: Messages = {
@@ -635,6 +772,7 @@ const en: Messages = {
     match: 'Match',
     history: 'History',
     settings: 'Settings',
+    ebad: 'eBad tournaments',
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
     menuLabel: 'Navigation menu',
@@ -649,6 +787,7 @@ const en: Messages = {
     match: 'Match in progress — Miss Badminton',
     history: 'History — Miss Badminton',
     settings: 'Settings — Miss Badminton',
+    ebad: 'eBad tournaments — Miss Badminton',
   },
   home: {
     subtitleEmpty: 'Club & competition scoreboard.',
@@ -930,6 +1069,76 @@ const en: Messages = {
     renameDuplicate: 'Another player already has this name.',
     playerDelete: 'Delete player {name}',
   },
+  ebad: {
+    title: 'eBad tournaments',
+    intro:
+      'Copy here the matches you follow in eBad: prepare them in one tap, then link the live-scored match to the eBad match to report the right score.',
+    noApi:
+      'eBad does not let other apps read its matches: entry is manual and stays on this device.',
+    add: 'Add an eBad match',
+    empty: 'No eBad match yet.',
+    formTitleAdd: 'New eBad match',
+    formTitleEdit: 'Edit eBad match',
+    tournament: 'Tournament',
+    date: 'Date',
+    time: 'Time',
+    discipline: 'Event',
+    disciplineSH: 'Men’s singles',
+    disciplineSD: 'Women’s singles',
+    disciplineDH: 'Men’s doubles',
+    disciplineDD: 'Women’s doubles',
+    disciplineDX: 'Mixed doubles',
+    round: 'Draw / round',
+    roundPlaceholder: 'e.g. P10 — Group A',
+    court: 'Court',
+    reference: 'Match no.',
+    format: 'Format',
+    format15: '3 × 15 points',
+    format21: '3 × 21 points',
+    team1: 'Team 1 (eBad order)',
+    team2: 'Team 2 (eBad order)',
+    player: 'Player',
+    partner: 'Partner',
+    reportedScore: 'Score entered in eBad',
+    reportedScoreHint: 'Optional — e.g. 15-12 13-15 15-9',
+    reportedScoreInvalid:
+      'Unreadable score: write each game as “15-12”, separated by spaces.',
+    required: 'Fill in the tournament and one player per team.',
+    save: 'Save',
+    cancel: 'Cancel',
+    edit: 'Edit',
+    delete: 'Delete',
+    confirmDelete:
+      'Delete this eBad match? The linked scored match stays in your history.',
+    prepare: 'Prepare match',
+    link: 'Link a scored match',
+    changeLink: 'Change link',
+    unlink: 'Unlink',
+    statusToPlay: 'To play',
+    statusLinked: 'Scored match linked',
+    statusMissing: 'The linked match is no longer in your history',
+    scoreToReport: 'Score to enter in eBad',
+    copy: 'Copy',
+    copied: 'Copied',
+    reportedOk: 'eBad score matches',
+    reportedMismatch: 'eBad score differs: {reported}',
+    reportedNone: 'Not entered in eBad yet',
+    swappedNote:
+      'Teams are reversed compared to the scored match: the score is shown in eBad order.',
+    linkTitle: 'Link to a scored match',
+    linkEbadTitle: 'Link to an eBad match',
+    suggested: 'Suggested',
+    noCandidates: 'No free scored match in your history.',
+    noEbadCandidates:
+      'No free eBad match. Add it from the eBad tournaments page.',
+    manage: 'Manage eBad matches',
+    historyLinkAria: 'Link to an eBad match',
+    linkedTo: 'eBad: {label}',
+    courtShort: 'Court {n}',
+    refShort: 'no. {n}',
+    activeMatchWarning:
+      'A match is already in progress: preparing this one will replace it.',
+  },
 };
 
 const es: Messages = {
@@ -939,6 +1148,7 @@ const es: Messages = {
     match: 'Partido',
     history: 'Historial',
     settings: 'Ajustes',
+    ebad: 'Torneos eBad',
     openMenu: 'Abrir el menú',
     closeMenu: 'Cerrar el menú',
     menuLabel: 'Menú de navegación',
@@ -953,6 +1163,7 @@ const es: Messages = {
     match: 'Partido en curso — Miss Badminton',
     history: 'Historial — Miss Badminton',
     settings: 'Ajustes — Miss Badminton',
+    ebad: 'Torneos eBad — Miss Badminton',
   },
   home: {
     subtitleEmpty: 'Marcador de club y competición.',
@@ -1238,6 +1449,76 @@ const es: Messages = {
     renameEmpty: 'El nombre no puede estar vacío.',
     renameDuplicate: 'Otro jugador ya tiene ese nombre.',
     playerDelete: 'Eliminar al jugador {name}',
+  },
+  ebad: {
+    title: 'Torneos eBad',
+    intro:
+      'Copia aquí los partidos que sigues en eBad: prepáralos con un toque y vincula el partido puntuado en directo al partido de eBad para anotar el resultado correcto.',
+    noApi:
+      'eBad no permite que otras aplicaciones lean sus partidos: la entrada es manual y se queda en este dispositivo.',
+    add: 'Añadir un partido eBad',
+    empty: 'Aún no hay partidos eBad.',
+    formTitleAdd: 'Nuevo partido eBad',
+    formTitleEdit: 'Editar partido eBad',
+    tournament: 'Torneo',
+    date: 'Fecha',
+    time: 'Hora',
+    discipline: 'Modalidad',
+    disciplineSH: 'Individual masculino',
+    disciplineSD: 'Individual femenino',
+    disciplineDH: 'Dobles masculino',
+    disciplineDD: 'Dobles femenino',
+    disciplineDX: 'Dobles mixto',
+    round: 'Cuadro / ronda',
+    roundPlaceholder: 'p. ej. P10 — Grupo A',
+    court: 'Pista',
+    reference: 'N.º de partido',
+    format: 'Formato',
+    format15: '3 × 15 puntos',
+    format21: '3 × 21 puntos',
+    team1: 'Equipo 1 (orden eBad)',
+    team2: 'Equipo 2 (orden eBad)',
+    player: 'Jugador',
+    partner: 'Pareja',
+    reportedScore: 'Resultado introducido en eBad',
+    reportedScoreHint: 'Opcional — p. ej. 15-12 13-15 15-9',
+    reportedScoreInvalid:
+      'Resultado ilegible: escribe cada set como «15-12», separados por espacios.',
+    required: 'Indica el torneo y un jugador por equipo.',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    edit: 'Editar',
+    delete: 'Eliminar',
+    confirmDelete:
+      '¿Eliminar este partido eBad? El partido puntuado vinculado se queda en el historial.',
+    prepare: 'Preparar el partido',
+    link: 'Vincular un partido puntuado',
+    changeLink: 'Cambiar vínculo',
+    unlink: 'Desvincular',
+    statusToPlay: 'Por jugar',
+    statusLinked: 'Partido puntuado vinculado',
+    statusMissing: 'El partido vinculado ya no está en el historial',
+    scoreToReport: 'Resultado para introducir en eBad',
+    copy: 'Copiar',
+    copied: 'Copiado',
+    reportedOk: 'Resultado eBad conforme',
+    reportedMismatch: 'Resultado eBad distinto: {reported}',
+    reportedNone: 'Aún no introducido en eBad',
+    swappedNote:
+      'Equipos invertidos respecto al partido puntuado: el resultado se muestra en el orden de eBad.',
+    linkTitle: 'Vincular a un partido puntuado',
+    linkEbadTitle: 'Vincular a un partido eBad',
+    suggested: 'Sugerido',
+    noCandidates: 'No hay partidos puntuados libres en el historial.',
+    noEbadCandidates:
+      'No hay partidos eBad libres. Añádelo desde la página Torneos eBad.',
+    manage: 'Gestionar partidos eBad',
+    historyLinkAria: 'Vincular a un partido eBad',
+    linkedTo: 'eBad: {label}',
+    courtShort: 'Pista {n}',
+    refShort: 'n.º {n}',
+    activeMatchWarning:
+      'Ya hay un partido en curso: preparar este lo sustituirá.',
   },
 };
 

@@ -102,6 +102,11 @@ export interface MatchConfig {
   timeLimitMin?: TimeLimitMin;
   /** Optionnel : comportement de départage. Défaut implicite : 'none'. */
   tieBreak?: TieBreak;
+  /**
+   * Optionnel : le match eBad préparé d'où vient ce match (cf. `ebad.ts`).
+   * L'assistant le conserve quand on modifie le match en cours.
+   */
+  ebadMatchId?: string;
 }
 
 /**
@@ -281,6 +286,7 @@ export function MatchSetupWizard({
       ...sideChangeOf(draft),
       timeLimitMin: draft.timeLimitMin,
       tieBreak: draft.tieBreak,
+      ...(initial?.ebadMatchId ? { ebadMatchId: initial.ebadMatchId } : {}),
       team1: {
         primary: draft.team1.primary.trim(),
         partner: isDoubles ? draft.team1.partner.trim() : undefined,

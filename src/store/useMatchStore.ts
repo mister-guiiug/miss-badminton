@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MatchConfig } from '../react/components/MatchSetupWizard';
 import { isSetWon, midSetSideChangeAt, setRulesOf } from '../scoring';
 import { storage, type SavedMatch } from '../storage';
+import { useEbadStore } from './useEbadStore';
 import { ExportBundleSchema, type Player } from '../schemas';
 import { migratePlayers, renameInMatches } from '../players';
 
@@ -681,6 +682,14 @@ export const useMatchStore = create<MatchState>()(
         // ce qui est réellement persisté (source de vérité = localStorage).
         storage.saveMatchToHistory(match);
         set({ matchHistory: storage.loadHistory() });
+        // Un match préparé depuis eBad se lie à son match eBad en finissant —
+        // sauf si celui-ci l'est déjà : la revanche jouée avec la même
+        // configuration ne vole pas la liaison du premier match.
+        if (match.config.ebadMatchId) {
+          useEbadStore
+            .getState()
+            .linkIfFree(match.config.ebadMatchId, match.id);
+        }
       },
 
       editSetScore: (setIndex, t1, t2) => {
@@ -742,6 +751,7 @@ export const useMatchStore = create<MatchState>()(
 
       removeFromHistory: id => {
         storage.removeMatchFromHistory(id);
+        useEbadStore.getState().forgetSavedMatch(id);
         // On filtre la liste en mémoire au lieu de relire `storage` : la
         // relecture rend la copie plafonnée à 200 matchs et tronquerait
         // l'historique complet hydraté depuis IndexedDB.
@@ -751,6 +761,10 @@ export const useMatchStore = create<MatchState>()(
       clearHistory: () => {
         clearUndoTimer();
         storage.clearHistory();
+        const ebad = useEbadStore.getState();
+        for (const m of ebad.matches) {
+          if (m.linkedMatchId) ebad.forgetSavedMatch(m.linkedMatchId);
+        }
         set({ matchHistory: [], pendingDeletion: null });
       },
 
@@ -781,6 +795,7 @@ export const useMatchStore = create<MatchState>()(
         clearUndoTimer();
         if (!pending) return;
         storage.removeMatchFromHistory(pending.id);
+        useEbadStore.getState().forgetSavedMatch(pending.id);
         set({
           matchHistory: get().matchHistory.filter(m => m.id !== pending.id),
           pendingDeletion: null,
