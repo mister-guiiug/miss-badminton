@@ -2,6 +2,11 @@
 
 PWA de suivi de scores et statistiques de badminton.
 
+## Guides
+
+- [Compter les points au badminton](https://mister-guiiug.github.io/miss-badminton/compter-les-points-au-badminton.html)
+- [Règles du service au badminton](https://mister-guiiug.github.io/miss-badminton/regles-du-service-au-badminton.html)
+
 ## 🚀 Démarrage rapide
 
 Prérequis : un jeton GitHub (droit `read:packages`) dans `NODE_AUTH_TOKEN`, car
